@@ -22,7 +22,8 @@ class cgs():
     Rsun = 69599000000 # cm                 Solar radius
     Lsun = 3.9e33 # erg/s                   Solar luminosity
 
-
+class si():
+    e = 0.
 
 
 
