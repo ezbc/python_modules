@@ -3,7 +3,7 @@
 ''' Module for basic coordinate creation.
 '''
 
-def make_velocity_axis(h):
+def make_velocityAxis(h):
     """ Creates the velocity axis given a pyfits header. Assumes the third
     axis is the velocity axis in km/s using the radio definition.
     """

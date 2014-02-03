@@ -12,7 +12,7 @@ class SpectralGrid(object):
     # Class variables
     gridlist = []
     cube = None
-    spectralAxis = None
+    spectral_axis = None
     raAxis = None
     decAxis = None
     gaussAreaList = []
@@ -20,6 +20,14 @@ class SpectralGrid(object):
     header = None
     fitProfileCount = 0
     invalidProfileCount = 0
+    threshold = 0
+    __tile_queue = queue.Queue()
+    __tile_param_queue = queue.Queue()
+    __tile_ncomp_queue = queue.Queue()
+    __directions = ['east','west','north','south',]
+    __tile_count = 0
+    __tile_fit_limit = 0
+
 
     def __init__(self,fitsfile,box=None,noiseScale=None,
             basesubtract=False,noiseRange=None,Tsys=None):
@@ -33,6 +41,7 @@ class SpectralGrid(object):
         ----------
         fitsFile : string
             Path to fits file to load.
+
         gridfile : gridlist
 
         box : list
@@ -70,7 +79,7 @@ class SpectralGrid(object):
         self.header = h
 
         # Define axes arrays
-        self.spectralAxis = make_velocityAxis(h)
+        self.spectral_axis = make_velocityAxis(h)
         self.raAxis,self.decAxis = make_radecAxes(h)
 
         # Create Tiles for the grid
@@ -117,7 +126,7 @@ class SpectralGrid(object):
             print ' Subtracting baseline from profiles...'
             for i in range(self.get_xsize()):
                 for j in range(self.get_ysize()):
-                    self.get_tile(i,j).subtract_baseline(self.spectralAxis,
+                    self.get_tile(i,j).subtract_baseline(self.spectral_axis,
                                                          noise1,noise2)
 
         print ' Calculating noise characteristics...'
@@ -157,7 +166,7 @@ class SpectralGrid(object):
             print 'System temperature not provided. Assuming Tsys = 30 K'
             Tsys = 30 # Tsys for Arecibo in K
 
-        xarr = self.spectralAxis
+        xarr = self.spectral_axis
         for i in range(self.get_xsize()):
             for j in range(self.get_ysize()):
                 if self.get_tile(i,j).has_validProfile():
@@ -165,7 +174,74 @@ class SpectralGrid(object):
                             noiseScale=noiseScale)
                     self.get_tile(i,j).calculate_noiseScale(Tsys)
 
-    def check_residuals(self,x,y,threshold):
+
+    def __calculate_pvalue(self,stats_dict):
+
+        from mystats import ftest,fvalue
+
+        pvalue_plus = ftest(stats_dict['chi_init'],stats_dict['chi_plus'],
+            stats_dict['dof_init'],stats_dict['dof_plus'])
+
+        stats_dict['pvalue_plus'] = pvalue_plus
+
+        return stats_dict
+
+    def __check_coords(coords, x, y):
+        ''' Converts coordinates to grid coordinates.
+
+        Parameters
+        ----------
+        coords : str
+            'grid' or 'image'
+
+        x,y : int
+            x and y positions
+
+        Returns
+        -------
+        x,y : int
+            x and y positions in grid coordinates
+
+        '''
+
+        if coords is 'grid':
+            try:
+                x = growPos[0]
+                y = growPos[1]
+            except IndexError:
+                print '\n Tile at grid position ' + str(x) + ', ' + str(y) + \
+                        ' does not exist.'
+                exit()
+        elif coords is 'image':
+            try:
+                x,y = self.image2grid(growPos[0],growPos[1])
+            except IndexError:
+                print '\n Tile at image position ' + str(x) + ', ' + str(y) + \
+                        ' does not exist.'
+                exit()
+
+        return x,y
+
+    def __check_number_of_fits(number_of_fits=None, co_cube=None):
+        ''' Checks whether the number_of_fits supplied by the user is valid.
+        '''
+
+        if co_cube is None:
+            total_tiles = (self.get_xsize())*(self.get_ysize())-1
+        elif co_cube.fitProfileCount < (self.get_xsize())*(self.get_ysize()):
+            total_tiles = co_cube.fitProfileCount - 1
+        else:
+            total_tiles = (self.get_xsize())*(self.get_ysize())-1
+
+        if number_of_fits is None or number_of_fits > total_tiles:
+            if co_cube is None:
+                self.__tile_fit_limit = total_tiles - self.invalidProfileCount
+            else:
+                self.__tile_fit_limit = total_tiles - self.invalidProfileCount
+
+        return number_of_fits
+
+    def check_residuals(self,tile):
         """ Checks tile at x,y, to find any significant peaks in the
         residuals that should be fitted. Threshold is in units of standard 
         deviations.
@@ -173,22 +249,22 @@ class SpectralGrid(object):
 
         from numpy import where
 
-        noiseProfile = self.get_tile(x,y).get_noiseProfile()
-        if self.get_tile(x,y).get_residuals() is not None:
-            residuals = self.get_tile(x,y).get_residuals()
+        noiseProfile = tile.get_noiseProfile()
+        if tile.get_residuals() is not None:
+            residuals = tile.get_residuals()
         else:
-            residuals = self.get_tile(x,y).get_profile()
+            residuals = tile.get_profile()
 
         maxResid = residuals.max()
 
         if noiseProfile is not None:
-            if maxResid >= noiseProfile[maxResid == residuals] * threshold:
+            if maxResid >= noiseProfile[maxResid == residuals] * self.threshold:
                 return (maxResid,
-                    self.spectralAxis[where(residuals == maxResid)[0][0]])
+                    self.spectral_axis[where(residuals == maxResid)[0][0]])
             else:
                 return None
 
-    def choose_neighbor(self,x,y,direction,COcube=None):
+    def choose_neighbor(self,x,y,direction,co_cube=None):
         ''' Determines whether neighboring tile is suitable for fitting.
         '''
 
@@ -202,21 +278,21 @@ class SpectralGrid(object):
                     # Check if tile is in queue already
                     if not self.get_neighbor(x,y,direction).is_visited():
                         # Does the CO tile exist?
-                        if COcube is not None:
-                            (imageX,imageY) = COcube.grid2image(x,y)
+                        if co_cube is not None:
+                            (imageX,imageY) = co_cube.grid2image(x,y)
                             #hiX,hiY = self.grid2image(x,y)
-                            #COx,COy = COcube.image2grid(hiX,hiY)
+                            #COx,COy = co_cube.image2grid(hiX,hiY)
                             try:
-                                COncomps = COcube.get_neighbor(imageY,
+                                COncomps = co_cube.get_neighbor(imageY,
                                                         imageX,direction,
                                                         coords='image').ncomps
-                                #COncomps = COcube.get_neighbor(COx,
+                                #COncomps = co_cube.get_neighbor(COx,
                                 #                        COy,direction).ncomps
                                 if COncomps is not None:
                                     returnNeighbor = True
                             except AttributeError:
                                 returnNeighbor = True
-                        elif COcube is None:
+                        elif co_cube is None:
                             returnNeighbor = True
         if returnNeighbor:
             self.get_neighbor(x,y,direction).set_visited()
@@ -224,11 +300,221 @@ class SpectralGrid(object):
         else:
             return None
 
-    def fit_profiles(self,guesses=None,ncomp=None,growPos=None,coords=None,
-                    alpha=None,filename=None,tileSaveFreq=None,
-                    threshold=None,numberOfFits=None,verbose=True,
-                    outputFilename=None,COcube=None,COwidthScale=1.,
+    def __compare_component_fits(self,data_dict):
+        ''' Performs F-test on fits with N, N-1, and N+1 # of model
+        components.
+
+        Returns
+        -------
+        ftest_result : int
+            = +1, Fitting additional component is significant.
+            = 0, Fitting initial components is significant.
+            = -1, Fitting one fewer component is significant.
+
+        stats_dict : dict
+            Contains the relevant stats.
+        '''
+
+        from mystats import ftest,fvalue
+
+        dofInit = len(self.spectral_axis) - data_dict['ncomp_init'] * 3
+        dofMinus = dofInit + 3
+        dofPlus = dofInit - 3
+        pvalue_plus = ftest(chi_init,chi_plus,dofInit,dofPlus)
+        pvalue_minus = ftest(chi_minus,chi_init,dofMinus,dofInit)
+
+        veryverbose=False
+        if veryverbose:
+            print 'chi_plus: ' + str(chi_plus)
+            print 'chi_init: ' + str(chiInit)
+            print 'chi_minus: ' + str(chiMinus)
+            print 'pvalue-: ' + str(pvalue_minus)
+            print 'pvalue+: ' + str(pvalue_plus)
+
+
+        ftest_result = 0
+        if pvalue_plus < alpha or pvalue_minus > alpha:
+            if pvalue_plus < 1 - pvalueMins:
+                ftest_result = +1
+            elif 1 - pvalue_minus <= pvalue_plus:
+                ftest_result = -1
+
+
+        stats_dict = {'dof_init': dofInit,
+                'dof_minus': dofMinus,
+                'dof_plus': dofPlus,
+                'pvalue_plus': pvalue_plus,
+                'pvalue_minus': pvalue_minus}
+
+        return ftest_result, stats_dict
+
+    def __fit_initial_components(self,data_dict):
+
+        ''' Performs the initial fit of a tile.
+
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionary of parameters used for fitting. See the fit_profiles
+            function for further details.
+
+        Returns
+        -------
+        data_dict : dict
+
+        '''
+
+        if data_dict['ncomp_init'] == 0:
+            # Define profile and noise profile for chi^2 calculation
+            profile = data_dict['tile_init'].profile
+            noiseProfile = data_dict['tile_init'].noiseProfile
+            data_dict['chi_square_init'] = \
+                    sum((profile - noiseProfile)**2 / noiseProfile)
+            data_dict['ncomp_init'] = []
+            data_dict['params_init'] = []
+        else:
+            data_dict['tile_init'].fit_profile(self.spectral_axis,
+                guesses = data_dict['params_init'],
+                ncomp = data_dict['ncomp_init'],
+                co_tile = data_dict['co_tile'],
+                co_width_scale = data_dict['co_width_scale'])
+            data_dict['chi_square_init'] = \
+                    data_dict['tile_init'].get_chi2()
+            data_dict['tile_init'].set_visited()
+
+        return data_dict
+
+    def __fit_onefewer_component(self,data_dict):
+
+        ''' Performs the initial fit of a tile.
+
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionary of parameters used for fitting. See the fit_profiles
+            function for further details.
+
+        Returns
+        -------
+        data_dict : dict
+
+        '''
+
+        if data_dict['ncomp_init'] > 1:
+            # First create a temporary tile
+            data_dict['tile_minus'] = SpectralTile(tile =\
+                    data_dict['tile_init'])
+
+            # Create initial guesses
+            newParams = data_dict['params_init'][1:]
+            guesses = self.writeToList(newParams)
+
+            # Perform the fit
+            data_dict['tile_minus'].fit_profile(self.spectral_axis,
+                guesses = guesses,
+                ncomp = self.data_dict['ncomp_init'] - 1,
+                co_tile = data_dict['co_tile'],
+                co_width_scale = data_dict['co_width_scale'])
+
+            data_dict['chi_square_minus'] = \
+                    data_dict['tile_minus'].get_chi2()
+        else:
+            # Calculate the chi^2
+            profile = data_dict['tile_init'].profile
+            noiseProfile = data_dict['tile_init'].noiseProfile
+            data_dict['chi_square_minus'] = \
+                    sum((profile - noiseProfile)**2 / noiseProfile)
+
+        return data_dict
+
+    def __fit_onemore_component(self,data_dict):
+
+        ''' Performs fit with additional component of a tile.
+
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionary of parameters used for fitting. See the fit_profiles
+            function for further details.
+
+        Returns
+        -------
+        data_dict : dict
+
+        '''
+
+        data_dict['tile_plus'] = SpectralTile(tile = \
+                data_dict['tile_init'])
+        #self.gridlist[x][y][0] = data_dict['tile_init']
+
+        peak_residual = self.check_residuals(data_dict['tile_init'])
+
+        if peak_residual is not None:
+            if data_dict['ncomp_init'] <= 1:
+                data_dict['tile_plus'].residuals = \
+                        data_dict['tile_plus'].profile
+            # Guess next component parameters
+            guesses = self.writeToList(data_dict['params_init'])
+            guesses.append(peak_residual[0])
+            guesses.append(peak_residual[1])
+            width = self.guess_width(tile = data_dict['tile_plus'], 
+                    peak = peak_residual[1],
+                    spectral_axis = self.spectral_axis)
+            guesses.append(width) # guess of 5 km/s width
+
+            # Perform fit
+            data_dict['tile_plus'].fit_profile(self.spectral_axis,
+                    guesses = guesses,
+                    ncomp = data_dict['ncomp_init'] + 1,
+                    co_tile = data_dict['co_tile'],
+                    co_width_scale = data_dict['co_width_scale'])
+
+            data_dict['chi_square_plus'] = data_dict['tile_plus'].get_chi2()
+
+        elif peak_residual is None:
+            data_dict['chi_square_plus'] = data_dict['chi_square_init']
+
+        return data_dict
+
+    def __fit_more_components(self, data_dict, stats_dict, alpha):
+
+        if initNComps == 0:
+            data_dict['tile_init'].ncomps = 0
+            data_dict['tile_init'].residuals = data_dict['tile_init'].profile
+            data_dict['tile_init'].params = []
+            data_dict['tile_init'].visited = True
+            data_dict['tile_init'].fitSuccess = True
+            data_dict['tile_init'].fit_chi2 = data_dict['tile_init'].get_chi2()
+
+        while stats_dict['pvalue_plus'] < alpha:
+            if verbose:
+                print 'Additional components significant.'
+            # Create temporary tile
+            data_dict['tile_plus'] = SpectralTile(tile = data_dict['tile_init'])
+
+            #self.gridlist[x][y][0] = data_dict['tile_init']
+
+            data_dict = self.__fit_onemore_component(data_dict)
+
+            if verbose:
+                print 'Number of components in fit = ' + \
+                    str(data_dict['tile_plus'].get_ncomps())
+
+            # Calculate p-value
+            stats_dict = self.__calculate_pvalue(stats_dict)
+
+            if veryverbose:
+                print 'pvalue = ' + str(pvalue_plus)
+
+            # If p-value is still significant, use new tile and repeat
+            data_dict['tile_init'] = data_dict['tile_plus']
+
+    def fit_profiles(self, guesses=[], ncomp=1, growPos=(0,0), coords='grid',
+                    alpha=0.05, filename=None, tileSaveFreq=100,
+                    threshold=1, number_of_fits=None, verbose=True,
+                    outputFilename=None, co_cube=None, co_width_scale=1.,
                     veryverbose=False):
+
         """ Fits spectral axis for each pixel in the cube.
 
         Parameters
@@ -244,7 +530,8 @@ class SpectralGrid(object):
             Number of gaussian components to fit.
 
         growPos : tuple
-            2D tuple consisting of (x,y) positions for grow method to begin fitting
+            2D tuple consisting of (x,y) positions for grow method to begin 
+            fitting
 
         coords : string, optional
             Default = 'grid'
@@ -259,7 +546,8 @@ class SpectralGrid(object):
             Name of file to save SpectralGrid instance to.
 
         tileSaveFreq : int, optional
-            After tileSaveFreq number of tiles fit, the SpectralGrid instance will
+            After tileSaveFreq number of tiles fit, the SpectralGrid instance
+            will
             be saved to filename.
 
         threshold : float, optional
@@ -273,13 +561,13 @@ class SpectralGrid(object):
         outputFilename : string, optional
             Default is no output file will be written.
 
-        COcube : SpectralGrid
+        co_cube : SpectralGrid
             SpectralGrid instance of a CO on the same spatial grid as the input
             HI cube. Fitted profiles in the CO cube will be used to guesses
             where HI absorption is present in the HI cube. Channels in the HI
             cube with HI absorption will be excluded from a profile fit.
 
-        COwidthScale : float
+        co_width_scale : float
             Scalar of the CO velocity width. 
         """
 
@@ -291,107 +579,54 @@ class SpectralGrid(object):
         from agpy.gaussfitter import multigaussfit as gfit
         import random
 
-        if growPos is None:
-            growPos = (0,0)
-        if ncomp is None:
-            ncomp = 1
-        if guesses is None:
-            guesses = [0.1,0.1,0.1]
-            ncomp = 1
-        if alpha is None:
-            alpha = 0.05
-        if tileSaveFreq is None:
-            tileSaveFreq = 10
-        if threshold is None:
-            threshold = 1
 
         # Set number of fits
-        if COcube is None:
-            totalTiles = (self.get_xsize())*(self.get_ysize())-1
-        elif COcube.fitProfileCount < (self.get_xsize())*(self.get_ysize()):
-            totalTiles = COcube.fitProfileCount - 1
-        else:
-            totalTiles = (self.get_xsize())*(self.get_ysize())-1
-
-        if numberOfFits is None or numberOfFits > totalTiles:
-            if COcube is None:
-                numberOfFits = totalTiles - self.invalidProfileCount
-            else:
-                numberOfFits = totalTiles - self.invalidProfileCount
+        self.__tile_fit_limit = \
+                self.__check_number_of_fits(number_of_fits=number_of_fits,
+                        co_cube=co_cube)
 
         # Convert coordinates to grid if image / set default
-        if coords is None or coords is 'grid':
-            try:
-                x = growPos[0]
-                y = growPos[1]
-            except IndexError:
-                print '\n Tile at grid position ' + str(x) + ', ' + str(y) + \
-                        ' does not exist.'
-                exit()
+        x,y = self.__check_coords(coords,x,y)
 
-        if coords is 'image':
-            try:
-                x,y = self.image2grid(growPos[0],growPos[1])
-            except IndexError:
-                print '\n Tile at image position ' + str(x) + ', ' + str(y) + \
-                        ' does not exist.'
-                exit()
         if verbose:
-            print 'Initial positions: x = ' + str(x) + ', y = ' + str(y)
+            print('Initial positions: x = ' + str(x) + ', y = ' + str(y))
 
         # Initialize arrays and counts
-        tileQueue = queue.Queue()
-        tileParamQueue = queue.Queue()
-        tileNCompQueue = queue.Queue()
-        tileCount = 0
-        directions = ['east','west','north','south',]
-        tileQueue.put(self.get_tile(x,y))
-        tileParamQueue.put(guesses)
+        self.__tile_queue.put(self.get_tile(x,y))
+        self.__tile_param_queue.put(guesses)
+        data_dict = {'chi_square_init': None,
+                'chi_square_minus': None,
+                'chi_square_plus': None,
+                'ncomp_init': None,
+                'params_init': None,
+                'co_tile': None,
+                'co_width_scale': co_width_scale,
+                'tile_init': None,
+                'tile_minus': None,
+                'tile_plus': None}
+        self.threshold = threshold
 
-        while tileCount <= numberOfFits:
+        while self.__tile_count <= self.__tile_fit_limit:
             if verbose:
-                print '\nBeginning fit #' + str(tileCount) + ' of ' + \
-                        str(numberOfFits)
+                print '\nBeginning fit #' + str(self.__tile_count) + ' of ' + \
+                        str(self.__tile_fit_limit)
 
-            # Get the next tile, but if empty the fitting is complete
-            if not tileQueue.empty():
-                tile = tileQueue.get()
-                if tileCount != 0:
-                    try:
-                        guesses = self.writeToList(tileParamQueue.get())
-                    except TypeError:
-                        guesses = []
-                else:
-                    guesses = tileParamQueue.get()
-                    #####################
-                    #guesses = []
-                    ###################
+            # Get the next tile and the corresponding guesses
+            data_dict['tile_init'], data_dict['params_init'] = \
+                    self.__get_next_tile()
 
-            else:
-                print 'No further profiles to fit.'
-                break
+            # Get the guesses for the profile
+            #if self.__tile_count == 0:
+            #    data_dict['ncomp_init'] = len(guesses) / 3
+            #else:
+            #    data_dict['ncomp_init'] = self.__tile_ncomp_queue.get()
 
-
-            # Perform first fit
-            if tileCount == 0:
-                nCompInit = len(guesses) / 3
-            else:
-                nCompInit = tileNCompQueue.get()
-
-            ##############
-            #nCompInit = 0
-            ##############
-
-
-            x = tile.get_position()[0]
-            y = tile.get_position()[1]
-            (imageX,imageY) = self.grid2image(x,y)
+            x = data_dict['tile_init'].get_position()[0]
+            y = data_dict['tile_init'].get_position()[1]
 
             # Get the CO tile
-            if COcube is not None:
-                COtile = COcube.get_tile(imageX,imageY,coords='image')
-            else:
-                COtile = None
+            if co_cube is not None:
+                data_dict['co_tile'] = co_cube.get_tile(x,y)
 
             if verbose:
                 print 'Fitting tile at Grid position ' + \
@@ -399,9 +634,6 @@ class SpectralGrid(object):
                 print 'Fitting tile at Image position ' + \
                         str(self.grid2image(x,y)[0]) + \
                             ', ' + str(self.grid2image(x,y)[1])
-
-            #print 'nCompInit = ' + str(nCompInit)
-            #print 'initial guesses = ' + str(guesses)
 
             # Fitting begins:
             # Steps to take:
@@ -417,245 +649,163 @@ class SpectralGrid(object):
                 # either fewer components or more components
                 # until p-value is insignificant.
 
-            # Define significant p-value
-            pSignificant = alpha
-
             # Perform fit with initial # of components
             # ----------------------------------------
-            # First create a temporary tile
-            if verbose:
-                print 'Initial # of components = ' + str(nCompInit)
-            tempTile_init = SpectralTile(tile=tile)
-
-            if nCompInit == 0:
-                profile = tempTile_init.profile
-                noiseProfile = tempTile_init.noiseProfile
-                chiInit = sum((profile - noiseProfile)**2 / noiseProfile)
-                initNComps = 0
-                initParams = []
-            else:
-                tempTile_init.fit_profile(self.spectralAxis,
-                    guesses=guesses,
-                    ncomp=nCompInit,
-                    COtile=COtile,
-                    COwidthScale=COwidthScale)
-                tempTile_init.set_visited()
-                chiInit = tempTile_init.get_chi2()
-                initNComps = tempTile_init.get_ncomps()
-                initParams = tempTile_init.get_params()
-                initCompAreaList = tempTile_init.get_compAreaList()
+            self.__fit_initial_components(data_dict)
 
             # Change the first tile guesses to the fit parameters
-            if tileCount == 0:
-                guesses = self.writeToList(tempTile_init.params)
+            #if self.__tile_count == 0:
+            #    guesses = self.writeToList(data_dict['tile_init'].params)
 
             # Perform fit with one fewer components
             # -------------------------------------
-            if initNComps > 1:
-                # First create a temporary tile
-                tempTile_minus = SpectralTile(tile=tile)
-
-                # Create initial guesses
-                newParams = initParams[1:]
-                guesses = self.writeToList(newParams)
-
-                # Perform the fit
-                tempTile_minus.fit_profile(self.spectralAxis,
-                    guesses=guesses,
-                    ncomp=initNComps - 1,
-                    COtile=COtile,
-                    COwidthScale=COwidthScale)
-
-                chiMinus = tempTile_minus.get_chi2()
-            else:
-                profile = tempTile_init.profile
-                noiseProfile = tempTile_init.noiseProfile
-                chiMinus = sum((profile - noiseProfile)**2 / noiseProfile)
+            data_dict = self.__fit_onefewer_component(data_dict)
 
             # Perform fit with an additional component
             # ----------------------------------------     
-            # First create a temporary tile
-
-            tempTile_plus = SpectralTile(tile=tile)
-            self.gridlist[x][y][0] = tempTile_init
-
-            peakResidual = self.check_residuals(x,y,threshold)
-            if peakResidual is not None:
-                if initNComps == 0 or initNComps == 1:
-                    self.get_tile(x,y).residuals = self.get_tile(x,y).profile
-                # Guess next component parameters
-                guesses = self.writeToList(initParams)
-                guesses.append(peakResidual[0])
-                guesses.append(peakResidual[1])
-                width = self.guess_width(x,y,peakResidual[1])
-                guesses.append(width) # guess of 5 km/s width
-
-                # Perform fit
-                tempTile_plus.fit_profile(self.spectralAxis,
-                        guesses=guesses,
-                        ncomp=initNComps+1,
-                        COtile=COtile,
-                        COwidthScale=COwidthScale)
-
-                chiPlus = tempTile_plus.get_chi2()
-            elif peakResidual is None:
-                chiPlus = chiInit
+            data_dict = self.__fit_onemore_component(data_dict)
 
             # Perform F-test on three fits
-            # ----------------------------------------     
-            dofInit = len(self.spectralAxis) - initNComps * 3
-            dofMinus = dofInit + 3
-            dofPlus = dofInit - 3
-            pvaluePlus = ftest(chiInit,chiPlus,dofInit,dofPlus)
-            pvalueMinus = ftest(chiMinus,chiInit,dofMinus,dofInit)
-
-            veryverbose=False
-            if veryverbose:
-                print 'chiPlus: ' + str(chiPlus)
-                print 'chiInit: ' + str(chiInit)
-                print 'chiMinus: ' + str(chiMinus)
-                print 'pvalue-: ' + str(pvalueMinus)
-                print 'pvalue+: ' + str(pvaluePlus)
-
-            significant = False
-            if pvaluePlus < pSignificant or pvalueMinus > pSignificant:
-                significant = True
+            # ----------------------------
+            ftest_result, stats_dict = self.__compare_component_fits(data_dict)
 
             # Perform fits with more components
-            # ---------------------------------    
-            if significant and pvaluePlus < 1 - pvalueMinus:
-                if initNComps == 0:
-                    tempTile_init.ncomps = 0
-                    tempTile_init.residuals = tempTile_init.profile
-                    tempTile_init.params = []
-                    tempTile_init.visited = True
-                    tempTile_init.fitSuccess = True
-                    tempTile_init.fit_chi2 = chiMinus
+            # ---------------------------------
+            if ftest_result == +1:
+                self.__fit_more_components(data_dict, stats_dict)
 
-                while pvaluePlus < pSignificant:
+                if initNComps == 0:
+                    data_dict['tile_init'].ncomps = 0
+                    data_dict['tile_init'].residuals = data_dict['tile_init'].profile
+                    data_dict['tile_init'].params = []
+                    data_dict['tile_init'].visited = True
+                    data_dict['tile_init'].fitSuccess = True
+                    data_dict['tile_init'].fit_chi2 = chi_minus
+
+                while pvalue_plus < alpha:
                     if verbose:
                         print 'Additional components significant.'
                     # Create temporary tile
-                    tempTile_plus = SpectralTile(tile=tempTile_init)
+                    data_dict['tile_plus'] = SpectralTile(tile=data_dict['tile_init'])
 
                     # Get initial parameters
-                    chiInit = tempTile_init.get_chi2()
-                    initNComps = tempTile_init.get_ncomps()
-                    initParams = tempTile_init.get_params()
+                    chi_init = data_dict['tile_init'].get_chi2()
+                    initNComps = data_dict['tile_init'].get_ncomps()
+                    initParams = data_dict['tile_init'].get_params()
 
-                    self.gridlist[x][y][0] = tempTile_init
-                    peakResidual = self.check_residuals(x,y,1)
-                    if peakResidual is not None:
+                    self.gridlist[x][y][0] = data_dict['tile_init']
+                    peak_residual = self.check_residuals(x,y,1)
+                    if peak_residual is not None:
                         # Write new guess from largest residual
                         guesses = self.writeToList(initParams)
-                        guesses.append(peakResidual[0])
-                        guesses.append(peakResidual[1])
-                        width = self.guess_width(x,y,peakResidual[1])
+                        guesses.append(peak_residual[0])
+                        guesses.append(peak_residual[1])
+                        width = self.guess_width(x,y,peak_residual[1])
                         guesses.append(width) # guess of 5 km/s width
 
                         # Fit the new tile                    
-                        tempTile_plus.fit_profile(self.spectralAxis,
+                        data_dict['tile_plus'].fit_profile(self.spectral_axis,
                                 guesses=guesses,
                                 ncomp=initNComps+1,
-                                COtile=COtile,
-                                COwidthScale=COwidthScale)
+                                co_tile=co_tile,
+                                co_width_scale=co_width_scale)
 
-                        chiPlus = tempTile_plus.get_chi2()
+                        chi_plus = data_dict['tile_plus'].get_chi2()
 
                     if verbose:
                         print 'Number of components in fit = ' + \
-                            str(tempTile_plus.get_ncomps())
+                            str(data_dict['tile_plus'].get_ncomps())
 
                     # Calculate p-value            
-                    dofInit = len(self.spectralAxis) - initNComps * 3
+                    dofInit = len(self.spectral_axis) - initNComps * 3
                     dofPlus = dofInit - 3
-                    tempTile_init.fValuePlusList.append(fvalue(chiInit,chiPlus,
+                    data_dict['tile_init'].fValuePlusList.append(fvalue(chi_init,chi_plus,
                                                                 dofInit,dofPlus))
-                    pvaluePlus = ftest(chiInit,chiPlus,dofInit,dofPlus)
+                    pvalue_plus = ftest(chi_init,chi_plus,dofInit,dofPlus)
                     if veryverbose:
-                        print 'pvalue = ' + str(pvaluePlus)
+                        print 'pvalue = ' + str(pvalue_plus)
                     # If p-value is still significant, use new tile and repeat
-                    tempTile_init = tempTile_plus
+                    data_dict['tile_init'] = data_dict['tile_plus']
 
             # Perform fits with fewer components
             # ----------------------------------
-            if significant and 1 - pvalueMinus <= pvaluePlus:
-                pvaluePlus = pvalueMinus #extract p-value from previous fit
-                pvalueMinus = 0
+            if significant and 1 - pvalue_minus <= pvalue_plus:
+                pvalue_plus = pvalue_minus #extract p-value from previous fit
+                pvalue_minus = 0
 
                 if initNComps <= 1:
                     if verbose and initNComps == 1:
                             print 'Fewer components significant'
-                    tempTile_init.ncomps = 0
-                    tempTile_init.residuals = tempTile_init.profile
-                    tempTile_init.params = []
-                    tempTile_init.visited = True
-                    tempTile_init.fitSuccess = True
-                    tempTile_init.fit_chi2 = chiMinus
+                    data_dict['tile_init'].ncomps = 0
+                    data_dict['tile_init'].residuals = data_dict['tile_init'].profile
+                    data_dict['tile_init'].params = []
+                    data_dict['tile_init'].visited = True
+                    data_dict['tile_init'].fitSuccess = True
+                    data_dict['tile_init'].fit_chi2 = chi_minus
 
                 else:
-                    while pvaluePlus > pvalueMinus:
+                    while pvalue_plus > pvalue_minus:
                         if verbose:
                             print 'Fewer components significant'
 
                         # Get initial parameters
-                        chiInit = tempTile_init.get_chi2()
-                        initNComps = tempTile_init.get_ncomps()
-                        initParams = tempTile_init.get_params()
+                        chi_init = data_dict['tile_init'].get_chi2()
+                        initNComps = data_dict['tile_init'].get_ncomps()
+                        initParams = data_dict['tile_init'].get_params()
 
                          # Create temporary tile
-                        tempTile_minus = SpectralTile(tile=tempTile_init)
+                        data_dict['tile_minus'] = SpectralTile(tile=data_dict['tile_init'])
 
                         # Use params from previous tile for guesses
                         newParams = initParams[1:]
                         guesses = self.writeToList(newParams)
 
                         # Fit the new tile
-                        tempTile_minus.fit_profile(self.spectralAxis,
+                        data_dict['tile_minus'].fit_profile(self.spectral_axis,
                                 guesses=guesses,
                                 ncomp=initNComps - 1,
-                                COtile=COtile,
-                                COwidthScale=COwidthScale)
+                                co_tile=co_tile,
+                                co_width_scale=co_width_scale)
 
                         if verbose:
                             print 'Number of components in fit = ' + \
-                                    str(tempTile_minus.get_ncomps())
+                                    str(data_dict['tile_minus'].get_ncomps())
 
                         # Calculate p-value
-                        chiMinus = tempTile_minus.get_chi2()
-                        dofInit = len(self.spectralAxis) - initNComps*3
+                        chi_minus = data_dict['tile_minus'].get_chi2()
+                        dofInit = len(self.spectral_axis) - initNComps*3
                         dofMinus = dofInit + 3
 
                         # Append fvalue to list
-                        tempTile_init.fValueMinusList.append(
-                                fvalue(chiMinus,chiInit,dofMinus,dofInit))
+                        data_dict['tile_init'].fValueMinusList.append(
+                                fvalue(chi_minus,chi_init,dofMinus,dofInit))
 
-                        pvalueMinus = ftest(chiMinus,chiInit,dofMinus,dofInit)
+                        pvalue_minus = ftest(chi_minus,chi_init,dofMinus,dofInit)
 
                         if veryverbose:
-                            print 'pvalue = ' + str(pvalueMinus)
-                        #print 'chiMinus : ' + str(chiMinus)
-                        #print 'chiInit : ' + str(chiInit)
+                            print 'pvalue = ' + str(pvalue_minus)
+                        #print 'chi_minus : ' + str(chiMinus)
+                        #print 'chi_init : ' + str(chiInit)
                         #print 'dofMinus : ' + str(dofMinus)
                         #print 'dofInit : ' + str(dofInit)
 
                         # If p-value is still significant, use new tile and
                         # repeat
-                        tempTile_init = tempTile_minus
-                        pvaluePlus = pvalueMinus
+                        data_dict['tile_init'] = data_dict['tile_minus']
+                        pvalue_plus = pvalue_minus
 
             # If no fits were significant, then adjust the parameters
             if initNComps == 0:
-                tempTile_init.ncomps = 0
-                tempTile_init.residuals = tempTile_init.profile
-                tempTile_init.params = []
-                tempTile_init.visited = True
-                tempTile_init.fitSuccess = True
-                tempTile_init.fit_chi2 = chiMinus
+                data_dict['tile_init'].ncomps = 0
+                data_dict['tile_init'].residuals = data_dict['tile_init'].profile
+                data_dict['tile_init'].params = []
+                data_dict['tile_init'].visited = True
+                data_dict['tile_init'].fitSuccess = True
+                data_dict['tile_init'].fit_chi2 = chi_minus
 
 
             # Write best-fit tile to the grid
-            self.gridlist[x][y][0],tile = tempTile_init,tempTile_init
+            self.gridlist[x][y][0],tile = data_dict['tile_init'],data_dict['tile_init']
 
             # add fit to total fit count
             self.fitProfileCount += 1
@@ -665,11 +815,12 @@ class SpectralGrid(object):
                         str(tile.ncomps) + ' components'
 
             # Write grid to file
-            if filename is not None and tileCount%tileSaveFreq == 0:
+            if filename is not None and self.__tile_count%tileSaveFreq == 0:
                 if verbose:
                     print '\n Saving SpectralGrid instance as ' + str(filename)
                 write_grid(self,filename)
-            elif filename is not None and tileCount == numberOfFits:
+            elif filename is not None and \
+                self.__tile_count == self.__tile_fit_limit:
                 if verbose:
                     print '\n Saving SpectralGrid instance as ' + str(filename)
                 write_grid(self,filename)
@@ -680,17 +831,17 @@ class SpectralGrid(object):
             random.shuffle(directions)
             for i, direction in enumerate(directions):
                 # Check if tile exists
-                neighbor = self.choose_neighbor(x,y,direction,COcube=COcube)
+                neighbor = self.choose_neighbor(x,y,direction,co_cube=co_cube)
                 if neighbor is not None:
-                    tileQueue.put(self.get_neighbor(x,y,direction,
+                    self.__tile_queue.put(self.get_neighbor(x,y,direction,
                             verbose=verbose))
-                    tileNCompQueue.put(tile.get_ncomps())
-                    tileParamQueue.put(tile.params)
+                    self.__tile_ncomp_queue.put(tile.get_ncomps())
+                    self.__tile_param_queue.put(tile.params)
 
-            tileCount = tileCount + 1
+            self.__tile_count = self.__tile_count + 1
 
-    def fit_profile(self,guesses,ncomp,x,y,coords='grid',COcube=None,
-                    COwidthScale=1.):
+    def fit_profile(self,guesses,ncomp,x,y,coords='grid',co_cube=None,
+                    co_width_scale=1.):
         """ Fits gaussians to a pixel in the cube.
         """
 
@@ -703,16 +854,16 @@ class SpectralGrid(object):
                         ' does not exist.'
                 exit()
 
-        if COcube is not None:
-            COtile = COcube.get_tile(x,y)
+        if co_cube is not None:
+            co_tile = co_cube.get_tile(x,y)
         else:
-            COtile = None
+            co_tile = None
 
-        self.get_tile(x,y).fit_profile(self.spectralAxis,
+        self.get_tile(x,y).fit_profile(self.spectral_axis,
                                            guesses=guesses,
                                            ncomp=ncomp,
-                                           COtile=COtile,
-                                           COwidthScale=COwidthScale)
+                                           co_tile=co_tile,
+                                           co_width_scale=co_width_scale)
 
     def get_component(self,x,y,compNumber):
         """ Returns a gaussian component from a fit.
@@ -720,7 +871,8 @@ class SpectralGrid(object):
 
         tile = self.get_tile(x,y)
         return tile.make_component(compNumber,
-                                   self.spectralAxis)
+                                   self.spectral_axis)
+
     def get_imagexsize(self):
         return len(self.cube[0][:])
 
@@ -754,11 +906,32 @@ class SpectralGrid(object):
             xNeighbor = x + 1
             return self.get_tile(xNeighbor,y)
 
-    def get_spectralAxis(self):
+
+    def __get_next_tile():
+        ''' Returns the next tile in the tile queue.
+        '''
+
+        if not self.__tile_queue.empty():
+            tile = self.__tile_queue.get()
+            tile_copy = SpectralGrid(tile = tile)
+            if self.__tile_count != 0:
+                try:
+                    guesses = self.writeToList(self.__tile_param_queue.get())
+                except TypeError:
+                    guesses = []
+            else:
+                guesses = self.__tile_param_queue.get()
+        else:
+            print 'No further profiles to fit.'
+            break
+
+        return tile_copy, guesses
+
+    def get_spectral_axis(self):
         """ Returns the spectral axis of the cube.
         """
 
-        return self.spectralAxis
+        return self.spectral_axis
 
     def get_tile(self,x, y, coords = None):
         """ Returns a tile at position x,y.
@@ -795,7 +968,6 @@ class SpectralGrid(object):
                 print '\n Tile at image position ' + str(x) + ', ' + str(y) + \
                         ' does not exist.'
 
-
     def get_xsize(self):
         return len(self.gridlist[:])
 
@@ -807,32 +979,6 @@ class SpectralGrid(object):
         """
 
         return (gridXPos + self.region[0], gridYPos + self.region[1])
-
-    def guess_width(self,x,y,maxpos):
-        ''' Guesses the width of a residual peak.
-        maxpos : int
-            In velocity units.
-        '''
-        from numpy import where
-
-        tile = self.get_tile(x,y)
-        residuals = tile.get_residuals()
-        # Find position in array of maximum velocity position
-        maxgridpos = where(self.spectralAxis == maxpos)[0][0]
-        # Find amplitude of maximum residual
-        maxResid = residuals[maxgridpos]
-        # Define width as maxpos minus position where residual is 0.5 maxpos
-        try:
-            minPoses = where(residuals[maxgridpos:-1] < 0.5 * maxResid)[0]
-            widthPos = abs(min(minPoses) - maxgridpos)
-            width = abs(self.spectralAxis[widthPos] - \
-                    self.spectralAxis[maxgridpos])
-        except ValueError:
-            minPoses = where(residuals[0:maxgridpos] < 0.5 * maxResid)[0]
-            widthPos = abs(min(minPoses) - maxgridpos)
-            width = abs( - self.spectralAxis[widthPos] + \
-                    self.spectralAxis[maxgridpos])
-        return width
 
     def image2grid(self,imageXPos,imageYPos):
         """ Converts image positions to grid pixel positions.
@@ -883,7 +1029,7 @@ class SpectralTile(object):
     fit_chi2 = None
     fValuePlusList = []
     fValueMinusList = []
-    spectralAxis = None
+    spectral_axis = None
     coVelocities = None
 
     def __init__(self,gridXPos = None,gridYPos = None,
@@ -932,32 +1078,32 @@ class SpectralTile(object):
             self.yOffset = tile.xOffset
             self.fValuePlusList = tile.fValuePlusList
             self.fValueMinusList = tile.fValueMinusList
-            self.spectralAxis = tile.spectralAxis
+            self.spectral_axis = tile.spectral_axis
             self.coVelocities = tile.coVelocities
 
 
 
-    def calculate_compArea(self,compNumber,spectralAxis):
+    def calculate_compArea(self,compNumber,spectral_axis):
         """ Caclutes area under gaussian.
         """
 
         from scipy.integrate import quad
 
-        a = spectralAxis.min()
-        b = spectralAxis.max()
+        a = spectral_axis.min()
+        b = spectral_axis.max()
 
         params = self.get_compParams(compNumber)
 
         return quad(self.gaussian,a,b,args=(params[0],params[1],params[2]))[0]
 
-    def calculate_compAreaList(self,spectralAxis):
+    def calculate_compAreaList(self,spectral_axis):
         """ Calculates areas of gaussian components in profile fit.
         """
 
         compAreaList = []
 
         for i in xrange(0,self.ncomps):
-            area = self.calculate_compArea(i,spectralAxis)
+            area = self.calculate_compArea(i,spectral_axis)
             compAreaList.append(area)
 
         self.compAreaList = sorted(compAreaList)
@@ -1001,8 +1147,8 @@ class SpectralTile(object):
 
             self.noiseProfile = n
 
-    def fit_profile(self,spectralAxis,guesses=None,ncomp=None,COtile=None,
-                    COwidthScale=1.):
+    def fit_profile(self,spectral_axis,guesses=None,ncomp=None,co_tile=None,
+                    co_width_scale=1.):
         """ Perform a gaussian decomposition on the profile.
         """
 
@@ -1013,56 +1159,56 @@ class SpectralTile(object):
 
         self.guesses = guesses
         # define mask for spectral axis
-        mask = np.ones(spectralAxis.shape,dtype=bool)
+        mask = np.ones(spectral_axis.shape,dtype=bool)
 
         # Determine extent of CO
-        if COtile is not None:
-            if COtile.ncomps is not None and COtile.ncomps > 0:
-                #vels = zeros(len(COtile.params))
-                #widths = zeros(len(COtile.params))
+        if co_tile is not None:
+            if co_tile.ncomps is not None and co_tile.ncomps > 0:
+                #vels = zeros(len(co_tile.params))
+                #widths = zeros(len(co_tile.params))
                 ## Get velocities and widths of components
-                #for i in range(len(COtile.params)):
-                #    vels[i] = COtile.params[i][1]
-                #    widths[i] = COtile.params[i][2]
+                #for i in range(len(co_tile.params)):
+                #    vels[i] = co_tile.params[i][1]
+                #    widths[i] = co_tile.params[i][2]
                 vels = []
                 widths = []
-                for i in range(len(COtile.params)):
-                    if COtile.params[i][0] > 3*COtile.noise:
-                        vels.append(COtile.params[i][1])
-                        widths.append(COtile.params[i][2])
+                for i in range(len(co_tile.params)):
+                    if co_tile.params[i][0] > 3*co_tile.noise:
+                        vels.append(co_tile.params[i][1])
+                        widths.append(co_tile.params[i][2])
                 vels = np.asarray(vels)
                 widths = np.asarray(widths)
                 # lower and higher velocity extent of components:
-                minVels = vels - COwidthScale*widths
-                maxVels = vels + COwidthScale*widths
+                minVels = vels - co_width_scale*widths
+                maxVels = vels + co_width_scale*widths
                 self.coVelocities = []
                 velpos = array([])
 
                 for i in range(len(minVels)):
                     # Define pixels excluded from CO region
-                    velpos_temp = where((spectralAxis > minVels[i]) & \
-                                        (spectralAxis < maxVels[i]))[0]
+                    velpos_temp = where((spectral_axis > minVels[i]) & \
+                                        (spectral_axis < maxVels[i]))[0]
 
                     mask[velpos_temp] = 0
 
                     # Define velocities included in CO region
-                    coVels = spectralAxis[(spectralAxis > minVels[i]) & \
-                                          (spectralAxis < maxVels[i])]
+                    coVels = spectral_axis[(spectral_axis > minVels[i]) & \
+                                          (spectral_axis < maxVels[i])]
                     self.coVelocities.append(coVels)
 
                 # now determine unique pixels
                 # velpos = unique(velpos).astype(int)
                 # Remove profile pixels within CO region
-                xarray = spectralAxis[mask]
+                xarray = spectral_axis[mask]
                 profile = self.profile[mask]
                 noiseProfile = self.noiseProfile[mask]
             else:
-                xarray = spectralAxis
+                xarray = spectral_axis
                 profile = self.profile
                 noiseProfile = self.noiseProfile
                 velpos=linspace(1,len(profile),len(profile))
         else:
-            xarray = spectralAxis
+            xarray = spectral_axis
             profile = self.profile
             noiseProfile = self.noiseProfile
             velpos=linspace(1,len(profile),len(profile))
@@ -1080,8 +1226,8 @@ class SpectralTile(object):
                     params=self.guesses,
                     limitedmin=[True,True,True]*ncomp,
                     limitedmax=[True,True,False]*ncomp,
-                    minpars=[0,spectralAxis.min(),0],
-                    maxpars=[1.1*self.profile.max(),spectralAxis.max(),0])
+                    minpars=[0,spectral_axis.min(),0],
+                    maxpars=[1.1*self.profile.max(),spectral_axis.max(),0])
 
             self.fitSuccess = True
         else:
@@ -1098,7 +1244,7 @@ class SpectralTile(object):
             self.params = []
             self.ncomps = 0
             self.fit_chi2 = fit[3]
-            self.spectralAxis = spectralAxis
+            self.spectral_axis = spectral_axis
 
             # Write gaussian component parameters to Tile, ignore comps with
             # amp=0 or width=0
@@ -1108,7 +1254,7 @@ class SpectralTile(object):
                     self.params.append(tempParams[i*3:i*3+3])
                     self.ncomps = self.ncomps + 1
 
-            self.calculate_compAreaList(spectralAxis)
+            self.calculate_compAreaList(spectral_axis)
 
 
     def gaussian(self,x,amp,shift,width):
@@ -1204,7 +1350,7 @@ class SpectralTile(object):
 
         return self.visited
 
-    def make_component(self,compNumber,spectralAxis):
+    def make_component(self,compNumber,spectral_axis):
         """ Creates a component using fit parameters.
         Returns a 1D numpy array.
         """
@@ -1218,7 +1364,7 @@ class SpectralTile(object):
             shift = self.params[compNumber][1]
             width = self.params[compNumber][2]
 
-            return self.make_gaussian(spectralAxis,amp,shift,width)
+            return self.make_gaussian(spectral_axis,amp,shift,width)
 
     def make_gaussian(self,xarr,amp,shift,width):
         """ Creates a gaussian shape over across an axis using gaussian
@@ -1250,22 +1396,21 @@ class SpectralTile(object):
 
         from pylab import polyfit
 
-        if self.profile is not None:
-            tempProfile = self.profile
+        tempProfile = self.profile
 
-            fitRegion = []
-            velMin = [lowrange[0],highrange[0]]
-            velMax = [lowrange[1],highrange[1]]
+        fitRegion = []
+        velMin = [lowrange[0],highrange[0]]
+        velMax = [lowrange[1],highrange[1]]
 
-            for k in xrange(len(velMin)):
-                tempRegion = np.where((xarr >= velMin[k]) & \
-                        (xarr <= velMax[k]))[0]
-                for i in range(len(tempRegion)):
-                    fitRegion.append(tempRegion[i])
+        for k in xrange(len(velMin)):
+            tempRegion = np.where((xarr >= velMin[k]) & \
+                    (xarr <= velMax[k]))[0]
+            for i in range(len(tempRegion)):
+                fitRegion.append(tempRegion[i])
 
-            m,b = polyfit(xarr[fitRegion], self.profile[fitRegion], 1)
+        m,b = polyfit(xarr[fitRegion], self.profile[fitRegion], 1)
 
-            self.profile = tempProfile - (m * xarr + b)
+        self.profile = tempProfile - (m * xarr + b)
 
     def calculate_noise(self,xarr,lowrange,highrange,noiseScale=None):
         """ Calculates rms noise of Tile profile given velocity ranges.
@@ -1312,7 +1457,7 @@ def compare_grids(grid0, grid1, velocityrange=[], plotallpixels=False,
     import pywcs
 
     if len(velocityrange) != 2:
-        sp = grid0.spectralAxis
+        sp = grid0.spectral_axis
         velocityrange = [min(sp),max(sp)]
 
     fig = plt.figure(figsize=(8,8))
@@ -1462,6 +1607,33 @@ def display_image(grid, plotallpixels=False, savedir='./', filename=None,
     if show:
         plt.show()
 
+
+def guess_width(tile=None, peak=None, spectral_axis=None):
+    ''' Guesses the width of a residual peak.
+    maxpos : int
+        In velocity units.
+    '''
+    from numpy import where
+
+    residuals = tile.get_residuals()
+    # Find position in array of maximum velocity position
+    maxgridpos = where(spectral_axis == maxpos)[0][0]
+    # Find amplitude of maximum residual
+    maxResid = residuals[maxgridpos]
+    # Define width as maxpos minus position where residual is 0.5 maxpos
+    try:
+        minPoses = where(residuals[maxgridpos:-1] < 0.5 * maxResid)[0]
+        widthPos = abs(min(minPoses) - maxgridpos)
+        width = abs(spectral_axis[widthPos] - \
+                spectral_axis[maxgridpos])
+    except ValueError:
+        minPoses = where(residuals[0:maxgridpos] < 0.5 * maxResid)[0]
+        widthPos = abs(min(minPoses) - maxgridpos)
+        width = abs( - spectral_axis[widthPos] + \
+                spectral_axis[maxgridpos])
+    return width
+
+
 def load_grid(filename):
     """ Loads saved SpectralGrid instance.
     """
@@ -1508,7 +1680,7 @@ def plot_NHI(grid, velocityrange=[], plotallpixels=False, savedir='./',
     import pywcs
 
     if len(velocityrange) != 2:
-        sp = grid.spectralAxis
+        sp = grid.spectral_axis
         velocityrange = [min(sp),max(sp)]
 
     fig = plt.figure(figsize=(8,8))
@@ -1604,8 +1776,8 @@ def plot_fit(grid,x,y,coords=None,coRegion=True,savedir='./',
     sp = tile.profile
     noise = tile.noiseProfile
     #print noise
-    xarr = grid.get_spectralAxis()
-    residualXarr = tile.spectralAxis
+    xarr = grid.get_spectral_axis()
+    residualXarr = tile.spectral_axis
     #print residuals.shape
     #print residualXarr.shape
     #print len(xarr)
@@ -1742,7 +1914,7 @@ def plot_fits(grid,xlist,ylist,coords=None,legend=False,coRegion=True,
         tile = grid.get_tile(x,y)
         sp = tile.profile
         noise = tile.noiseProfile
-        xarr = grid.get_spectralAxis()
+        xarr = grid.get_spectral_axis()
         totGaussFit = np.zeros(len(xarr))
         ncomps = tile.get_ncomps()
 
@@ -1989,7 +2161,7 @@ def plot_spectrum(grid,x,y,coords=None,savedir='./',filename=None,show=True):
     tile = grid.get_tile(x,y)
     sp = tile.profile
     noise = tile.noiseProfile
-    xarr = grid.get_spectralAxis()
+    xarr = grid.get_spectral_axis()
 
     fig = plt.figure(figsize=[20,10])
     ax = fig.add_subplot(1,1,1)
@@ -2116,7 +2288,7 @@ def write_fits_NHI(SpectralGrid,filename,velocityrange=[]):
 
     # Use all velocities if not specified
     if len(velocityrange) != 2:
-        sp = SpectralGrid.spectralAxis
+        sp = SpectralGrid.spectral_axis
         velocityrange = [min(sp),max(sp)]
 
     # Choose components
