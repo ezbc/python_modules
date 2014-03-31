@@ -174,18 +174,37 @@ class SpectralGrid(object):
                             noiseScale=noiseScale)
                     self.get_tile(i,j).calculate_noiseScale(Tsys)
 
-    def __calculate_pvalue(self,stats_dict):
+    def __calculate_pvalue(self,stats_dict, from_init_to='plus'):
+        ''' Calculates pvalue of fits.
+
+        Parameters
+        ----------
+
+        stats_dict : dict
+
+        from_init_to : str
+            'plus' for comparing initial to more components
+            'minus' for comparing initial to fewer components
+        '''
 
         from mystats import ftest,fvalue
 
-        pvalue_plus = ftest(stats_dict['chi_init'],stats_dict['chi_plus'],
-            stats_dict['dof_init'],stats_dict['dof_plus'])
+        if from_init_to is 'plus':
+            pvalue_plus = \
+                    ftest(stats_dict['chi_init'],stats_dict['chi_plus'],
+                          stats_dict['dof_init'],stats_dict['dof_plus'])
 
-        stats_dict['pvalue_plus'] = pvalue_plus
+            stats_dict['pvalue_plus'] = pvalue_plus
+        elif from_init_to is 'minus':
+            pvalue_minus = \
+                    ftest(stats_dict['chi_minus'],stats_dict['chi_init'],
+                          stats_dict['dof_minus'],stats_dict['dof_init'])
+
+            stats_dict['pvalue_minus'] = pvalue_minus
 
         return stats_dict
 
-    def __check_coords(self,coords, growPos):
+    def __check_coords(self,coords, grow_pos):
         ''' Converts coordinates to grid coordinates.
 
         Parameters
@@ -205,15 +224,15 @@ class SpectralGrid(object):
 
         if coords is 'grid':
             try:
-                x = growPos[0]
-                y = growPos[1]
+                x = grow_pos[0]
+                y = grow_pos[1]
             except IndexError:
                 print '\n Tile at grid position ' + str(x) + ', ' + str(y) + \
                         ' does not exist.'
                 exit()
         elif coords is 'image':
             try:
-                x,y = self.image2grid(growPos[0],growPos[1])
+                x,y = self.image2grid(grow_pos[0],grow_pos[1])
             except IndexError:
                 print '\n Tile at image position ' + str(x) + ', ' + str(y) + \
                         ' does not exist.'
@@ -363,9 +382,14 @@ class SpectralGrid(object):
 
         from mystats import ftest,fvalue
 
-        dofInit = len(self.spectral_axis) - data_dict['ncomp_init'] * 3
-        dofMinus = dofInit + 3
-        dofPlus = dofInit - 3
+        # Degrees of freedom = # of data - # of model parameters
+
+        dofInit = len(self.spectral_axis) \
+                - self.__get_number_of_params(data_dict['params_init'])
+        dofMinus = len(self.spectral_axis) \
+                - self.__get_number_of_params(data_dict['params_minus'])
+        dofPlus = len(self.spectral_axis) \
+                - self.__get_number_of_params(data_dict['params_plus'])
         chi_init = stats_dict['chi_init']
         chi_minus = stats_dict['chi_minus']
         chi_plus = stats_dict['chi_plus']
@@ -373,30 +397,23 @@ class SpectralGrid(object):
         pvalue_plus = ftest(chi_init,chi_plus,dofInit,dofPlus)
         pvalue_minus = ftest(chi_minus,chi_init,dofMinus,dofInit)
 
-        veryverbose=False
-        if veryverbose:
-            print 'chi_plus: ' + str(chi_plus)
-            print 'chi_init: ' + str(chiInit)
-            print 'chi_minus: ' + str(chiMinus)
-            print 'pvalue-: ' + str(pvalue_minus)
-            print 'pvalue+: ' + str(pvalue_plus)
-
-
         ftest_result = 0
         if pvalue_plus < stats_dict['alpha'] or \
         	pvalue_minus > stats_dict['alpha']:
+        	# Fit more components if significant
             if pvalue_plus < 1 - pvalue_minus:
                 ftest_result = +1
+            # Fit fewer components if significant
             elif 1 - pvalue_minus <= pvalue_plus:
                 ftest_result = -1
 
         stats_dict['dof_init'] = dofInit
-        stats_dict['dof_minus'] = dofMinus,
-        stats_dict['dof_plus'] = dofPlus,
-        stats_dict['chi_init'] = chi_init,
-        stats_dict['chi_plus'] = chi_plus,
-        stats_dict['chi_minus'] = chi_minus,
-        stats_dict['pvalue_plus'] = pvalue_plus,
+        stats_dict['dof_minus'] = dofMinus
+        stats_dict['dof_plus'] = dofPlus
+        stats_dict['chi_init'] = chi_init
+        stats_dict['chi_plus'] = chi_plus
+        stats_dict['chi_minus'] = chi_minus
+        stats_dict['pvalue_plus'] = pvalue_plus
         stats_dict['pvalue_minus'] = pvalue_minus
 
         return ftest_result, stats_dict
@@ -423,46 +440,22 @@ class SpectralGrid(object):
                 if verbose:
                     print 'Fewer components significant'
 
-                 # Create temporary tile
-                data_dict['tile_minus'] = \
-                        SpectralTile(tile = data_dict['tile_init'])
+                data_dict,stats_dict = \
+                    self.__fit_onemore_component(data_dict, stats_dict)
 
-                # Use params from previous tile for guesses,
-                # convert guesses to a list
-                new_params = stats_dict['param_init'][1:]
-                guesses = __write_to_list(new_params)
-
-                # Fit the new tile
-                data_dict['tile_minus'].fit_profile(self.spectral_axis,
-                        guesses = guesses,
-                        ncomp = data_dict['ncomp_init'] - 1,
-                        co_tile = data_dict['co_tile'],
-                        co_width_scale = data_dict['co_width_scale'])
 
                 if verbose:
                     print 'Number of components in fit = ' + \
                             str(data_dict['tile_minus'].get_ncomps())
 
                 # Calculate p-value
-                stats_dict['chi_plus'] = \
-                        data_dict['tile_minus'].get_chi2()
-                stats_dict['dof_plus'] = \
-                        len(self.spectral_axis) - stats_dict['ncomp_plus']*3
-                stats_dict['dof_minus'] = stats_dict['dof_plus'] + 3
-
-                # Calculate p-value
-                stats_dict = self.__calculate_pvalue(stats_dict)
-
-                if veryverbose:
-                    print 'pvalue = ' + str(pvalue_minus)
-                #print 'chi_minus : ' + str(chiMinus)
-                #print 'chi_init : ' + str(chiInit)
-                #print 'dofMinus : ' + str(dofMinus)
-                #print 'dofInit : ' + str(dofInit)
+                stats_dict = self.__calculate_pvalue(stats_dict,
+                        from_init_to='minus')
 
                 # If p-value is still significant, use new tile and
                 # repeat
-                data_dict['tile_plus'] = data_dict['tile_minus']
+                data_dict['tile_plus'] = \
+                        SpectralTile(tile = data_dict['tile_minus'])
                 stats_dict['pvalue_plus'] = stats_dict['pvalue_minus']
 
     def __fit_initial_components(self,data_dict, stats_dict):
@@ -481,14 +474,15 @@ class SpectralGrid(object):
 
         '''
 
+        # If there are no components
         if data_dict['ncomp_init'] == 0:
-            # Define profile and noise profile for chi^2 calculation
             profile = data_dict['tile_init'].profile
             noiseProfile = data_dict['tile_init'].noiseProfile
             stats_dict['chi_init'] = \
                     sum((profile - noiseProfile)**2 / noiseProfile)
-            data_dict['ncomp_init'] = []
+            data_dict['ncomp_init'] = 0
             data_dict['params_init'] = []
+        # If there are components, then fit the profile
         else:
             data_dict['tile_init'].fit_profile(self.spectral_axis,
                 guesses = data_dict['params_init'],
@@ -498,10 +492,12 @@ class SpectralGrid(object):
             stats_dict['chi_init'] = \
                     data_dict['tile_init'].get_chi2()
             data_dict['tile_init'].set_visited()
+            data_dict['param_init'] = \
+                    data_dict['tile_init'].get_params()
 
         return data_dict, stats_dict
 
-    def __fit_onefewer_component(self,data_dict, stats_dict):
+    def __fit_onefewer_component(self, data_dict, stats_dict):
 
         ''' Performs the initial fit of a tile.
 
@@ -517,34 +513,40 @@ class SpectralGrid(object):
 
         '''
 
-        if data_dict['ncomp_init'] > 1:
-            # First create a temporary tile
-            data_dict['tile_minus'] = SpectralTile(tile =\
-                    data_dict['tile_init'])
+        # First create a temporary tile
+        data_dict['tile_minus'] = SpectralTile(tile =\
+                data_dict['tile_init'])
+
+        if data_dict['ncomp_init'] <= 1:
+            # Calculate the chi^2
+            profile = data_dict['tile_init'].profile
+            noiseProfile = data_dict['tile_init'].noiseProfile
+            stats_dict['chi_minus'] = \
+                    sum((profile - noiseProfile)**2 / noiseProfile)
+            stats_dict['dof_minus'] = len(self.spectral_axis) \
+                    - self.__get_number_of_params(data_dict['params_minus'])
+
+        elif data_dict['ncomp_init'] > 1:
 
             # Create initial guesses
             new_params = data_dict['params_init'][1:]
-            guesses = self.__write_to_list(new_params)
+            data_dict['params_minus'] = self.__write_to_list(new_params)
 
             # Perform the fit
             data_dict['tile_minus'].fit_profile(self.spectral_axis,
-                guesses = guesses,
+                guesses = data_dict['params_minus'],
                 ncomp = self.data_dict['ncomp_init'] - 1,
                 co_tile = data_dict['co_tile'],
                 co_width_scale = data_dict['co_width_scale'])
 
             stats_dict['chi_minus'] = \
                     data_dict['tile_minus'].get_chi2()
-        else:
-            # Calculate the chi^2
-            profile = data_dict['tile_init'].profile
-            noiseProfile = data_dict['tile_init'].noiseProfile
-            stats_dict['chi_minus'] = \
-                    sum((profile - noiseProfile)**2 / noiseProfile)
+            stats_dict['dof_plus'] = len(self.spectral_axis) \
+                    - self.__get_number_of_params(data_dict['params_plus'])
 
         return data_dict, stats_dict
 
-    def __fit_onemore_component(self,data_dict, stats_dict):
+    def __fit_onemore_component(self, data_dict, stats_dict):
 
         ''' Performs fit with additional component of a tile.
 
@@ -554,9 +556,14 @@ class SpectralGrid(object):
             Dictionary of parameters used for fitting. See the fit_profiles
             function for further details.
 
+        stats_dict : dict
+            Dictionary of statistics used for fitting. See the fit_profiles
+            function for further details.
+
         Returns
         -------
         data_dict : dict
+        stats_dict : dict
 
         '''
 
@@ -564,9 +571,9 @@ class SpectralGrid(object):
 
         data_dict['tile_plus'] = SpectralTile(tile = \
                 data_dict['tile_init'])
-        #self.grid_list[x][y][0] = data_dict['tile_init']
+        stats_dict['chi_init'] = data_dict['tile_init'].get_chi2()
 
-        peak_residual = self.check_residuals(data_dict['tile_init'])
+        peak_residual = self.check_residuals(data_dict['tile_plus'])
 
         if peak_residual is not None:
             if data_dict['ncomp_init'] <= 1:
@@ -579,16 +586,24 @@ class SpectralGrid(object):
             width = self.guess_width(tile = data_dict['tile_plus'],
                     peak = peak_residual[1],
                     spectral_axis = self.spectral_axis)
-            guesses.append(width) # guess of 5 km/s width
+            guesses.append(width)
+            data_dict['params_plus'] = guesses
 
             # Perform fit
             data_dict['tile_plus'].fit_profile(self.spectral_axis,
-                    guesses = guesses,
+                    guesses = data_dict['params_plus'],
                     ncomp = data_dict['ncomp_init'] + 1,
                     co_tile = data_dict['co_tile'],
                     co_width_scale = data_dict['co_width_scale'])
 
+            # Adjust tile and statistics
+            data_dict['params_plus'] = data_dict['tile_plus'].params
             stats_dict['chi_plus'] = data_dict['tile_plus'].get_chi2()
+            data_dict['ncomp_plus'] = data_dict['tile_plus'].ncomps
+            stats_dict['dof_plus'] = len(self.spectral_axis) \
+                    - self.__get_number_of_params(data_dict['params_plus'])
+
+        # If not residuals are above noise*threshold, then do not fit
         elif peak_residual is None:
             stats_dict['chi_plus'] = stats_dict['chi_init']
 
@@ -596,24 +611,34 @@ class SpectralGrid(object):
 
     def __fit_more_components(self, data_dict, stats_dict, verbose=True):
 
-        if data_dict['ncomp_init'] == 0:
-            data_dict['tile_init'].ncomps = 0
-            data_dict['tile_init'].residuals = data_dict['tile_init'].profile
-            data_dict['tile_init'].params = []
-            data_dict['tile_init'].visited = True
-            data_dict['tile_init'].fitSuccess = True
-            data_dict['tile_init'].fit_chi2 = data_dict['tile_init'].get_chi2()
+        ''' Performs tile fits with additional components until the fits are
+        no longer significant.
+
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionary of parameters used for fitting. See the fit_profiles
+            function for further details.
+
+        stats_dict : dict
+            Dictionary of statistics used for fitting. See the fit_profiles
+            function for further details.
+
+        Returns
+        -------
+        data_dict : dict
+        stats_dict : dict
+
+        '''
+
+        data_dict = self.__check_zero_fits(data_dict, stats_dict)
 
         while stats_dict['pvalue_plus'] < stats_dict['alpha']:
             if verbose:
                 print 'Additional components significant.'
-            # Create temporary tile
-            data_dict['tile_plus'] = SpectralTile(tile = \
-                    data_dict['tile_init'])
 
-            #self.grid_list[x][y][0] = data_dict['tile_init']
-
-            data_dict = self.__fit_onemore_component(data_dict)
+            data_dict,stats_dict = \
+                    self.__fit_onemore_component(data_dict, stats_dict)
 
             if verbose:
                 print 'Number of components in fit = ' + \
@@ -622,13 +647,12 @@ class SpectralGrid(object):
             # Calculate p-value
             stats_dict = self.__calculate_pvalue(stats_dict)
 
+            veryverbose = True
             if veryverbose:
-                print 'pvalue = ' + str(pvalue_plus)
+                print 'pvalue = ' + str(stats_dict['pvalue_plus'])
 
-            # If p-value is still significant, use new tile and repeat
-            data_dict['tile_init'] = data_dict['tile_plus']
 
-    def fit_profiles(self, guesses=[], ncomp=1, growPos=(0,0), coords='grid',
+    def fit_profiles(self, guesses=[], ncomp=1, grow_pos=(0,0), coords='grid',
                     alpha=0.05, filename=None, tile_save_freq=100,
                     threshold=1, number_of_fits=None, verbose=True,
                     outputFilename=None, co_cube=None, co_width_scale=1.,
@@ -648,7 +672,7 @@ class SpectralGrid(object):
             Default = 1
             Number of gaussian components to fit.
 
-        growPos : tuple
+        grow_pos : tuple
             2D tuple consisting of (x,y) positions for grow method to begin
             fitting
 
@@ -721,7 +745,7 @@ class SpectralGrid(object):
                         co_cube = co_cube)
 
         # Convert coordinates to grid if image / set default
-        x,y = self.__check_coords(coords,growPos)
+        x,y = self.__check_coords(coords,grow_pos)
 
         if verbose:
             print('Initial positions: x = ' + str(x) + ', y = ' + str(y))
@@ -731,6 +755,8 @@ class SpectralGrid(object):
         self.__tile_param_queue.put(guesses)
         data_dict = {'ncomp_init': len(guesses)/3,
                 'params_init': guesses,
+                'params_minus': [],
+                'params_plus': [],
                 'co_tile': None,
                 'co_width_scale': co_width_scale,
                 'tile_init': None,
@@ -871,6 +897,23 @@ class SpectralGrid(object):
 
     def get_imageysize(self):
         return len(self.cube[0][0])
+
+    def __get_number_of_params(self, param_list):
+
+        if type(param_list) is list:
+            try:
+                number_of_params = 0
+                for param in param_list:
+                    number_of_params += len(param)
+            except TypeError:
+                if type(param_list) is list:
+                    number_of_params = len(param_list)
+                else:
+                	number_of_params = 0
+        else:
+        	number_of_params = None
+
+        return number_of_params
 
     def get_neighbor(self,x,y,direction,coords='grid',verbose=True):
         """ Gets a neighboring tile East, West, North, or South of the

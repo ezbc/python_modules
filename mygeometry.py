@@ -16,14 +16,14 @@ def get_rect(x, y, width, height, angle):
     height : float
         Height of rectangle.
     angle : float
-        Angle of rotation in degrees clockwise from East.
+        Angle of rotation in degrees counter clockwise from East.
     '''
 
     import numpy as np
 
     # Create simple rectangle
     rect = np.array([(0, 0), (width, 0), (width, height), (0, height), (0, 0)])
-    theta = (np.pi / 180.0) * angle
+    theta = (np.pi / 180.0) * (angle )
 
     # Define four corners of rotated rectangle
     R = np.array([[np.cos(theta), -np.sin(theta)],
@@ -49,7 +49,7 @@ def get_rectangular_mask(image, x, y, width=None, height=None, angle=0.0,
     height : float
         Height of rectangle.
     angle : float
-        Angle of rotation in degrees clockwise from East.
+        Angle of rotation in degrees counter-clockwise from East.
 
     Returns
     -------
@@ -93,11 +93,12 @@ def get_polygon_mask(image, polygon, return_indices=False):
     if return_indices:
     	return (rr,cc)
     else:
-        mask = np.zeros(image.shape)
-
-        mask[rr,cc] = 1
-
-        return mask
+        try:
+            mask = np.zeros(image.shape)
+            mask[rr,cc] = 1
+            return mask
+        except IndexError:
+            raise IndexError('Polygon contains no pixels')
 
 def point_in_polygon(target, poly):
 
