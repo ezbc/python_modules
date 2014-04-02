@@ -52,4 +52,12 @@ region to a FITS file.
     pyfits.header.Header
     >>> pf.writeto('planck_region_857GHz.fits', data, header = header)
 
+The next example code will extract a region from the CO-Type1 J3-->2 DR1
+all-sky map covering the Perseus molecular cloud.
+
+    >>> (data, header) = pl.get_data(data_type='CO-Type1', longitude_range =
+                                (155, 165), latitude_range = (-30, -15), 
+                                field = 8)
+    >>> pf.writeto(output_dir + 'co_type1_j32.fits', data, header = header)
+
 
