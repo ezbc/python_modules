@@ -39,6 +39,7 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
     # Number of axes
     naxis = len(axes)
 
+    # Basic FITS info
     header_new = pf.Header()
     items = [('SIMPLE', True),
              ('BITPIX', -32),
@@ -54,6 +55,7 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
 
     column = field + 1
 
+    # Extended info
     items = [('BSCALE', 1.0),
              ('BZERO', 0.0),
              ('BLANK', -1),
@@ -102,21 +104,23 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
     for item in items:
         header_new.append(item)
 
-    # add rest frequency
-    if header['AST-COMP'] in ['CO-TYPE1', 'CO-TYPE2', 'CO-TYPE3']:
-        if header['AST-COMP'] == 'CO-TYPE2':
+    # Add rest frequency for CO images
+    try:
+        if header['AST-COMP'] in ['CO-TYPE1', 'CO-TYPE2', 'CO-TYPE3']:
             if field in (0,1,2,3): # then CO J 1-->0
                 rest_freq = 115.2712018e9 # Hz
             elif field in (4,5,6,7): # then CO J 2-->1
                 rest_freq = 230.5380000e9 # Hz
             elif field in(8,9,10,11): # then CO J 3-->2
                 rest_freq = 345.796e9 # Hz
-    	header_new.append(('RESTFREQ', 115.2712018e9))
+        header_new.append(('RESTFREQ', 115.2712018e9))
+    except KeyError:
+        nothing = None
 
     return header_new
 
 def get_planck_filename(data_location = './', data_type = None,
-        data_type_version = 10):
+        dr_version = 1):
 
     ''' Finds the file name for data_type requested. The files are:
             COM_CompMap_dust-commrul_2048_R1.00.fits
@@ -126,6 +130,7 @@ def get_planck_filename(data_location = './', data_type = None,
             HFI_CompMap_CO-Type2_2048_R1.10.fits
             HFI_CompMap_CO-Type3_2048_R1.10.fits
             HFI_CompMap_DustOpacity_2048_R1.10.fits
+            HFI_CompMap_ThermalDustModel_2048_R1.20.fits
             HFI_SkyMap_100_2048_R1.10_nominal.fits
             HFI_SkyMap_143_2048_R1.10_nominal.fits
             HFI_SkyMap_217_2048_R1.10_nominal.fits
@@ -136,7 +141,6 @@ def get_planck_filename(data_location = './', data_type = None,
             LFI_SkyMap_044_1024_R1.10_nominal.fits
             LFI_SkyMap_070_1024_R1.10_nominal.fits
 
-
     Parameters
     ----------
     data_location : str
@@ -146,35 +150,10 @@ def get_planck_filename(data_location = './', data_type = None,
         descriptions of each data type.
         http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/
 
-        The options are:
-            CO:
-                'CO-Type1'
-                'CO-Type2'
-                'CO-Type3'
-            Frequency bands (in GHz):
-                '030'
-                '044'
-                '070'
-                '100'
-                '143'
-                '217'
-                '353'
-                '545',
-                '857'
-            Processed data products:
-                'Thermal'
-                'Dust Opacity'
-                'TAU353',
-                'TAU353ERR',
-                'EBV',
-                'EBV_ERR',
-                'T_HF',
-                'T_HF_ERR',
-                'BETAHF',
-                'BETAHFERR'
+        See the header of the get_data() function to see how to specify the
+        data type.
     data_type_version : int
-        Data release number in the format of a two digit integer. Data release
-        one would be 10.
+        Data release number.
 
     Returns
     -------
@@ -191,21 +170,20 @@ def get_planck_filename(data_location = './', data_type = None,
     freq_types = [ '030', '044', '070', '100', '143', '217', '353', '545',
             '857']
     dust_types = ['Thermal', 'Dust Opacity']
-    dust_names = ['dust-commrul', 'DustOpacity']
-
+    dust_names = ['dust-commrul', 'ThermalDustModel']
 
     # Determine which file is chosen
     if data_type in CO_types:
-        data_file = 'HFI_CompMap_%s_2048_R1.10.fits' % data_type
+        data_file = 'HFI_CompMap_%s_2048_R1.%s0.fits' % (data_type, dr_version)
         nside = 2048
     elif data_type in dust_types:
-        data_name = dust_names[dust_types == data_type]
         if data_type == 'Dust Opacity':
-            data_file = 'HFI_CompMap_%s_2048_R1.10.fits' % data_name
+            data_file = 'HFI_CompMap_%s_2048_R1.%s0.fits' % ('ThermalDustModel',
+                    dr_version)
             nside = 2048
-        if data_type in thermal_array:
-            data_file = 'COM_CompMap_ThermalDustModel_2048_R1.10.fits' % \
-                data_type
+        if data_type == 'Thermal':
+            data_file = 'COM_CompMap_%s_2048_R1.%s0.fits' % ('dust-commrul',
+                    dr_version)
             nside = 2048
     elif data_type in freq_types:
         if data_type in freq_types[:3]:
@@ -214,24 +192,27 @@ def get_planck_filename(data_location = './', data_type = None,
         else:
         	receiver_type = 'HFI'
         	nside = 2048
-        	data_file = '%s_SkyMap_%s_%s_R1.10_nominal.fits' % \
-                    (receiver_type, data_type, nside,)
+        data_file = '%s_SkyMap_%s_%s_R1.%s0_nominal.fits' % \
+                (receiver_type, data_type, nside, dr_version)
     else:
         raise LookupError('Invalid data type chosen.')
 
-    if not os.path.isfile(data_file):
-        raise IOError('No such file: %s' % data_file)
-
     data_file = data_location + data_file
+
+    # Does file exist on disk?
+    if not os.path.isfile(data_file):
+        raise IOError('No such file: %s \n Check data release version and \
+            the directory including the Planck data.' % data_file)
 
     return data_file
 
-def get_data(data_location='./', data_type = 'CO-Type3', longitude_range =
-        (152,180), latitude_range = (-25,-3), field = 0, resolution = 0.01,
+def get_data(data_location='./', data_type = None, longitude_range =
+        (0,360), latitude_range = (-90, 90), field = 0, resolution = 0.1,
         cut_last_pixel = False, verbose = True, return_header = True,
-        reverse_xaxis = True):
+        reverse_xaxis = True, dr_version = 1):
 
-    ''' Extracts region from Planck data set.
+    ''' Extracts region from Planck data set. Region will be in galactic
+    coordinates.
 
     Parameters
     ----------
@@ -239,7 +220,7 @@ def get_data(data_location='./', data_type = 'CO-Type3', longitude_range =
         Filepath to location of Planck data. Default is current directory.
     data_type : str
         Data type to choose from. Options are:
-            Narrow-band: 'CO-Type1', 'CO-Type2', 'CO-Type3'
+            Narrow-band: ['CO-Type1', 'CO-Type2', 'CO-Type3']
                 'CO-Type1' fields:
                     0:  12CO J 1-->0 Intensity
                     1:  12CO J 1-->0 Intensity Error
@@ -268,33 +249,33 @@ def get_data(data_location='./', data_type = 'CO-Type3', longitude_range =
                     2:  12CO Null Test
                     3:  12CO Mask
 
-            Broad-band (GHz): '030', '044', '070', '100', '143', '217', '353',
-                              '545', '857'
+            Broad-band (GHz): ['030', '044', '070', '100', '143', '217', '353',
+                               '545', '857']
                 Broad-band fields:
                     0: I stokes
                     1: Hits
                     2: II_cov
 
-            Processed data products: 'Dust Opacity', 'Thermal'
+            Processed data products: ['Dust Opacity', 'Thermal']
                 'Dust Opacity' fields:
+                    0: Opacity 353GHz
+                    1: Error on opacity
+                    2: E(B-V)
+                    3: Error on E(B-V)
+                    4: T for high freq correction
+                    5: Error on T
+                    6: Beta for high freq correction
+                    7: Error on Beta
+                'Thermal' dust model fields:
                     0: Intensity
                     1: Intensity standard deviation
                     2: Intensity ??
                     3: Intensity ??
-                'Thermal' dust model fields:
-                    0: 'Opacity 353GHz',
-                    1: 'Error on opacity',
-                    2: 'E(B-V)',
-                    3: 'Error on E(B-V)',
-                    4: 'T for high freq correction',
-                    5: 'Error on T',
-                    6: 'Beta for high freq correction',
-                    7: 'Error on Beta']
 
     longitude : array-like
-        Lower and upper longitude.
+        Lower and upper longitude. Default is whole sky.
     latitude : array-like
-        Lower and upper latitude.
+        Lower and upper latitude. Default is whole sky.
     field : int
         Field in data type.
     resolution : float
@@ -307,6 +288,8 @@ def get_data(data_location='./', data_type = 'CO-Type3', longitude_range =
         Verbose?
     reverse_xaxis : bool
         The highest x-axis value begins at the origin.
+    dr_version : int
+        Data release version of data.
 
     Returns
     -------
@@ -315,11 +298,27 @@ def get_data(data_location='./', data_type = 'CO-Type3', longitude_range =
     header : dict, optional
         FITS format header.
 
+    Examples
+    --------
+    >>> import planckpy as pl
+    >>> import pyfits as pf
+    >>> (data, header) = pl.get_data(data_type = '857', longitude_range =
+            (155,165), latitude_range = (-30, -15))
+    >>> data.shape
+    (151, 101)
+    >>> header['TYPE']
+    'I_STOKES'
+    >>> pf.writeto('planck_region_857GHz.fits', data, header = header)
+
     '''
+
+    if data_type is None:
+        print('WARNING (get_data): No data type chosen. Returning None type.')
+    	return None
 
     # Get the filename
     filename = get_planck_filename(data_type = data_type, data_location =
-            data_location)
+            data_location, dr_version = dr_version)
 
     if verbose:
         print('Reading file:\n%s' % (filename))
@@ -378,7 +377,10 @@ def get_data(data_location='./', data_type = 'CO-Type3', longitude_range =
     # Reverse the array
     if reverse_xaxis:
         map_region = map_region.T[::, ::-1]
+    elif not reverse_xaxis:
+        map_region = map_region.T
 
+    # Build a header
     if return_header:
     	header_region = build_header(header = header_pf, axes =
     	        (longitude_axis, latitude_axis), reverse_xaxis = reverse_xaxis,
@@ -399,7 +401,7 @@ def main():
         pf.writeto('/d/bip3/ezbc/taurus/data/planck/taurus_planck_region.fits',
                 data, header = header, clobber = True, output_verify = 'fix')
 
-    if True:
+    if 0:
         # Extract the data
         (data, header) = get_data(data_location=data_location,
                 data_type='CO-Type3', longitude_range = (145,165),
@@ -411,6 +413,21 @@ def main():
         # Write the data to FITS format
         pf.writeto('/d/bip3/ezbc/perseus/data/planck/perseus_planck_region.fits',
                 data, header = header, clobber = True, output_verify = 'fix')
+
+    if 1:
+        data_location = '/d/bip3/ezbc/planck/planck_raw_data/'
+        output_dir = '/d/bip3/ezbc/planck/tests/'
+
+        (data, header) = get_data(data_location=data_location,
+                data_type='Dust Opacity', longitude_range = (145,150),
+                latitude_range=(-10,-5), field=0, resolution = 0.1,
+                cut_last_pixel = False, verbose = True, dr_version = 2)
+
+        print(header)
+
+        # Write the data to FITS format
+        pf.writeto(output_dir + 'tau353.fits', data, header = header, clobber
+                = True, output_verify = 'fix')
 
 if __name__ == '__main__':
 	main()
