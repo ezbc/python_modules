@@ -1,14 +1,17 @@
+##### Version: 0.0
+
 # Planckpy Overview 
 
-Extracts a region from the Planck data in HEALPix format, and converts to
-galactic coordinates. 
+Extracts a region from the Planck Survey data archive in HEALPix format, and
+converts to galactic coordinates. To access the Planck data archive visit
+
+[Planck archive](http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/)
 
 Original author: Dr. Robert Benjamin - bobbenjamin@me.com
 
 Maintained by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
 
-Code hosted at:
-git@bitbucket.org:ezbc/planckpy.git
+### Dependencies
 
 The Planckpy module requires the following libraries:
 
@@ -30,14 +33,23 @@ A Python configuration setup script is in development to make installation
 easier.
 
 ### Example Code
+
+The following code will extract a region from the 857 GHz DR1 all-sky map
+covering the Perseus molecular cloud. The example also shows how to write the
+region to a FITS file.
+
     >>> import planckpy as pl
     >>> import pyfits as pf
     >>> (data, header) = pl.get_data(data_type = '857', longitude_range =
             (155,165), latitude_range = (-30, -15))
     >>> data.shape
     (151, 101)
+    >>> type(data)
+    numpy.ndarray
     >>> header['TYPE']
     'I_STOKES'
+    >>> type(header)
+    pyfits.header.Header
     >>> pf.writeto('planck_region_857GHz.fits', data, header = header)
 
 
