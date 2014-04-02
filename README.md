@@ -7,7 +7,7 @@ converts to galactic coordinates. To access the Planck data archive visit
 
 [Planck archive](http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/)
 
-Original author: Dr. Robert Benjamin - bobbenjamin@me.com
+Original author: Dr. Robert Benjamin - benjamir@uww.edu
 
 Maintained by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
 
