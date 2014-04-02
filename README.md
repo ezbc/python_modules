@@ -12,8 +12,10 @@ git@bitbucket.org:ezbc/planckpy.git
 
 Module requires the following libraries:
 
-[numpy](http://www.scipy.org/scipylib/download.html)
-[pyfits](http://www.stsci.edu/institute/software_hardware/pyfits/Download)
-[healpy](https://pypi.python.org/pypi/healpy)
++ [numpy](http://www.scipy.org/scipylib/download.html)
+
++ [pyfits](http://www.stsci.edu/institute/software_hardware/pyfits/Download)
+
++ [healpy](https://pypi.python.org/pypi/healpy)
 
 
