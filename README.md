@@ -1,16 +1,16 @@
 # Planckpy Overview 
 
 Extracts a region from the Planck data in HEALPix format, and converts to
-galactic coordinates.
+galactic coordinates. 
 
 Original author: Dr. Robert Benjamin - bobbenjamin@me.com
 
-Edited and ported by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
+Maintained by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
 
 Code hosted at:
 git@bitbucket.org:ezbc/planckpy.git
 
-Module requires the following libraries:
+The Planckpy module requires the following libraries:
 
 + [numpy](http://www.scipy.org/scipylib/download.html)
 
@@ -18,8 +18,18 @@ Module requires the following libraries:
 
 + [healpy](https://pypi.python.org/pypi/healpy)
 
-### Some Example Code
 
+### Installing
+
+To add Planckpy module to your Python library, add the location of the Planckpy
+module to your Python path. This line can be added to your .bashrc.
+
+    $ export PYTHONPATH=$PYTHONPATH:<planckpy location>
+
+A Python configuration setup script is in development to make installation
+easier.
+
+### Example Code
     >>> import planckpy as pl
     >>> import pyfits as pf
     >>> (data, header) = pl.get_data(data_type = '857', longitude_range =
