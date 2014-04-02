@@ -1,4 +1,4 @@
-Planckpy Overview # Heading 1
+Planckpy Overview #
 
 Extracts a region from the Planck data in HEALPix format, and converts to
 galactic coordinates.
