@@ -3,9 +3,9 @@
 Extracts a region from the Planck data in HEALPix format, and converts to
 galactic coordinates.
 
-Original author: Dr. Robert Benjamin - bobbenjamin@me.com
+    Original author: Dr. Robert Benjamin - bobbenjamin@me.com
 
-Edited and ported by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
+    Edited and ported by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
 
 Code hosted at:
 git@bitbucket.org:ezbc/planckpy.git
