@@ -3,8 +3,9 @@
 ''' Extracts a region from the Planck data in HEALPix format, and converts to
 galactic coordinates.
 
-Original author: Dr. Robert Benjamin - bobbenjamin@me.com
-Edited and ported by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
+    Original author: Dr. Robert Benjamin - bobbenjamin@me.com
+
+    Edited and ported by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
 
 Code hosted at:
 git@bitbucket.org:ezbc/planckpy.git
@@ -18,11 +19,15 @@ Module requires the following libraries:
 '''
 
 import numpy as np
-import pyfits as pf
+from astropy.io import fits as pf
 import healpy
+#from kapteyn import wcs
+from astropy.coordinates import ICRS as eq
+from astropy.coordinates import Galactic as gal
+from astropy import units
 
 def build_header(header = None, axes = None, reverse_xaxis = True, field =
-        0):
+        0, coord_type = 'galactic'):
 
     ''' Builds a header for the extracted Planck image.
 
@@ -36,6 +41,8 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
         x-axis maximum at the origin?
     field : int
         Column to extract from Planck data.
+    coord_type : str
+        Options are 'galactic' and 'equatorial'
 
     Returns
     -------
@@ -84,7 +91,11 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
         header_new.append(item)
 
     # Axes characteristics
-    ctypes = ['GLON', 'GLAT', 'VELO-LSR']
+    if coord_type == 'galactic':
+        ctypes = ['GLON', 'GLAT', 'VELO-LSR']
+    if coord_type == 'equatorial':
+        ctypes = ['RA', 'DEC', 'VELO-LSR']
+
     for i, axis in enumerate(axes):
         crpix = 0
     	cdelt = axis[1] - axis[0]
@@ -107,9 +118,9 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
     items = [('CELLSCAL','CONSTANT'),
              ('BMAJ', 5/3600.),
              ('BMIN', 5/3600.),
-             ('COORDSYS', 'GALACTIC'),
+             #('COORDSYS', 'GALACTIC'),
              ('EPOCH', 2000.),
-             ('BAD_DATA', header['BAD_DATA'])]
+             ('BAD_DATA', -1e28)]
     for item in items:
         header_new.append(item)
 
@@ -215,10 +226,46 @@ def get_planck_filename(data_location = './', data_type = None,
 
     return data_file
 
-def get_data(data_location='./', data_type = None, longitude_range =
-        (0,360), latitude_range = (-90, 90), field = 0, resolution = 0.1,
-        cut_last_pixel = False, verbose = True, return_header = True,
-        reverse_xaxis = True, dr_version = 1):
+def eq2gal(ra,dec):
+
+    '''
+
+    Original code from:
+    http://community.dur.ac.uk/physics.astrolab/python_links.html
+
+    '''
+
+    rmat = numpy.array([
+     [-0.054875539726,-0.873437108010,-0.483834985808],
+     [+0.494109453312,-0.444829589425,+0.746982251810],
+     [-0.867666135858,-0.198076386122,+0.455983795705]],dtype='d')
+    cosb = math.cos(dec)
+    v1 = numpy.array([math.cos(ra)*cosb,math.sin(ra)*cosb,math.sin(dec)])
+    v2 = numpy.multiply(rmat,v1)
+    x = v2[0]
+    y = v2[1]
+    z = v2[2]
+    r = math.sqrt(x*x+y*y)
+    if r == 0.0:
+        l = 0.0
+    else:
+        l = math.atan2(y,x)
+    if z == 0.0:
+        b = 0.0
+    else:
+        b = math.atan2(z,r)
+    ll = math.fmod(l,2.*math.pi)
+    if ll < 0.0: ll = ll + 2.*math.pi
+
+    bb = math.fmod(b,2*math.pi)
+    if abs(bb) >= math.pi: print "Ugh!"
+
+    return ll, bb
+
+def get_data(data_location='./', data_type = None, x_range = (0,360),
+        y_range = (-90, 90), coord_type = 'galactic', field = 0,
+        resolution = 0.1, cut_last_pixel = False, verbose = True, return_header
+        = True, reverse_xaxis = True, dr_version = 1):
 
     ''' Extracts region from Planck data set. Region will be in galactic
     coordinates. Planck data must be on disk.
@@ -281,10 +328,12 @@ def get_data(data_location='./', data_type = None, longitude_range =
                     2: Intensity ??
                     3: Intensity ??
 
-    longitude : array-like
+    x_coord_range : array-like
         Lower and upper longitude. Default is whole sky.
-    latitude : array-like
+    y_range : array-like
         Lower and upper latitude. Default is whole sky.
+    coord_type : str
+        Options are 'galactic' and 'equatorial'
     field : int
         Field in data type.
     resolution : float
@@ -311,7 +360,7 @@ def get_data(data_location='./', data_type = None, longitude_range =
     --------
     >>> import planckpy as pl
     >>> import pyfits as pf
-    >>> (data, header) = pl.get_data(data_type = '857', longitude_range =
+    >>> (data, header) = pl.get_data(data_type = '857', x_range =
             (155,165), latitude_range = (-30, -15))
     >>> data.shape
     (151, 101)
@@ -346,28 +395,38 @@ def get_data(data_location='./', data_type = None, longitude_range =
     nside = header_pf['NSIDE']
 
     # Set up longitude / latitude grid for extracting the region
-    longitude_res, latitude_res = resolution, resolution
-    pixel_count_long = (longitude_range[1] - longitude_range[0]) / \
-        longitude_res + 1
-    pixel_count_lat = (latitude_range[1] - latitude_range[0]) / \
-        latitude_res + 1
+    x_coord_res, y_coord_res = resolution, resolution
+    x_pixel_count = (x_range[1] - x_range[0]) / \
+        x_coord_res + 1
+    y_pixel_count = (y_range[1] - y_range[0]) / \
+        y_coord_res + 1
     if cut_last_pixel:
-    	pixel_count_long -= 1
-    	pixel_count_lat -= 1
+    	x_pixel_count -= 1
+    	y_pixel_count -= 1
 
     # Write axes of l/b positions
-    longitude_axis = longitude_range[0] + longitude_res * \
-            np.arange(pixel_count_long)
-    latitude_axis = latitude_range[0] + latitude_res * \
-            np.arange(pixel_count_lat)
+    x_axis = x_range[0] + x_coord_res * \
+            np.arange(x_pixel_count)
+    y_axis = y_range[0] + y_coord_res * \
+            np.arange(y_pixel_count)
 
-    # Create map of l/b positions
-    longitude_grid = np.zeros(shape = (pixel_count_long, pixel_count_lat))
-    latitude_grid = np.zeros(shape = (pixel_count_long, pixel_count_lat))
-    for b in range(len(latitude_axis)):
-        longitude_grid[:, b] = longitude_axis
-    for l in range(len(longitude_axis)):
-        latitude_grid[l, :] = latitude_axis
+    # Create grids of coordinate positions
+    x_grid = np.zeros(shape = (x_pixel_count, y_pixel_count))
+    y_grid = np.zeros(shape = (x_pixel_count, y_pixel_count))
+    for y in range(len(y_axis)):
+        x_grid[:, y] = x_axis
+    for x in range(len(x_axis)):
+        y_grid[x, :] = y_axis
+
+    # Convert to galactic coordinates
+    if coord_type.lower() == 'equatorial':
+        axes = eq(ra = x_grid, dec = y_grid, unit = (units.degree,
+            units.degree))
+        longitude_grid = axes.galactic.l.deg
+        latitude_grid = axes.galactic.b.deg
+    elif coord_type.lower() == 'galactic':
+        longitude_grid = x_grid
+        latitude_grid = y_grid
 
     # Convert from phi / theta to l/b
     phi_grid = longitude_grid / 180. * np.pi
@@ -383,6 +442,9 @@ def get_data(data_location='./', data_type = None, longitude_range =
     # Omit the degenerate axes
     map_region = np.squeeze(map_region)
 
+    # Move set bad_data to be >-1e30 to be read by kvis
+    map_region[map_region < -1e30] = np.NaN
+
     # Reverse the array
     if reverse_xaxis:
         map_region = map_region.T[::, ::-1]
@@ -391,9 +453,11 @@ def get_data(data_location='./', data_type = None, longitude_range =
 
     # Build a header
     if return_header:
-    	header_region = build_header(header = header_pf, axes =
-    	        (longitude_axis, latitude_axis), reverse_xaxis = reverse_xaxis,
-    	        field = field)
+    	header_region = build_header(header = header_pf,
+    	        axes = (x_axis, y_axis),
+    	        reverse_xaxis = reverse_xaxis,
+    	        field = field,
+    	        coord_type = coord_type)
         return map_region, header_region
     else:
         return map_region
