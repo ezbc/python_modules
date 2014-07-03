@@ -25,9 +25,10 @@ import healpy
 from astropy.coordinates import ICRS as eq
 from astropy.coordinates import Galactic as gal
 from astropy import units
+from astropy import wcs
 
-def build_header(header = None, axes = None, reverse_xaxis = True, field =
-        0, coord_type = 'galactic'):
+def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
+        0, coord_type = 'galactic', xy_res=None):
 
     ''' Builds a header for the extracted Planck image.
 
@@ -35,7 +36,7 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
     ----------
     header : pyfits.Header instance
         Header from Planck data as a pyfits.Header object instance.
-    axes : tuple, array-like
+    axis_grids : tuple, array-like
         Tuple of axis grids.
     reverse_xaxis : bool
         x-axis maximum at the origin?
@@ -53,7 +54,7 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
     '''
 
     # Number of axes
-    naxis = len(axes)
+    naxis = len(axis_grids)
 
     # Basic FITS info
     header_new = pf.Header()
@@ -67,7 +68,7 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
 
     # length of each axis
     for i in range(naxis):
-        header_new.append(('NAXIS%s' % (i+1), len(axes[i])))
+        header_new.append(('NAXIS%s' % (i+1), len(axis_grids[i])))
 
     column = field + 1
 
@@ -92,20 +93,40 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
 
     # Axes characteristics
     if coord_type == 'galactic':
-        ctypes = ['GLON', 'GLAT', 'VELO-LSR']
+        ctypes = ['GLON--CAR', 'GLAT--CAR', 'VELO-LSR']
     if coord_type == 'equatorial':
-        ctypes = ['RA', 'DEC', 'VELO-LSR']
+        ctypes = ['RA---CAR', 'DEC--CAR', 'VELO-LSR']
 
-    for i, axis in enumerate(axes):
+    for i, axis in enumerate(axis_grids):
         crpix = 0
-    	cdelt = axis[1] - axis[0]
     	ctype = ctypes[i]
-    	crval = axis[0]
-        if i == 0 and reverse_xaxis:
-        	cdelt = -cdelt
-        	crval = axis[-1]
-        elif i == 0 and not reverse_xaxis:
-    	    crval = axis[0]
+    	crval = axis[0, 0]
+
+        print 'axis'
+        print axis[0:3, 0:3]
+
+        #
+        if i == 0: # ra
+            # choose cdelt along line of constant dec
+            dec_angle = np.cos(np.deg2rad(axis_grids[1][0, 0]))
+            cdelt = (axis[1, 0] - axis[0, 0]) * dec_angle
+
+            cdelt = axis_grids[1][0, 1] - axis_grids[1][0, 0]
+
+            cdelt = xy_res[0]
+
+            # if reverse_axis, put the highest RA value at the origin
+            if reverse_xaxis:
+                cdelt = -cdelt
+                crval = axis[-1, 0]
+                #crval = 82.5
+            elif not reverse_xaxis:
+                crval = axis[0, 0]
+        elif i == 1: # dec
+            cdelt = axis[0, 1] - axis[0, 0]
+            cdelt = xy_res[1]
+
+        print ctype, cdelt, crval
 
     	items = [('CRPIX%s' % (i+1), crpix),
     	         ('CDELT%s' % (i+1), cdelt),
@@ -115,12 +136,13 @@ def build_header(header = None, axes = None, reverse_xaxis = True, field =
         for item in items:
             header_new.append(item)
 
-    items = [('CELLSCAL','CONSTANT'),
+    items = [#('CELLSCAL','CONSTANT'),
              ('BMAJ', 5/3600.),
              ('BMIN', 5/3600.),
              #('COORDSYS', 'GALACTIC'),
-             ('EPOCH', 2000.),
-             ('BAD_DATA', -1e28)]
+             #('EPOCH', 2000.),
+             #('BAD_DATA', -1e28)
+             ]
     for item in items:
         header_new.append(item)
 
@@ -394,39 +416,91 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
     # Get nside from HEALPix format, acts as resolution of HEALPix image
     nside = header_pf['NSIDE']
 
+    '''
     # Set up longitude / latitude grid for extracting the region
-    x_coord_res, y_coord_res = resolution, resolution
-    x_pixel_count = (x_range[1] - x_range[0]) / \
-        x_coord_res + 1
-    y_pixel_count = (y_range[1] - y_range[0]) / \
-        y_coord_res + 1
+    dec_angle = np.cos(np.deg2rad(y_range[0]))
+    x_coord_res = resolution * dec_angle
+    print x_coord_res
+    y_coord_res = resolution
+    x_pixel_count = np.floor((x_range[1] - x_range[0]) / x_coord_res + 1)
+    y_pixel_count = np.floor((y_range[1] - y_range[0]) / y_coord_res + 1)
     if cut_last_pixel:
     	x_pixel_count -= 1
     	y_pixel_count -= 1
 
     # Write axes of l/b positions
-    x_axis = x_range[0] + x_coord_res * \
-            np.arange(x_pixel_count)
-    y_axis = y_range[0] + y_coord_res * \
-            np.arange(y_pixel_count)
+    x_center = (x_range[1] - x_range[0]) / 2.
+    y_center = (y_range[1] - y_range[1]) / 2.
+    x_axis = - x_center + x_coord_res * np.arange(x_pixel_count)
+    #x_axis = x_range[0] + x_coord_res * np.arange(x_pixel_count)
+    y_axis = y_range[0] + y_coord_res * np.arange(y_pixel_count)
 
     # Create grids of coordinate positions
+    # Using the plate-caree projection
+    #   constant arclengths of the image will be sampled
+    #   right ascension grid will span a larger range in hours with
+    #   increasing declination
     x_grid = np.zeros(shape = (x_pixel_count, y_pixel_count))
     y_grid = np.zeros(shape = (x_pixel_count, y_pixel_count))
     for y in range(len(y_axis)):
-        x_grid[:, y] = x_axis
+    	dec_angle = np.cos(np.deg2rad(y_axis[y]))
+        x_grid[:, y] = x_range[0] + x_center + x_axis / dec_angle
+        #x_grid[:, y] = x_axis / dec_angle
     for x in range(len(x_axis)):
         y_grid[x, :] = y_axis
 
+    print('DEC')
+    print(y_grid[0, -1])
+    print('RA')
+    print(x_grid[:, -1])
+    print('DEC')
+    print(y_grid[0, 0])
+    print('RA')
+    print(x_grid[:, 0])
+    '''
+
+
+    # Set up longitude / latitude grid for extracting the region
+    x_coord_res, y_coord_res = resolution, resolution
+    x_pixel_count = np.ceil((x_range[1] - x_range[0]) / x_coord_res) + 1
+    y_pixel_count = np.ceil((y_range[1] - y_range[0]) / y_coord_res) + 1
+    if cut_last_pixel:
+    	x_pixel_count -= 1
+    	y_pixel_count -= 1
+
+    # Write pixel positions
+    x_pix = np.arange(x_pixel_count)
+    y_pix = np.arange(y_pixel_count)
+
+    # Create grids of coordinate positions
+    x_grid, y_grid = np.meshgrid(x_pix, y_pix)
+
+    w = wcs.WCS(naxis=2)
+    w.wcs.cdelt = np.array([-x_coord_res, y_coord_res])
+    w.wcs.crpix = [0, 0]
+    w.wcs.crval = [x_range[1], y_range[0]]
+    w.wcs.ctype = ['RA---CAR', 'DEC--CAR']
+
+    x_coords, y_coords = w.all_pix2world(x_grid,
+                                         y_grid,
+                                         1,)
+                                         #ra_dec_order=True)
+
+    print x_coords[0:3, 0:3]
+    print x_coords[-4:-1, -4:-1]
+    print y_coords[0:3, 0:3]
+
     # Convert to galactic coordinates
     if coord_type.lower() == 'equatorial':
-        axes = eq(ra = x_grid, dec = y_grid, unit = (units.degree,
-            units.degree))
+        axes = eq(ra=x_coords,
+                  dec=y_coords,
+                  unit=(units.degree, units.degree)
+                  )
         longitude_grid = axes.galactic.l.deg
         latitude_grid = axes.galactic.b.deg
     elif coord_type.lower() == 'galactic':
-        longitude_grid = x_grid
-        latitude_grid = y_grid
+        longitude_grid = x_coords
+        latitude_grid = y_coords
 
     # Convert from phi / theta to l/b
     phi_grid = longitude_grid / 180. * np.pi
@@ -439,7 +513,7 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
     # Map the column data to a 2d array
     map_region = map_raw[pixel_indices]
 
-    # Omit the degenerate axes
+    # Omit any degenerate axes
     map_region = np.squeeze(map_region)
 
     # Move set bad_data to be >-1e30 to be read by kvis
@@ -447,17 +521,21 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
 
     # Reverse the array
     if reverse_xaxis:
-        map_region = map_region.T[::, ::-1]
+        #map_region = map_region.T[::, ::-1]
+        #map_region = map_region[::, ::-1]
+        map_region = map_region
     elif not reverse_xaxis:
-        map_region = map_region.T
+        #map_region = map_region.T
+        map_region = map_region
 
     # Build a header
     if return_header:
     	header_region = build_header(header = header_pf,
-    	        axes = (x_axis, y_axis),
+    	        axis_grids = (x_coords, y_coords),
     	        reverse_xaxis = reverse_xaxis,
     	        field = field,
-    	        coord_type = coord_type)
+    	        coord_type = coord_type,
+    	        xy_res = (x_coord_res, y_coord_res))
         return map_region, header_region
     else:
         return map_region
