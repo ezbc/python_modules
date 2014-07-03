@@ -11,6 +11,8 @@ Original author: Dr. Robert Benjamin - benjamir@uww.edu
 
 Maintained by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu
 
+Please send emails to ezbc@astro.wisc.edu with questions, comments, or suggestions.
+
 ### Dependencies
 
 The Planckpy module requires the following libraries:
