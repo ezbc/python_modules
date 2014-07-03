@@ -21,14 +21,9 @@ Module requires the following libraries:
 import numpy as np
 from astropy.io import fits as pf
 import healpy
-#from kapteyn import wcs
-from astropy.coordinates import ICRS as eq
-from astropy.coordinates import Galactic as gal
-from astropy import units
-from astropy import wcs
 
 def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
-        0, coord_type = 'galactic', xy_res=None):
+        0, coord_type = 'galactic', xy_res=None, wcs_header=None):
 
     ''' Builds a header for the extracted Planck image.
 
@@ -66,11 +61,14 @@ def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
     for item in items:
         header_new.append(item)
 
-    # length of each axis
+    # length of each axis, x and y correspond to dec and ra lengths
     for i in range(naxis):
-        header_new.append(('NAXIS%s' % (i+1), len(axis_grids[i])))
+        header_new.append(('NAXIS%s' % (i+1), axis_grids[0].shape[-(i+1)]))
 
     column = field + 1
+
+    for card in wcs_header.cards:
+    	header_new.append((card[0], card[1], card[2]))
 
     # Extended info
     items = [('BSCALE', 1.0),
@@ -91,57 +89,10 @@ def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
     for item in items:
         header_new.append(item)
 
-    # Axes characteristics
-    if coord_type == 'galactic':
-        ctypes = ['GLON--CAR', 'GLAT--CAR', 'VELO-LSR']
-    if coord_type == 'equatorial':
-        ctypes = ['RA---CAR', 'DEC--CAR', 'VELO-LSR']
-
-    for i, axis in enumerate(axis_grids):
-        crpix = 0
-    	ctype = ctypes[i]
-    	crval = axis[0, 0]
-
-        print 'axis'
-        print axis[0:3, 0:3]
-
-        #
-        if i == 0: # ra
-            # choose cdelt along line of constant dec
-            dec_angle = np.cos(np.deg2rad(axis_grids[1][0, 0]))
-            cdelt = (axis[1, 0] - axis[0, 0]) * dec_angle
-
-            cdelt = axis_grids[1][0, 1] - axis_grids[1][0, 0]
-
-            cdelt = xy_res[0]
-
-            # if reverse_axis, put the highest RA value at the origin
-            if reverse_xaxis:
-                cdelt = -cdelt
-                crval = axis[-1, 0]
-                #crval = 82.5
-            elif not reverse_xaxis:
-                crval = axis[0, 0]
-        elif i == 1: # dec
-            cdelt = axis[0, 1] - axis[0, 0]
-            cdelt = xy_res[1]
-
-        print ctype, cdelt, crval
-
-    	items = [('CRPIX%s' % (i+1), crpix),
-    	         ('CDELT%s' % (i+1), cdelt),
-    	         ('CRVAL%s' % (i+1), crval),
-    	         ('CTYPE%s' % (i+1), ctype),
-    	         ]
-        for item in items:
-            header_new.append(item)
-
-    items = [#('CELLSCAL','CONSTANT'),
-             ('BMAJ', 5/3600.),
+    items = [('BMAJ', 5/3600.), # Planck has 5' beam
              ('BMIN', 5/3600.),
-             #('COORDSYS', 'GALACTIC'),
-             #('EPOCH', 2000.),
-             #('BAD_DATA', -1e28)
+             ('EPOCH', 2000.),
+             ('EQUINOX', 2000.),
              ]
     for item in items:
         header_new.append(item)
@@ -155,11 +106,64 @@ def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
                 rest_freq = 230.5380000e9 # Hz
             elif field in(8,9,10,11): # then CO J 3-->2
                 rest_freq = 345.796e9 # Hz
-        header_new.append(('RESTFREQ', 115.2712018e9))
+            header_new.append(('RESTFREQ', 115.2712018e9))
     except KeyError:
-        nothing = None
+        pass
 
     return header_new
+
+def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
+        coord_type='equatorial'):
+
+    ''' Builds grid of WCS coordinates given x and y pixel coordinate grids.
+
+    Parameters
+    ----------
+    grids : tuple
+    coord_reses : tuple
+    ranges : tuple
+    reverse_xaxis : bool
+    coord_type : str
+
+    Returns
+    -------
+    x_coords, y_coords : array-like
+        RA and dec grids of coordinates.
+    wcs_header : astropy.io.fits.header.Header instance
+        Header
+
+    '''
+
+    from astropy import wcs
+
+    x_grid, y_grid = grids[0], grids[1]
+    x_coord_res, y_coord_res = coord_reses[0], coord_reses[1]
+    x_range, y_range = ranges[0], ranges[1]
+
+    if reverse_xaxis:
+    	x_coord_res *= -1.
+
+    # Initialize WCS object
+    w = wcs.WCS(naxis=2)
+    w.wcs.cdelt = np.array([x_coord_res, y_coord_res])
+    w.wcs.crpix = [0, 0]
+    if reverse_xaxis:
+        w.wcs.crval = [x_range[1], y_range[0]]
+    else:
+        w.wcs.crval = [x_range[0], y_range[0]]
+
+    if coord_type.lower() == 'equatorial':
+        w.wcs.ctype = ['RA---CAR', 'DEC--CAR']
+    elif coord_type.lower() == 'galactic':
+        w.wcs.ctype = ['GLON-CAR', 'GLAT-CAR']
+
+    x_coords, y_coords = w.all_pix2world(x_grid,
+                                         y_grid,
+                                         1,)
+
+    wcs_header = w.to_header()
+
+    return x_coords, y_coords, wcs_header
 
 def get_planck_filename(data_location = './', data_type = None,
         dr_version = 1):
@@ -283,6 +287,74 @@ def eq2gal(ra,dec):
     if abs(bb) >= math.pi: print "Ugh!"
 
     return ll, bb
+
+def gal2sphere(x_coords, y_coords):
+
+    ''' Converts galactic coordinates to angular coordinates of a point on the
+    sphere.
+
+    Parameters
+    ----------
+    x_coords, y_coords : array-like
+        N-dimensional galactic x and y coordinates
+
+    Returns
+    -------
+    phi_grid : array-like
+        Rotation angle in spherical coordinates
+    theta_grid : array-like
+        Azimuthal angle in spherical coordinates
+
+    '''
+
+    # Convert from phi / theta to l/b
+    phi_grid = x_coords / 180. * np.pi
+    theta_grid = (90. - y_coords) / 180. * np.pi
+
+    return phi_grid, theta_grid
+
+def switch_coords(x_coords, y_coords, coord_type='equatorial'):
+
+    ''' Switches coordinates between equatorial and galactic.
+
+    Parameters
+    ----------
+    x_coords, y_coords : array-like
+        N-dimensional x and y coordinates
+    coord_type : str
+        Coordinate system of x_coords and y_coords. Options are 'equatorial'
+        and 'galactic'. Default is to switch between 'equatorial' to 'galactic'.
+
+    Returns
+    -------
+    x_coords_sw, y_coords_sw : array-like
+        N-dimensional x and y coordinates in the switched coordinate system.
+
+    '''
+
+    from astropy.coordinates import ICRS as eq
+    from astropy.coordinates import Galactic as gal
+    from astropy import units
+
+    # Convert coordinates to arrays
+    x_coords, y_coords = np.copy(x_coords), np.copy(y_coords)
+
+    if coord_type.lower() == 'galactic':
+        coords = gal(l=x_coords,
+                  b=y_coords,
+                  unit=(units.degree, units.degree)
+                  )
+        x_coords_sw = coords.icrs.ra.deg
+        y_coords_sw = coords.icrs.dec.deg
+    elif coord_type.lower() == 'equatorial':
+        coords = eq(ra=x_coords,
+                  dec=y_coords,
+                  unit=(units.degree, units.degree)
+                  )
+        x_coords_sw = coords.galactic.l.deg
+        y_coords_sw = coords.galactic.b.deg
+
+    return x_coords_sw, y_coords_sw
 
 def get_data(data_location='./', data_type = None, x_range = (0,360),
         y_range = (-90, 90), coord_type = 'galactic', field = 0,
@@ -416,49 +488,9 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
     # Get nside from HEALPix format, acts as resolution of HEALPix image
     nside = header_pf['NSIDE']
 
-    '''
-    # Set up longitude / latitude grid for extracting the region
-    dec_angle = np.cos(np.deg2rad(y_range[0]))
-    x_coord_res = resolution * dec_angle
-    print x_coord_res
-    y_coord_res = resolution
-    x_pixel_count = np.floor((x_range[1] - x_range[0]) / x_coord_res + 1)
-    y_pixel_count = np.floor((y_range[1] - y_range[0]) / y_coord_res + 1)
-    if cut_last_pixel:
-    	x_pixel_count -= 1
-    	y_pixel_count -= 1
-
-    # Write axes of l/b positions
-    x_center = (x_range[1] - x_range[0]) / 2.
-    y_center = (y_range[1] - y_range[1]) / 2.
-    x_axis = - x_center + x_coord_res * np.arange(x_pixel_count)
-    #x_axis = x_range[0] + x_coord_res * np.arange(x_pixel_count)
-    y_axis = y_range[0] + y_coord_res * np.arange(y_pixel_count)
-
-    # Create grids of coordinate positions
-    # Using the plate-caree projection
-    #   constant arclengths of the image will be sampled
-    #   right ascension grid will span a larger range in hours with
-    #   increasing declination
-    x_grid = np.zeros(shape = (x_pixel_count, y_pixel_count))
-    y_grid = np.zeros(shape = (x_pixel_count, y_pixel_count))
-    for y in range(len(y_axis)):
-    	dec_angle = np.cos(np.deg2rad(y_axis[y]))
-        x_grid[:, y] = x_range[0] + x_center + x_axis / dec_angle
-        #x_grid[:, y] = x_axis / dec_angle
-    for x in range(len(x_axis)):
-        y_grid[x, :] = y_axis
-
-    print('DEC')
-    print(y_grid[0, -1])
-    print('RA')
-    print(x_grid[:, -1])
-    print('DEC')
-    print(y_grid[0, 0])
-    print('RA')
-    print(x_grid[:, 0])
-    '''
-
+    # Need x and y range in equatorial coordinates
+    if coord_type.lower() == 'galactic':
+        x_range, y_range = switch_coords(x_range, y_range, coord_type)
 
     # Set up longitude / latitude grid for extracting the region
     x_coord_res, y_coord_res = resolution, resolution
@@ -475,36 +507,17 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
     # Create grids of coordinate positions
     x_grid, y_grid = np.meshgrid(x_pix, y_pix)
 
-    w = wcs.WCS(naxis=2)
-    w.wcs.cdelt = np.array([-x_coord_res, y_coord_res])
-    w.wcs.crpix = [0, 0]
-    w.wcs.crval = [x_range[1], y_range[0]]
-    w.wcs.ctype = ['RA---CAR', 'DEC--CAR']
+    # Convert pixel coordinates to WCS coordinates
+    x_coords, y_coords, wcs_header = build_wcs(grids=(x_grid, y_grid),
+                                   coord_reses=(x_coord_res, y_coord_res),
+                                   ranges=(x_range, y_range),
+                                   reverse_xaxis=reverse_xaxis)
 
-    x_coords, y_coords = w.all_pix2world(x_grid,
-                                         y_grid,
-                                         1,)
-                                         #ra_dec_order=True)
-
-    print x_coords[0:3, 0:3]
-    print x_coords[-4:-1, -4:-1]
-    print y_coords[0:3, 0:3]
-
-    # Convert to galactic coordinates
-    if coord_type.lower() == 'equatorial':
-        axes = eq(ra=x_coords,
-                  dec=y_coords,
-                  unit=(units.degree, units.degree)
-                  )
-        longitude_grid = axes.galactic.l.deg
-        latitude_grid = axes.galactic.b.deg
-    elif coord_type.lower() == 'galactic':
-        longitude_grid = x_coords
-        latitude_grid = y_coords
+    # Get galactic coordinates for angles
+    l_grid, b_grid = switch_coords(x_coords, y_coords, 'equatorial')
 
     # Convert from phi / theta to l/b
-    phi_grid = longitude_grid / 180. * np.pi
-    theta_grid = (90. - latitude_grid) / 180. * np.pi
+    phi_grid, theta_grid = gal2sphere(l_grid, b_grid)
 
     # Convert from angle to pixel
     pixel_indices = healpy.ang2pix(nside = nside, theta = theta_grid,
@@ -516,21 +529,14 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
     # Omit any degenerate axes
     map_region = np.squeeze(map_region)
 
-    # Move set bad_data to be >-1e30 to be read by kvis
-    map_region[map_region < -1e30] = np.NaN
-
-    # Reverse the array
-    if reverse_xaxis:
-        #map_region = map_region.T[::, ::-1]
-        #map_region = map_region[::, ::-1]
-        map_region = map_region
-    elif not reverse_xaxis:
-        #map_region = map_region.T
-        map_region = map_region
+    # Change bad data to be NaNs
+    bad_data = header_pf['BAD_DATA']
+    map_region[map_region == bad_data] = np.NaN
 
     # Build a header
     if return_header:
     	header_region = build_header(header = header_pf,
+    	        wcs_header=wcs_header,
     	        axis_grids = (x_coords, y_coords),
     	        reverse_xaxis = reverse_xaxis,
     	        field = field,
