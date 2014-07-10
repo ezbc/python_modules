@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 
-def get_rect(x, y, width, height, angle):
+def get_rect(x, y, width, height, angle,):
 
     ''' Returns four points of a rotated rectangle.
 
@@ -22,7 +22,11 @@ def get_rect(x, y, width, height, angle):
     import numpy as np
 
     # Create simple rectangle
-    rect = np.array([(0, 0), (width, 0), (width, height), (0, height), (0, 0)])
+    rect = np.array([(-width/2., -height/2.),
+                     (width/2., -height/2.),
+                     (width/2., height/2.),
+                     (-width/2., height/2.),
+                     (-width/2., -height/2.)])
     theta = (np.pi / 180.0) * (angle )
 
     # Define four corners of rotated rectangle
@@ -74,19 +78,23 @@ def get_rectangular_mask(image, x, y, width=None, height=None, angle=0.0,
 
 def get_polygon_mask(image, polygon, return_indices=False):
 
+    '''
+    Parameters
+    ----------
+    image : array-like
+
+    polygon : array-like
+        N x 2 array of vertices
+
+    '''
+
     import numpy as np
-    import matplotlib.path as Path
-
-    '''
     import numpy
-    from PIL import Image, ImageDraw
-
-    img = Image.new('L', (image.shape[1], image.shape[0]))
-    ImageDraw.Draw(img).polygon(polygon, outline=1, fill=1)
-    mask = numpy.array(img)
-    '''
-
+    import matplotlib.path as Path
     from skimage.draw import polygon as get_poly_indices
+
+    if type(polygon) is not numpy.array:
+        polygon = np.copy(polygon)
 
     rr, cc = get_poly_indices(polygon[:, 0], polygon[:, 1], image.shape)
 
@@ -171,4 +179,47 @@ def point_in_polygon(target, poly):
         inside = not inside
 
     return inside
+
+def rotate_polygon(polygon, anchor, angle):
+
+    '''
+    Parameters
+    ----------
+    polygon : array-like
+        N x 2 array with x coordinates in column 0 and y coordinates in
+        column 1
+    anchor : tuple
+        x and y coordinates of pivot point.
+    angle : float
+        Angle to rotate polygon clockwise from North.
+    '''
+
+    import numpy
+    import numpy as np
+
+    angle = np.deg2rad(angle)
+
+    # If not arrays, make them
+    if type(polygon) is not numpy.array:
+        polygon = np.copy(polygon)
+    if type(anchor) is not numpy.array:
+        anchor = np.copy(anchor)
+
+    # Center the polygon to the anchor point
+    polygon_zero = polygon - anchor
+
+    # Rotate the polygon
+    rotation_matrix = np.array([[np.cos(angle), -np.sin(angle)],
+                                [np.sin(angle), np.cos(angle)]])
+
+    polygon_rotated = np.dot(polygon_zero, rotation_matrix)
+
+    # Translate polygon to original position
+    polygon_translate = polygon_rotated + anchor
+
+    return polygon_translate
+
+
+
+
 
