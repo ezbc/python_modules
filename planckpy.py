@@ -56,7 +56,6 @@ def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
     items = [('SIMPLE', True),
              ('BITPIX', -32),
              ('NAXIS', naxis),
-             ('EXTEND', True),
              ]
     for item in items:
         header_new.append(item)
@@ -65,13 +64,17 @@ def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
     for i in range(naxis):
         header_new.append(('NAXIS%s' % (i+1), axis_grids[0].shape[-(i+1)]))
 
+    header_new.append(('EXTEND', True))
+
     column = field + 1
 
+    # CTYPE, CRPIX, CRDELT, CRDELT
     for card in wcs_header.cards:
     	header_new.append((card[0], card[1], card[2]))
 
     # Extended info
-    items = [('BSCALE', 1.0),
+    items = [('CELLSCAL', 'CONSTANT'),
+             ('BSCALE', 1.0),
              ('BZERO', 0.0),
              ('BLANK', -1),
              ('BUNIT', header['TUNIT%s' % column]),
@@ -136,31 +139,39 @@ def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
 
     from astropy import wcs
 
+    # Break up tuples to be more easily read
     x_grid, y_grid = grids[0], grids[1]
     x_coord_res, y_coord_res = coord_reses[0], coord_reses[1]
     x_range, y_range = ranges[0], ranges[1]
 
     if reverse_xaxis:
-    	x_coord_res *= -1.
+    	x_coord_res *= -1.0
 
     # Initialize WCS object
+    # CRPIX should be at 0, 0 so that unsophisticated software like Kvis can
+    # read the coordinates properly.
     w = wcs.WCS(naxis=2)
     w.wcs.cdelt = np.array([x_coord_res, y_coord_res])
-    w.wcs.crpix = [0, 0]
+    w.wcs.crval = [0, 0]
     if reverse_xaxis:
-        w.wcs.crval = [x_range[1], y_range[0]]
+    	w.wcs.crpix = [-x_range[1] / w.wcs.cdelt[0],
+    	               -y_range[0] / w.wcs.cdelt[1]]
     else:
-        w.wcs.crval = [x_range[0], y_range[0]]
+    	w.wcs.crpix = [-x_range[0] / w.wcs.cdelt[0],
+    	               -y_range[0] / w.wcs.cdelt[1]]
 
+    # Define coordinate type
     if coord_type.lower() == 'equatorial':
         w.wcs.ctype = ['RA---CAR', 'DEC--CAR']
     elif coord_type.lower() == 'galactic':
         w.wcs.ctype = ['GLON-CAR', 'GLAT-CAR']
 
+    # Get pixel coordinates as WCS coordinates
     x_coords, y_coords = w.all_pix2world(x_grid,
                                          y_grid,
                                          1,)
 
+    # Write wcs object as an easily readable header object
     wcs_header = w.to_header()
 
     return x_coords, y_coords, wcs_header
@@ -464,9 +475,17 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
 
     '''
 
+    # Testing the code? Various prints will be allowed if true
+    testing = False
+
     if data_type is None:
         print('WARNING (get_data): No data type chosen. Returning None type.')
     	return None
+
+    if x_range[0] >= x_range[1]:
+    	raise ValueError('x_range[0] must be < x_range[1]')
+    if y_range[0] >= y_range[1]:
+    	raise ValueError('y_range[0] must be < y_range[1]')
 
     # Get the filename
     filename = get_planck_filename(data_type = data_type, data_location =
@@ -512,6 +531,13 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
                                    coord_reses=(x_coord_res, y_coord_res),
                                    ranges=(x_range, y_range),
                                    reverse_xaxis=reverse_xaxis)
+
+    if testing:
+        print('x_coords', x_coords[0:3, 0:2])
+        print('x_coords', x_coords[0,0], x_coords[-1, 0])
+        print('x_coords', x_coords[0,-1], x_coords[-1, -1])
+        print('y_coords', y_coords[0,0], y_coords[-1, 0])
+        print('y_coords', y_coords[0,-1], y_coords[-1, -1])
 
     # Get galactic coordinates for angles
     l_grid, b_grid = switch_coords(x_coords, y_coords, 'equatorial')
