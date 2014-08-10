@@ -22,8 +22,8 @@ import numpy as np
 from astropy.io import fits as pf
 import healpy
 
-def build_header(header = None, axis_grids = None, reverse_xaxis = True, field =
-        0, coord_type = 'galactic', xy_res=None, wcs_header=None):
+def build_header(header=None, axis_grids=None, reverse_xaxis=True, field=0,
+        coord_type='galactic', xy_res=None, wcs_header=None):
 
     ''' Builds a header for the extracted Planck image.
 
@@ -176,8 +176,8 @@ def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
 
     return x_coords, y_coords, wcs_header
 
-def get_planck_filename(data_location = './', data_type = None,
-        dr_version = 1):
+def get_planck_filename(data_location='./', data_type=None,
+        dr_version=1):
 
     ''' Finds the file name for data_type requested. The files are:
             COM_CompMap_dust-commrul_2048_R1.00.fits
@@ -295,7 +295,6 @@ def eq2gal(ra,dec):
     if ll < 0.0: ll = ll + 2.*math.pi
 
     bb = math.fmod(b,2*math.pi)
-    if abs(bb) >= math.pi: print "Ugh!"
 
     return ll, bb
 
@@ -367,10 +366,9 @@ def switch_coords(x_coords, y_coords, coord_type='equatorial'):
 
     return x_coords_sw, y_coords_sw
 
-def get_data(data_location='./', data_type = None, x_range = (0,360),
-        y_range = (-90, 90), coord_type = 'galactic', field = 0,
-        resolution = 0.1, cut_last_pixel = False, verbose = True, return_header
-        = True, reverse_xaxis = True, dr_version = 1):
+def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
+    90), coord_type='galactic', field=0, resolution=0.1, cut_last_pixel=False,
+    verbose=True, return_header=True, reverse_xaxis=True, dr_version=1):
 
     ''' Extracts region from Planck data set. Region will be in galactic
     coordinates. Planck data must be on disk.
@@ -464,19 +462,16 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
     Examples
     --------
     >>> import planckpy as pl
-    >>> import pyfits as pf
-    >>> (data, header) = pl.get_data(data_type = '857', x_range =
-            (155,165), latitude_range = (-30, -15))
+    >>> from astropy.io import fits
+    >>> (data, header) = pl.get_data(data_type='857', x_range=(155,165),
+            y_range=(-30, -15))
     >>> data.shape
     (151, 101)
     >>> header['TYPE']
     'I_STOKES'
-    >>> pf.writeto('planck_region_857GHz.fits', data, header = header)
+    >>> fits.writeto('planck_region_857GHz.fits', data, header=header)
 
     '''
-
-    # Testing the code? Various prints will be allowed if true
-    testing = False
 
     if data_type is None:
         print('WARNING (get_data): No data type chosen. Returning None type.')
@@ -531,13 +526,6 @@ def get_data(data_location='./', data_type = None, x_range = (0,360),
                                    coord_reses=(x_coord_res, y_coord_res),
                                    ranges=(x_range, y_range),
                                    reverse_xaxis=reverse_xaxis)
-
-    if testing:
-        print('x_coords', x_coords[0:3, 0:2])
-        print('x_coords', x_coords[0,0], x_coords[-1, 0])
-        print('x_coords', x_coords[0,-1], x_coords[-1, -1])
-        print('y_coords', y_coords[0,0], y_coords[-1, 0])
-        print('y_coords', y_coords[0,-1], y_coords[-1, -1])
 
     # Get galactic coordinates for angles
     l_grid, b_grid = switch_coords(x_coords, y_coords, 'equatorial')
