@@ -466,7 +466,7 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     >>> (data, header) = pl.get_data(data_type='857', x_range=(155,165),
             y_range=(-30, -15))
     >>> data.shape
-    (151, 101)
+    (63, 189)
     >>> header['TYPE']
     'I_STOKES'
     >>> fits.writeto('planck_region_857GHz.fits', data, header=header)
