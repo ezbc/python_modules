@@ -39,6 +39,7 @@ easier.
 The following code will extract a region from the 857 GHz DR1 all-sky map
 covering the Perseus molecular cloud. The example also shows how to write the
 region to a FITS file.
+
     >>> import planckpy as pl
     >>> from astropy.io import fits
     >>> (data, header) = pl.get_data(data_type='857', x_range=(155,165),
