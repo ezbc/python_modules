@@ -40,21 +40,21 @@ The following code will extract a region from the 857 GHz DR1 all-sky map
 covering the Perseus molecular cloud. The example also shows how to write the
 region to a FITS file.
 ```
-    >>> import planckpy as pl
-    >>> from astropy.io import fits
-    >>> (data, header) = pl.get_data(data_type='857', x_range=(155,165),
-            y_range=(-30, -15))
-    >>> data.shape
-    (63, 189)
-    >>> header['TYPE']
-    'I_STOKES'
-    >>> fits.writeto('planck_region_857GHz.fits', data, header=header)
+>>> import planckpy as pl
+>>> from astropy.io import fits
+>>> (data, header) = pl.get_data(data_type='857', x_range=(155,165),
+        y_range=(-30, -15))
+>>> data.shape
+(63, 189)
+>>> header['TYPE']
+'I_STOKES'
+>>> fits.writeto('planck_region_857GHz.fits', data, header=header)
 ```
 The next example code will extract a region from the CO-Type1 J3-->2 DR1
 all-sky map covering the Perseus molecular cloud.
 ```
-    >>> (data, header) = pl.get_data(data_type='CO-Type1', longitude_range =
+>>> (data, header) = pl.get_data(data_type='CO-Type1', longitude_range =
                                 (155, 165), latitude_range = (-30, -15), 
                                 field = 8)
-    >>> pf.writeto(output_dir + 'co_type1_j32.fits', data, header = header)
+>>> pf.writeto(output_dir + 'co_type1_j32.fits', data, header = header)
 ```
