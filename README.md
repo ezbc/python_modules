@@ -19,7 +19,7 @@ The Planckpy module requires the following libraries:
 
 + [numpy](http://www.scipy.org/scipylib/download.html)
 
-+ [pyfits](http://www.stsci.edu/institute/software_hardware/pyfits/Download)
++ [astropy](http://www.astropy.org/)
 
 + [healpy](https://pypi.python.org/pypi/healpy)
 
