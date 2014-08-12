@@ -69,7 +69,7 @@ def build_header(header=None, axis_grids=None, reverse_xaxis=True, field=0,
 
     # CTYPE, CRPIX, CRDELT, CRDELT
     for card in wcs_header.cards:
-    	header_new.append((card[0], card[1], card[2]))
+        header_new.append((card[0], card[1], card[2]))
 
     # Extended info
     items = [('CELLSCAL', 'CONSTANT'),
@@ -144,7 +144,7 @@ def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
     x_range, y_range = ranges[0], ranges[1]
 
     if reverse_xaxis:
-    	x_coord_res *= -1.0
+        x_coord_res *= -1.0
 
     # Initialize WCS object
     # CRPIX should be at 0, 0 so that unsophisticated software like Kvis can
@@ -153,11 +153,11 @@ def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
     w.wcs.cdelt = np.array([x_coord_res, y_coord_res])
     w.wcs.crval = [0, 0]
     if reverse_xaxis:
-    	w.wcs.crpix = [-x_range[1] / w.wcs.cdelt[0],
-    	               -y_range[0] / w.wcs.cdelt[1]]
+        w.wcs.crpix = [-x_range[1] / w.wcs.cdelt[0],
+                       -y_range[0] / w.wcs.cdelt[1]]
     else:
-    	w.wcs.crpix = [-x_range[0] / w.wcs.cdelt[0],
-    	               -y_range[0] / w.wcs.cdelt[1]]
+        w.wcs.crpix = [-x_range[0] / w.wcs.cdelt[0],
+                       -y_range[0] / w.wcs.cdelt[1]]
 
     # Define coordinate type
     if coord_type.lower() == 'equatorial':
@@ -243,11 +243,11 @@ def get_planck_filename(data_location='./', data_type=None,
             nside = 2048
     elif data_type in freq_types:
         if data_type in freq_types[:3]:
-        	receiver_type = 'LFI'
-        	nside = 1024
+            receiver_type = 'LFI'
+            nside = 1024
         else:
-        	receiver_type = 'HFI'
-        	nside = 2048
+            receiver_type = 'HFI'
+            nside = 2048
         data_file = '%s_SkyMap_%s_%s_R1.%s0_nominal.fits' % \
                 (receiver_type, data_type, nside, dr_version)
     else:
@@ -474,12 +474,12 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
 
     if data_type is None:
         print('WARNING (get_data): No data type chosen. Returning None type.')
-    	return None
+        return None
 
     if x_range[0] >= x_range[1]:
-    	raise ValueError('x_range[0] must be < x_range[1]')
+        raise ValueError('x_range[0] must be < x_range[1]')
     if y_range[0] >= y_range[1]:
-    	raise ValueError('y_range[0] must be < y_range[1]')
+        raise ValueError('y_range[0] must be < y_range[1]')
 
     # Get the filename
     filename = get_planck_filename(data_type = data_type, data_location =
@@ -501,17 +501,19 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     # Get nside from HEALPix format, acts as resolution of HEALPix image
     nside = header_pf['NSIDE']
 
-    # Need x and y range in equatorial coordinates
-    if coord_type.lower() == 'galactic':
-        x_range, y_range = switch_coords(x_range, y_range, coord_type)
 
     # Set up longitude / latitude grid for extracting the region
     x_coord_res, y_coord_res = resolution, resolution
     x_pixel_count = np.ceil((x_range[1] - x_range[0]) / x_coord_res) + 1
     y_pixel_count = np.ceil((y_range[1] - y_range[0]) / y_coord_res) + 1
+
+    # The counts should be positive! Problems will arise if southern
+    # coordinates queried
+    x_pixel_count = np.abs(x_pixel_count)
+    y_pixel_count = np.abs(y_pixel_count)
     if cut_last_pixel:
-    	x_pixel_count -= 1
-    	y_pixel_count -= 1
+        x_pixel_count -= 1
+        y_pixel_count -= 1
 
     # Write pixel positions
     x_pix = np.arange(x_pixel_count)
@@ -520,14 +522,24 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     # Create grids of coordinate positions
     x_grid, y_grid = np.meshgrid(x_pix, y_pix)
 
+    # Need x and y range in equatorial coordinates
+    if coord_type.lower() == 'galactic':
+        x_range, y_range = switch_coords(x_range, y_range, coord_type)
+
     # Convert pixel coordinates to WCS coordinates
     x_coords, y_coords, wcs_header = build_wcs(grids=(x_grid, y_grid),
-                                   coord_reses=(x_coord_res, y_coord_res),
-                                   ranges=(x_range, y_range),
-                                   reverse_xaxis=reverse_xaxis)
+                                        coord_reses=(x_coord_res, y_coord_res),
+                                        ranges=(x_range, y_range),
+                                        reverse_xaxis=reverse_xaxis,
+                                        coord_type='equatorial')
+
+    print(x_coords.shape, y_coords.shape)
 
     # Get galactic coordinates for angles
-    l_grid, b_grid = switch_coords(x_coords, y_coords, 'equatorial')
+    if coord_type == 'equatorial':
+        l_grid, b_grid = switch_coords(x_coords, y_coords, coord_type)
+    elif coord_type == 'galactic':
+    	l_grid, b_grid = x_coords, y_coords
 
     # Convert from phi / theta to l/b
     phi_grid, theta_grid = gal2sphere(l_grid, b_grid)
@@ -546,15 +558,32 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     bad_data = header_pf['BAD_DATA']
     map_region[map_region == bad_data] = np.NaN
 
+    # Rebuild header if galactic coordinates chosen
+    if coord_type.lower() == 'galactic':
+        x_range, y_range = switch_coords(x_range, y_range, 'equatorial')
+
+        # Convert pixel coordinates to WCS coordinates
+        x_coords, y_coords, wcs_header = build_wcs(grids=(x_grid,
+                                                          y_grid),
+                                                    coord_reses=(x_coord_res,
+                                                                 y_coord_res),
+                                                    ranges=(x_range,
+                                                            y_range),
+                                                    reverse_xaxis=reverse_xaxis,
+                                                    coord_type=coord_type)
+
+        print 'xcoords, ycoords'
+        print x_coords, y_coords
+
     # Build a header
     if return_header:
-    	header_region = build_header(header = header_pf,
-    	        wcs_header=wcs_header,
-    	        axis_grids = (x_coords, y_coords),
-    	        reverse_xaxis = reverse_xaxis,
-    	        field = field,
-    	        coord_type = coord_type,
-    	        xy_res = (x_coord_res, y_coord_res))
+        header_region = build_header(header = header_pf,
+                wcs_header=wcs_header,
+                axis_grids = (x_coords, y_coords),
+                reverse_xaxis = reverse_xaxis,
+                field = field,
+                coord_type = coord_type,
+                xy_res = (x_coord_res, y_coord_res))
         return map_region, header_region
     else:
         return map_region
