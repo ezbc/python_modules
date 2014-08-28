@@ -1,6 +1,452 @@
 #!/usr/bin/python
 
-def bootstrap(data,model,num_samples=100,alpha=0.05,data_error=None,
+
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+
+class rv2d_discrete(object):
+
+    ''' A generic discrete 2D random variable class meant for subclassing.
+    Similar to scipy.stats.rv_discrete.
+
+    Parameters
+    ----------
+    likelihoods : array-like
+        N x M array of relative likelihoods corresponding to parameter 1 and 2
+        values.
+    param_grid1, param_grid2 : array-like
+        Parameter values corresponding to element positions of likelihoods.
+        The lengths of param_grid1 and param_grid2 must be N and M respectively.
+    param_name1, param_name2 : str
+        Names of parameters 1 and 2.
+    L_scalar : float
+        Inverse scalar of the likelihoods to calculate the 2D PDF. The
+        likelihoods are divided by the minimum non-zero likelihood otherwise.
+
+    Examples
+    --------
+
+
+    '''
+
+    import numpy as np
+
+    def __init__(self, likelihoods=None, param_grid1=None, param_grid2=None,
+            param_name1='param1', param_name2='param2', L_scalar=None):
+
+        super(rv2d_discrete, self).__init__()
+        self.likelihoods = np.squeeze(likelihoods)
+        self.likelihoods[self.likelihoods < 1e-16] = 0.0
+        self.pdf = None
+        self.param_grid1 = param_grid1
+        self.param_grid2 = param_grid2
+        self.param_name1 = param_name1
+        self.param_name2 = param_name2
+        if L_scalar is None:
+        	self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 0]))
+        else:
+            self.L_scalar = L_scalar
+
+        # Scale likelihoods so that min value is an integer
+        likelihoods_scaled = np.floor(self.likelihoods * L_scalar)
+
+        # Initialize
+        self.pdf = np.empty((np.sum(likelihoods_scaled), 2))
+        count = 0
+
+        # Create numbers of parameter pairs proportional to the parameter pair
+        # likelihood
+        for i, param1 in enumerate(param_grid1):
+            for j, param2 in enumerate(param_grid2):
+                L = likelihoods_scaled[i, j]
+                if L > 0:
+                    self.pdf[count:count + L] = (param1, param2)
+                    count += L
+
+    def rvs(self,):
+
+        ''' Returns parameters random sample from the pdf.
+        '''
+
+        from numpy.random import randint
+
+        # Get a random index of the pdf
+        index = randint(0, len(self.pdf[:, 0]))
+
+        # extract the parameters from the pdf
+        params = self.pdf[index]
+
+        return params
+
+def calc_symmetric_error(x, y=None, alpha=0.05):
+
+    '''
+
+    Parameters
+    ----------
+    x : array-like
+
+    y : array-like, optional
+        If provided, treated as the PDF of x
+
+    '''
+
+
+    import numpy as np
+
+    from scipy.integrate import simps as integrate
+
+    if len(x) < 4:
+    	raise ValueError('x and y must have lengths > 3')
+
+    # Create histogram with bin widths normalized by the density of values
+    if y is None:
+        x = np.sort(x)
+        y = np.ones(x.shape)
+
+    confidence = (1.0 - alpha)
+    #confidence = alpha
+
+    print 'alpha', alpha
+
+    # area under whole function
+    area = integrate(y, x)
+
+    # Get weighted average of PDF
+    mid_pos = np.argmin(np.abs(x - np.average(x, weights=y)))
+
+    # If the cum sum had duplicates, then multiple median pos will be derived,
+    # take the one in the middle.
+    try:
+        if len(mid_pos) > 1:
+            mid_pos = mid_pos[len(mid_pos) / 2]
+    except TypeError:
+        pass
+
+    # Lower error
+    pos = mid_pos - 1
+    while pos >= 0 and pos < mid_pos:
+        y_clip = y[pos:mid_pos + 1]
+        x_clip = x[pos:mid_pos + 1]
+
+        low_area = integrate(y_clip, x_clip)
+
+        if low_area >= area * confidence / 2.0:
+        	low_pos = pos
+        	break
+
+        pos -= 1
+
+    if pos == -1:
+    	low_pos = np.min(np.where(y != 0))
+
+    # higher error
+    pos = mid_pos + 1
+    max_pos = len(x)
+    while pos <= max_pos and pos > mid_pos:
+        y_clip = y[mid_pos:pos]
+        x_clip = x[mid_pos:pos]
+
+        high_area = integrate(y_clip, x_clip)
+
+        if high_area >= area * confidence / 2.0:
+        	high_pos = pos - 1
+        	break
+
+        pos += 1
+
+    if pos == max_pos + 1:
+    	high_pos = np.max(np.where(y != 0))
+
+    median = x[mid_pos]
+    low_error = x[mid_pos] - x[low_pos]
+    high_error = x[high_pos] - x[mid_pos]
+
+    return median, high_error, low_error
+
+def calc_cdf_error(x, alpha=0.05):
+
+    import numpy as np
+
+    from scipy.integrate import simps as integrate
+
+    if len(x) != len(y):
+    	raise ValueError('x and y must be the same shape')
+    if len(x) < 4:
+    	raise ValueError('x and y must have lengths > 3')
+
+    cdf = np.cumsum(y) / np.sum(y)
+
+    import matplotlib.pyplot as plt
+    plt.plot(x, cdf)
+    plt.show()
+
+    mid_pos = np.argmin(np.abs(cdf - 0.5)) + 1
+    low_pos = np.argmin(np.abs(cdf - alpha / 2.0))
+    high_pos = np.argmin(np.abs(alpha / 2.0 - cdf))
+
+    median = x[mid_pos]
+    low_error = x[mid_pos] - x[low_pos]
+    high_error = x[high_pos] - x[mid_pos]
+
+    return median, high_error, low_error
+
+# Bootstrapping using medians
+def bootstrap(data, num_samples):
+
+    ''' Bootstraps data to determine errors. Resamples the data num_samples
+    times. Returns errors of a bootstrap simulation at the 100.*(1 - alpha)
+    confidence interval.
+
+    Parameters
+    ----------
+    data : array-like
+        Array of data in the form of an numpy.ndarray
+    num_samples : int
+        Number of times to resample the data.
+
+    Returns
+    -------
+    conf_int : tuple, float
+        Lower error and upper error at 100*(1-alpha) confidence of the data.
+    samples : array-like
+        Array of each resampled data. Will have one extra dimension than the
+        data of length num_samples, representing each simulation.
+
+    Notes
+    -----
+    -> arrays can be initialized with numpy.empty
+    -> random samples can be retrieved from an array with random.sample
+
+    Examples
+    --------
+    >>> import scipy
+    >>> import numpy as np
+    >>> data = scipy.random.f(1, 2, 100)
+    >>> data.shape
+    (100,)
+    >>> samples = bootstrap(data, 50)
+    >>> samples.shape
+    (50, 100,)
+    '''
+
+    samples = np.empty((num_samples, data.size))
+
+    for i in range(num_samples):
+    	indices = np.random.randint(0, data.size, data.size)
+        samples[i,:] = data[indices]
+
+
+    return samples
+
+def calc_bootstrap_error(samples, alpha):
+
+    ''' Returns errors of a bootstrap simulation at the 100.*(1 - alpha)
+    confidence interval. Errors are computed by deriving a cumulative
+    distribution function of the medians of the sampled data and determining the
+    distance between the median and the value including alpha/2 % of the data,
+    and the value including alpha/2 % of the data.
+
+    Parameters
+    ----------
+    samples : array-like
+        Array of each resampled data.
+
+    Returns
+    -------
+    conf_int : tuple, float
+        Median of the data, the lower error and the upper error at 100*(1-alpha)
+        confidence of the data.
+
+    Notes
+    -----
+    -> To find the index in an array closest to a given value, use the
+    numpy.argmin function to find the index of the minimum value in an array.
+    For example to find the value closest to 11.1 in an array of 10, 11, and 12:
+        >>> import numpy as np
+        >>> a = np.array([10, 11, 12])
+        >>> print(np.argmin(np.abs(a - 11.1)))
+        1
+
+    Examples
+    --------
+    >>> import scipy
+    >>> import numpy as np
+    >>> data = scipy.random.f(1, 2, 100)
+    >>> samples = bootstrap(data, 50)
+    >>> errors = calc_bootstrap_error(samples, 0.05)
+
+    '''
+
+    medians, cdf = calc_cdf(samples)
+    median = medians[np.argmin(np.abs(cdf - 0.5))]
+    error_low = medians[np.argmin(np.abs(cdf - alpha/2.))]
+    error_high = medians[np.argmin(np.abs(cdf - (1 - alpha/2.)))]
+
+    return (median, median - error_low, error_high - median)
+
+def calc_cdf(samples):
+
+    ''' Calculates a cumulative distribution function of the medians of each
+    instance of resampled data.
+
+    Parameters
+    ----------
+    samples : array-like
+        Array of each resampled data.
+
+    Returns
+    -------
+    medians : array-like
+        Array containing mean values for the cdf.
+    cdf : array-like
+        Array containing fraction of data below value x.
+
+    '''
+
+    medians = np.sort(np.median(samples, axis=0))
+    cdf = np.cumsum(medians) / np.sum(medians)
+
+    return medians, cdf
+
+# Bootstrapping using means
+def bootstrap(data, num_samples):
+
+    ''' Bootstraps data to determine errors. Resamples the data num_samples
+    times. Returns errors of a bootstrap simulation at the 100.*(1 - alpha)
+    confidence interval.
+
+    Parameters
+    ----------
+    data : array-like
+        Array of data in the form of an numpy.ndarray
+    num_samples : int
+        Number of times to resample the data.
+
+    Returns
+    -------
+    conf_int : tuple, float
+        Lower error and upper error at 100*(1-alpha) confidence of the data.
+    samples : array-like
+        Array of each resampled data. Will have one extra dimension than the
+        data of length num_samples, representing each simulation.
+
+    Notes
+    -----
+    -> arrays can be initialized with numpy.empty
+    -> random samples can be retrieved from an array with random.sample
+
+    Examples
+    --------
+    >>> import scipy
+    >>> import numpy as np
+    >>> data = scipy.random.f(1, 2, 100)
+    >>> data.shape
+    (100,)
+    >>> samples = bootstrap(data, 50)
+    >>> samples.shape
+    (50, 100,)
+    '''
+
+    samples = np.empty((num_samples, data.size))
+
+    for i in range(num_samples):
+    	indices = np.random.randint(0, data.size, data.size)
+        samples[i,:] = data[indices]
+
+    return samples
+
+def calc_bootstrap_error(samples, alpha):
+
+    ''' Returns errors of a bootstrap simulation at the 100.*(1 - alpha)
+    confidence interval. Errors are computed by deriving a cumulative
+    distribution function of the means of the sampled data and determining the
+    distance between the mean and the value including alpha/2 % of the data,
+    and the value including alpha/2 % of the data.
+
+    Parameters
+    ----------
+    samples : array-like
+        Array of each resampled data.
+
+    Returns
+    -------
+    conf_int : tuple, float
+        Mean of the data, the lower error and the upper error at 100*(1-alpha)
+        confidence of the data.
+
+    Notes
+    -----
+    -> To find the index in an array closest to a given value, use the
+    numpy.argmin function to find the index of the minimum value in an array.
+    For example to find the value closest to 11.1 in an array of 10, 11, and 12:
+        >>> import numpy as np
+        >>> a = np.array([10, 11, 12])
+        >>> print(np.argmin(np.abs(a - 11.1)))
+        1
+
+    Examples
+    --------
+    >>> import scipy
+    >>> import numpy as np
+    >>> data = scipy.random.f(1, 2, 100)
+    >>> samples = bootstrap(data, 50)
+    >>> errors = calc_bootstrap_error(samples, 0.05)
+
+    '''
+
+    means, cdf = calc_cdf(samples)
+
+    import matplotlib.pyplot as plt
+    plt.plot(means, cdf)
+    plt.show()
+
+    mean = means[np.argmin(np.abs(cdf - 0.5))]
+    error_low = means[np.argmin(np.abs(cdf - alpha/2.))]
+    error_high = means[np.argmin(np.abs(cdf - (1 - alpha/2.)))]
+
+    return (mean, mean - error_low, error_high - mean)
+
+def calc_cdf(samples):
+
+    ''' Calculates a cumulative distribution function of the means of each
+    instance of resampled data.
+
+    Parameters
+    ----------
+    samples : array-like
+        Array of each resampled data.
+
+    Returns
+    -------
+    means : array-like
+        Array containing mean values for the cdf.
+    cdf : array-like
+        Array containing fraction of data below value x.
+
+    '''
+
+    means = np.sort(np.mean(samples, axis=1))
+    cdf = np.cumsum(means) / np.sum(means)
+
+    return means, cdf
+
+def calc_pdf(x, y):
+
+    '''
+    Calculates probability density function of the data. Uses a non-parametric
+    approach to estimate the PDF.
+
+    '''
+
+    from scipy import interpolate
+
+    inverse_density_function = interpolate.interp1d(x, y)
+
+    return inverse_density_function
+
+def bootstrap_model(data,model,num_samples=100,alpha=0.05,data_error=None,
         sigma=None, verbose=True):
 
     ''' Bootstraps data with models a given number of times and calculates the
@@ -154,4 +600,25 @@ def ftest(chi1,chi2,dof1,dof2):
     from scipy.stats import f
 
     return 1 - f.cdf( (chi1/float(dof1)) / (chi2/float(dof2)), dof1,dof2)
+
+def test_bootstrap():
+    import numpy as np
+    from scikits.bootstrap import ci
+
+    data = np.random.normal(loc=1, scale=1, size=1000)
+    print('std = %.2f' % data.std())
+
+    samples = bootstrap(data, 100)
+    boot_error = calc_bootstrap_error(samples, 0.32)
+
+    boot_error_ci = ci(data, np.median, 0.32)
+
+    print('bootstrap error', boot_error)
+    print('bootstrap error ci', boot_error_ci)
+
+def main():
+    test_bootstrap()
+
+if __name__ == '__main__':
+	main()
 

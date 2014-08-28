@@ -165,8 +165,8 @@ def blankcube(image,
 
     # determine beamsize of cube
     ia.open(imageDir + image + extension)
-    beamsizes = np.zeros(ia.shape()[3])
-    for i in range(ia.shape()[3]):
+    beamsizes = np.zeros(ia.shape()[2])
+    for i in range(ia.shape()[2]):
         beamsizes[i] = ia.restoringbeam(channel=i)['major']['value']
     beamsizeUnit = ia.restoringbeam(channel=i)['major']['unit']
     beamsize = qa.convert(str(beamsizes.max()) + beamsizeUnit,'arcsec')['value']
@@ -177,7 +177,7 @@ def blankcube(image,
     ia.close()
 
     if verbose:
-        print 'Max beamsize is ' + str(beamsize) + '"' 
+        print 'Max beamsize is ' + str(beamsize) + '"'
 
     if not os.path.exists(image + '.blk.image'):
         # create cube for blanking
@@ -200,7 +200,7 @@ def blankcube(image,
                 expr='IM0')
 
     if not os.path.exists(image + '.smooth.image'):
-        # convolve cube to 2X beam for blanking 
+        # convolve cube to 2X beam for blanking
         imsmooth(imagename=image + extension,
              outfile=image + '.smooth.image',
              major=str(beamsize*beamScale) + 'arcsec',
@@ -214,7 +214,7 @@ def blankcube(image,
     threshold = ia.statistics()['sigma'][0] * blankThreshold
     ia.close()
 
-    # blank the cube at threshold*sigma 
+    # blank the cube at threshold*sigma
     ia.open(image + '.smooth.image')
     ia.calcmask(mask=image + '.smooth.image > ' + str(threshold),
              name='mask1')
@@ -306,31 +306,31 @@ def convolve(image, psf, ft_psf=None, ft_image=None, no_ft=None,
     EXPLANATION:
           The default is to compute the convolution using a product of
           Fourier transforms (for speed).
-    
+
     CALLING SEQUENCE:
-    
+
           imconv = convolve( image1, psf, FT_PSF = psf_FT )
      or:
           correl = convolve( image1, image2, /CORREL )
      or:
           correl = convolve( image, /AUTO )
-    
+
     INPUTS:
           image = 2-D array (matrix) to be convolved with psf
           psf = the Point Spread Function, (size < or = to size of image).
-    
+
     OPTIONAL INPUT KEYWORDS:
-    
+
           FT_PSF = passes out/in the Fourier transform of the PSF,
                   (so that it can be re-used the next time function is called).
           FT_IMAGE = passes out/in the Fourier transform of image.
-    
+
           /CORRELATE uses the conjugate of the Fourier transform of PSF,
                   to compute the cross-correlation of image and PSF,
                   (equivalent to IDL function convol() with NO rotation of PSF)
-    
+
           /AUTO_CORR computes the auto-correlation function of image using FFT.
-    
+
           /NO_FT overrides the use of FFT, using IDL function convol() instead.
                   (then PSF is rotated by 180 degrees to give same result)
     METHOD:
@@ -351,49 +351,49 @@ def convolve(image, psf, ft_psf=None, ft_image=None, no_ft=None,
     imft = ft_image
     noft = no_ft
     auto = auto_correlation
-    
-    sp = array(shape(psf_ft)) 
+
+    sp = array(shape(psf_ft))
     sif = array(shape(imft))
     sim = array(shape(image))
     sc = sim / 2
     npix = array(image, copy=0).size
-    
-    if image.ndim!=2 or noft!=None:   
-       if (auto is not None):   
+
+    if image.ndim!=2 or noft!=None:
+       if (auto is not None):
           message("auto-correlation only for images with FFT", inf=True)
           return image
-       else:   
-          if (correlate is not None):   
+       else:
+          if (correlate is not None):
              return convol(image, psf)
           else:
              return convol(image, rotate(psf, 2))
-    
+
     if imft==None or (imft.ndim!=2) or imft.shape!=im.shape: #add the type check
        imft = ifft2(image)
-    
-    if (auto is not None):   
+
+    if (auto is not None):
        return roll(roll(npix * real(fft2(imft * conjugate(imft))), sc[0], 0),sc[1],1)
 
-    if (ft_psf==None or ft_psf.ndim!=2 or ft_psf.shape!=image.shape or 
+    if (ft_psf==None or ft_psf.ndim!=2 or ft_psf.shape!=image.shape or
              ft_psf.dtype!=image.dtype):
        sp = array(shape(psf))
-       
+
        loc = maximum((sc - sp / 2), 0)         #center PSF in new array,
        s = maximum((sp / 2 - sc), 0)        #handle all cases: smaller or bigger
        l = minimum((s + sim - 1), (sp - 1))
-       psf_ft = conjugate(image) * 0 #initialise with correct size+type according 
+       psf_ft = conjugate(image) * 0 #initialise with correct size+type according
        #to logic of conj and set values to 0 (type of ft_psf is conserved)
        psf_ft[loc[1]:loc[1]+l[1]-s[1]+1,loc[0]:loc[0]+l[0]-s[0]+1] = \
                       psf[s[1]:(l[1])+1,s[0]:(l[0])+1]
        psf_ft = ifft2(psf_ft)
-    
-    if (correlate is not None):   
+
+    if (correlate is not None):
        conv = npix * real(fft2(imft * conjugate(psf_ft)))
-    else:   
+    else:
        conv = npix * real(fft2(imft * psf_ft))
-    
+
     sc = sc + (sim % 2)   #shift correction for odd size images.
-    
+
     return roll(roll(conv, sc[0],0), sc[1],1)
 
 def gauss2d(shape, fwhm, normalize=True):
@@ -457,6 +457,9 @@ def flux2Mass(distance=None,distanceErr=None,arcsecPerPix=None,beamsize=None,
     beamsize in units of "
     Returns mass in units of Msun
     '''
+
+    import numpy as np
+
     beamarea = 1.13*beamsize**2/arcsecPerPix**2
     mass = 2.36e5 * distance**2 * flux / beamarea
     massErr = np.sqrt((mass * 2*distanceErr/distance)**2 + (fluxErr/flux)**2)
@@ -496,15 +499,12 @@ def make_SBimage(image='',cellsize=None,beamsize=None,distance=None,
            hdvalue='',
            hdcomment='Units Msun/pc^-2')
 
-
-
 def execute():
     import os
     os.chdir('/d/bip3/ezbc/leop/data/hi/casa/images/gmrt/')
     dummyMS = '/d/bip3/ezbc/leop/data/hi/casa/uvdata/leopGMRT.contsub.ms'
     blankcube('./','leop.gmrt.original.4arcsec',dummyMS=dummyMS,pbcor=False,
             ruthless=True,smooth=True)
-
 
 def printProperties(filenames):
 

@@ -1,10 +1,9 @@
 #!/usr/bin/python
 
 def check_residuals(xarr,profile,threshold):
-    """ Checks tile at to find any significant peaks in the
-    residuals that should be fitted. Threshold is in units of standard
-    deviations.
-    """
+
+    """ Checks tile at to find any significant peaks in the residuals that
+    should be fitted. Threshold is in units of standard deviations.  """
 
     from numpy import where
 
@@ -31,7 +30,7 @@ def make_2gaussGuesses(xarr,profile,threshold):
     guesses = []
 
     if profileMax >= threshold:
-        
+
 
         return (profileMax, xarr[where(profile == profileMax)[0][0]])
 
