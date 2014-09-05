@@ -22,7 +22,7 @@ from astropy.io import fits as pf
 import healpy
 
 def build_header(header=None, axis_grids=None, reverse_xaxis=True, field=0,
-        coord_type='galactic', xy_res=None, wcs_header=None):
+        coord_type='equatorial', xy_res=None, wcs_header=None):
 
     ''' Builds a header for the extracted Planck image.
 
@@ -37,7 +37,8 @@ def build_header(header=None, axis_grids=None, reverse_xaxis=True, field=0,
     field : int
         Column to extract from Planck data.
     coord_type : str
-        Options are 'galactic' and 'equatorial'
+        Only option is 'equatorial'. Galactic coordinates will be implemented
+        soon.
 
     Returns
     -------
@@ -262,41 +263,6 @@ def get_planck_filename(data_location='./', data_type=None,
 
     return data_file
 
-def eq2gal(ra,dec):
-
-    '''
-
-    Original code from:
-    http://community.dur.ac.uk/physics.astrolab/python_links.html
-
-    '''
-
-    rmat = numpy.array([
-     [-0.054875539726,-0.873437108010,-0.483834985808],
-     [+0.494109453312,-0.444829589425,+0.746982251810],
-     [-0.867666135858,-0.198076386122,+0.455983795705]],dtype='d')
-    cosb = math.cos(dec)
-    v1 = numpy.array([math.cos(ra)*cosb,math.sin(ra)*cosb,math.sin(dec)])
-    v2 = numpy.multiply(rmat,v1)
-    x = v2[0]
-    y = v2[1]
-    z = v2[2]
-    r = math.sqrt(x*x+y*y)
-    if r == 0.0:
-        l = 0.0
-    else:
-        l = math.atan2(y,x)
-    if z == 0.0:
-        b = 0.0
-    else:
-        b = math.atan2(z,r)
-    ll = math.fmod(l,2.*math.pi)
-    if ll < 0.0: ll = ll + 2.*math.pi
-
-    bb = math.fmod(b,2*math.pi)
-
-    return ll, bb
-
 def gal2sphere(x_coords, y_coords):
 
     ''' Converts galactic coordinates to angular coordinates of a point on the
@@ -366,11 +332,13 @@ def switch_coords(x_coords, y_coords, coord_type='equatorial'):
     return x_coords_sw, y_coords_sw
 
 def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
-    90), coord_type='galactic', field=0, resolution=0.1, cut_last_pixel=False,
+    90), coord_type='equatorial', field=0, resolution=0.1, cut_last_pixel=False,
     verbose=True, return_header=True, reverse_xaxis=True, dr_version=1):
 
-    ''' Extracts region from Planck data set. Region will be in galactic
-    coordinates. Planck data must be on disk.
+    ''' Extracts region from Planck data set. Region will be in equatorial
+    coordinates. Planck data must be on disk. Visit
+    http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/ to
+    download Planck archive data.
 
     Parameters
     ----------
@@ -435,7 +403,8 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     y_range : array-like
         Lower and upper latitude. Default is whole sky.
     coord_type : str
-        Options are 'galactic' and 'equatorial'
+        Only option is 'equatorial'. Galactic coordinates will be implemented
+        soon.
     field : int
         Field in data type.
     resolution : float
@@ -462,10 +431,10 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     --------
     >>> import planckpy as pl
     >>> from astropy.io import fits
-    >>> (data, header) = pl.get_data(data_type='857', x_range=(155,165),
-            y_range=(-30, -15))
+    >>> (data, header) = pl.get_data(data_type='857', x_range=(21.3, 30.3),
+            y_range=(60.0, 73.0))
     >>> data.shape
-    (63, 189)
+    (131, 91)
     >>> header['TYPE']
     'I_STOKES'
     >>> fits.writeto('planck_region_857GHz.fits', data, header=header)
@@ -475,6 +444,17 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     if data_type is None:
         print('WARNING (get_data): No data type chosen. Returning None type.')
         return None
+
+    if coord_type is 'galactic':
+    	raise ValueError('Galactic coordinates not yet implemented.')
+
+    if np.abs(y_range[0]) > 90.0 or np.abs(y_range[1]) > 90.0:
+    	raise ValueError('y coordinates must be < +90 deg and > -90 deg')
+    if x_range[0] < 0.0 or \
+       x_range[1] < 0.0 or \
+       x_range[0] > 360.0 or \
+       x_range[1] > 360.0:
+    	raise ValueError('x coordinates must be > 0 deg and < 360 deg')
 
     if x_range[0] >= x_range[1]:
         raise ValueError('x_range[0] must be < x_range[1]')
@@ -533,8 +513,6 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
                                         reverse_xaxis=reverse_xaxis,
                                         coord_type='equatorial')
 
-    print(x_coords.shape, y_coords.shape)
-
     # Get galactic coordinates for angles
     if coord_type == 'equatorial':
         l_grid, b_grid = switch_coords(x_coords, y_coords, coord_type)
@@ -571,9 +549,6 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
                                                             y_range),
                                                     reverse_xaxis=reverse_xaxis,
                                                     coord_type=coord_type)
-
-        print 'xcoords, ycoords'
-        print x_coords, y_coords
 
     # Build a header
     if return_header:
