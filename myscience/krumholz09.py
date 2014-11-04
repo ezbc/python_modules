@@ -10,6 +10,7 @@ def calc_rh2(h_sd, phi_CNM = None,
         f_diss = 0.1, # fraction of absorbing H2 which disociates
         phi_mol = 10.0, # molecular gas fraction
         mu_H = 2.3e-24, # molecular weight of H, g
+        G_0 = 1.0, # Radiation field
         return_fractions=False
         ):
     '''
@@ -127,6 +128,8 @@ def calc_T_cnm(phi_cnm, Z=1.0):
         Phi_cnm parameter, n_cnm = phi_cnm * n_cnm,min .
     Z : float, array-like
         Metallicity normalized by solar value.
+    G0 : float, array-like
+        FUV radiation field normalized by solar value.
 
     '''
 
@@ -153,5 +156,46 @@ def calc_T_cnm(phi_cnm, Z=1.0):
 
     return T_cnm
 
+def calc_n_min(G_0=1.0, Z=1.0):
 
+    ''' Calculates minimum volume density of CNM to maintain pressure balance
+    with the WNM. See equation (5). Returns n_min in cm^-3.
+
+    Parameters
+    ----------
+    G_0 : float, array-like
+        Incident radiation field of FUV photons normalized to solar.
+    Z : float, array-like
+        Metallicity normalized to solar value.
+
+    '''
+
+    n_min = 31.0 * G_0 / (1 + 3.1 * Z**(0.365))
+
+    return n_min
+
+def calc_n_cnm(G_0=1.0, T_cnm=70.0, Z=1.0):
+
+    ''' Calculates volume density of CNM. See equation (18). Returns n_cnm in
+    cm^-3.
+
+    Parameters
+    ----------
+    G_0 : float, array-like
+        Incident radiation field of FUV photons normalized to solar.
+    Z : float, array-like
+        Metallicity normalized to solar value.
+
+    '''
+
+    import numpy as np
+
+    T_cnm2 = T_cnm / 100.0
+
+    numerator = 20.0 * G_0 * T_cnm2**-0.2 * np.exp(1.5 / T_cnm2)
+    denominator = 1 + 2.6 * (T_cnm2**0.5 * Z)**0.365
+
+    n_cnm = numerator / denominator
+
+    return n_cnm
 
