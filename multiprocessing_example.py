@@ -4,104 +4,73 @@
 import os
 from Queue import Queue
 from multiprocessing import Process
+import signal
 
-def returning_wrapper(func, *args, **kwargs):
-    queue = kwargs.get("multiprocess_returnable")
-    del kwargs["multiprocess_returnable"]
-    queue.put(func(*args, **kwargs))
+class KeyboardInterruptError(Exception): pass
 
-class Multiprocess(object):
-    """Cute decorator to run a function in multiple processes."""
-    def __init__(self, func):
-        self.func = func
-        self.processes = []
+def manip_data(data):
+    try:
+        for datum in data:
+            test = datum * data
+    except KeyboardInterrupt:
+        raise KeyboardInterruptError
 
-    def __call__(self, *args, **kwargs):
-        num_processes = kwargs.get("multiprocess_num_processes", 12) # default to two processes.
-        return_obj = kwargs.get("multiprocess_returnable", Queue()) # default to stdlib Queue
-        kwargs["multiprocess_returnable"] = return_obj
-        for i in xrange(num_processes):
-            pro = Process(target=returning_wrapper, args=tuple([self.func] + list(args)), kwargs=kwargs)
-            self.processes.append(pro)
-            pro.start()
-        return return_obj
+    return 'no'
 
-@Multiprocess
-def run():
-    import numpy as np
-    n = np.random.randint(0, 1, size=(100, 1000))
-    for i in xrange(n.shape[0]):
-        for j in xrange(n.shape[1]):
-        	a = n * i * j
+def manip_data_args(data, arg1=0):
+    try:
+        for datum in data:
+            test = datum * data
+    except KeyboardInterrupt:
+        raise KeyboardInterruptError
 
-    return a
+    return arg1
 
-def for_loop(n):
-    for i in xrange(n.shape[0]):
-        for j in xrange(n.shape[1]):
-        	a = n * i * j
-
-    return a
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def main():
 
     import numpy as np
 
     # http://stackoverflow.com/questions/10797998/is-it-possible-to-multiprocesspython-a-function-that-returns-something
-    '''
-    items = (10, 10, 10, 10)
 
-    x = split_processing(items)
+    import multiprocessing
+    import time
 
-    print x
+    data = (
+        ['a', '2'], ['b', '4'], ['c', '6'], ['d', '8'],
+        ['e', '1'], ['f', '3'], ['g', '5'], ['h', '7']
+    )
 
-    info('main line')
-    p = Process(target=f, args=('bob',))
-    p.start()
-    p.join()
+    data = np.random.random((1000, 10000))
 
-    data = info()
-    print 'data', data
-    data = run()
-    #print data.get(False)
-
-    print 'stage 1 done'
-
-    @Multiprocess
-    def info():
-        print 'module name:', __name__
-        print 'parent process:', os.getppid()
-        print 'process id:', os.getpid()
-        return 4 * 22
-
-    data = info()
-    print data.get(False)
-
-    print 'stage 2 done'
-
-    data = Multiprocess(for_loop)
-    #data = info(for_loop)
-
-    array = np.random.randint(0, 1, size=(100,100))
-
-    output = data(*(array,))
-
-    print 'before'
-    #print help(output)
-    print output.empty()
-    print output.get(False)
-    #print(help(data))
+    p = multiprocessing.Pool()
+    args = np.arange(0, 20, 1)
+    results = np.zeros(args.shape)
+    for i, arg in enumerate(args):
+        results[i] = p.apply_async(manip_data_args, args=(data, arg))
+    results.get()
+    p.close()
+    print 'pool map complete'
 
     '''
-
-    from multiprocessing import Pool
-
-    array = np.random.randint(0, 1, size=(100,100))
-
-    pool = Pool()
-    pool.map(for_loop, (array,))
-    pool.get(timeout=10)
-
+    try:
+        p = multiprocessing.Pool()
+        test = p.map(manip_data, data)
+        p.close()
+        print 'pool map complete'
+    except KeyboardInterrupt:
+        print 'got ^C while pool mapping, terminating the pool'
+        p.terminate()
+        p.wait()
+        print 'pool is terminated'
+    finally:
+        print 'joining pool processes'
+        p.join()
+        print 'join complete'
+    print 'the end'
+    '''
 
 if __name__ == '__main__':
 	main()

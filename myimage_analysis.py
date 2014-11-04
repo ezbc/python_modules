@@ -168,6 +168,9 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
 
     import numpy as np
 
+    if len(velocity_range) != 2:
+    	raise ValueError('velocity_range must be a 2 element tuple.')
+
     # Calculate NHI from cube if set
     if cube is not None and velocity_axis is not None:
         if cube.ndim == 3:
@@ -175,7 +178,7 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
                               cube.shape[2]))
             image[:,:] = np.NaN
             indices = np.where((velocity_axis > velocity_range[0]) & \
-                    (velocity_axis < velocity_range[1]))[0]
+                               (velocity_axis < velocity_range[1]))[0]
             image[:,:] = cube[indices,:,:].sum(axis=0)
             # Calculate image error
             if return_nhi_error:

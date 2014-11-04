@@ -106,9 +106,6 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
         y = np.ones(x.shape)
 
     confidence = (1.0 - alpha)
-    #confidence = alpha
-
-    print 'alpha', alpha
 
     # area under whole function
     area = integrate(y, x)
