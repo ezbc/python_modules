@@ -154,9 +154,17 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
     velocity_axis : array-like, optional
         One dimensional array containing velocities corresponding to
     fits_filename : str
-        If specified, and a header is provided, the nhi image will be written.
+        If specified, and a header is provided, the N(HI) image will be written
+        as a fits file.
     header : pyfits.Header
         Header from cube.
+    velocity_range : tuple, ndarray
+        If velocity range is a tuple including images of the same
+        shape as the spatial dimensions of the cube, then each velocity range
+        will be applied to individual pixels
+    velocity_noise_range : tuple
+        Lower and upper velocities which do not have emission. Used to
+        calculate the N(HI) noise map.
 
     Returns
     -------
@@ -168,35 +176,86 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
 
     import numpy as np
 
-    if len(velocity_range) != 2:
-    	raise ValueError('velocity_range must be a 2 element tuple.')
+    velocity_range = np.asarray(velocity_range)
+
+    #if velocity_range.ndim != 1 | velocity_range.ndim != 2:
+    #    raise ValueError('velocity_range must be pair or a list of pairs' + \
+    #            ' of HI velocities.')
+
+    if cube is None:
+    	raise TypeError('cube is required')
+    if velocity_axis is None:
+    	raise TypeError('velocity_axis is required')
 
     # Calculate NHI from cube if set
-    if cube is not None and velocity_axis is not None:
-        if cube.ndim == 3:
-            image = np.empty((cube.shape[1],
-                              cube.shape[2]))
-            image[:,:] = np.NaN
+    # If the cube is 3 dimensional, one velocity, and two spatial axes
+    if cube.ndim == 3:
+        image = np.empty((cube.shape[1],
+                          cube.shape[2]))
+        image[:,:] = np.NaN
+        # If multiple velocity ranges, then include velocities between each
+        # one
+        if velocity_range.ndim == 2:
+            if velocity_range[0].ndim == cube.shape[1:]:
+                raise ValueError('3D multi vel range not yet implemented')
+                '''
+                indices = np.zeros(cube.shape)
+                for i in xrange(0, indices.shape[0]):
+                    for j in xrange(0, indices.shape[1]):
+                        indices[:, i,j] = (velocity_range[0, i, j] < \
+                                        velocity_axis) & \
+                                       (velocity_range[1, i, j] > \
+                                        velocity_axis)
+                indices = (velocity_range[0] < velocity_axis) & \
+                          (velocity_range[1] > velocity_axis)
+                indices = np.where(indices == 1)[0]
+                '''
+                image[:,:] = cube[indices].sum(axis=0)
+            else:
+                indices = np.zeros(cube.shape[0])
+                for i in xrange(0, velocity_range.shape[0]):
+                    indices += (velocity_axis > velocity_range[i, 0]) & \
+                                (velocity_axis < velocity_range[i, 1])
+                indices = np.where(indices == 1)[0]
+                image[:,:] = cube[indices,:,:].sum(axis=0)
+        # If only one velocity range provided, integrate from lower to upper
+        elif velocity_range.ndim == 1:
             indices = np.where((velocity_axis > velocity_range[0]) & \
                                (velocity_axis < velocity_range[1]))[0]
+
             image[:,:] = cube[indices,:,:].sum(axis=0)
-            # Calculate image error
-            if return_nhi_error:
-                image_error = np.empty((cube.shape[1],
-                                  cube.shape[2]))
-                image_error[:,:] = np.NaN
-                image_error[:,:] = (noise_cube[indices,:,:]**2).sum(axis=0)**0.5
-        if cube.ndim == 2:
-            image = np.empty((cube.shape[1]))
+
+        # Calculate image error
+        if return_nhi_error:
+            image_error = np.empty((cube.shape[1],
+                              cube.shape[2]))
+            image_error[:,:] = np.NaN
+            image_error[:,:] = (noise_cube[indices,:,:]**2).sum(axis=0)**0.5
+    # If the cube is unraveled, one dimension velocity, and one dimension
+    # spatial
+    if cube.ndim == 2:
+        image = np.empty((cube.shape[1]))
+        # If only one velocity range provided, integrate whole cube with one
+        # range
+        if velocity_range.ndim == 1:
             image[:] = np.NaN
             indices = np.where((velocity_axis > velocity_range[0]) & \
                     (velocity_axis < velocity_range[1]))[0]
             image[:] = cube[indices,:].sum(axis=0)
-            # Calculate image error
-            if return_nhi_error:
-                image_error = np.empty((cube.shape[1]))
-                image_error[:] = np.NaN
-                image_error[:] = (noise_cube[indices,:]**2).sum(axis=0)**0.5
+        # If an image of velocity ranges provide, integrate each pixel with a
+        # different range
+        elif velocity_range[0].shape[0] == cube.shape[1]:
+            image = np.zeros(cube.shape[1])
+            for i in xrange(0, cube.shape[1]):
+                indices = (velocity_range[0, i] < velocity_axis) & \
+                          (velocity_range[1, i] > velocity_axis)
+                image[i] = np.sum(cube[indices, i])
+
+        # Calculate image error
+        if return_nhi_error:
+            image_error = np.empty((cube.shape[1]))
+            image_error[:] = np.NaN
+            image_error[:] = (noise_cube[indices,:]**2).sum(axis=0)**0.5
 
     # NHI in units of 1e20 cm^-2
     delta_v = velocity_axis[-1] - velocity_axis[-2]
