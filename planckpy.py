@@ -387,7 +387,7 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
                     0: Opacity 353GHz
                     1: Error on opacity
                     2: E(B-V)
-                    3: Error on E(B-V)
+                    3: Radiance
                     4: T for high freq correction
                     5: Error on T
                     6: Beta for high freq correction
