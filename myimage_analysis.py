@@ -137,8 +137,113 @@ def hrs2degs(ra=None, dec=None):
 
     return (ra_deg, dec_deg)
 
+def bin_image(image, binsize=(1,1), header=None, origin='lower left',
+        func=np.nansum):
+
+    ''' Bins an image.
+
+    Parameters
+    ----------
+    image : array-like
+        2D image or 3D to be binned. First two axes will be binned.
+    binsize : tuple
+        Integer number of pixels to bin in x,y directions
+    header : astropy.io.Header, optional
+        Header
+    origin : string
+        Location to begin binning.
+    func : function
+        Function with which to operate on the pixels being binned.
+
+    Returns
+    -------
+    image_binned : array-like
+        Binned image.
+    header_binned : astropy.io.Header, optional
+        If header is provided, edited header is returned.
+
+    '''
+
+    import numpy as np
+    from astropy.io import fits
+
+    # Cycle through slices of image, if 2D, only one slice
+    if image.ndim == 2:
+        # Write axes grids
+        x_grid_bin = np.arange(0, image.shape[0], binsize[0])
+        y_grid_bin = np.arange(0, image.shape[1], binsize[1])
+
+        # Bin image
+        image_binned = np.zeros((len(x_grid_bin), len(y_grid_bin)))
+
+        for i in xrange(0, len(x_grid_bin) - 1):
+            for j in xrange(0, len(y_grid_bin) - 1):
+                image_binned[i, j] = \
+                    func(image[x_grid_bin[i]:x_grid_bin[i+1],
+                               y_grid_bin[j]:y_grid_bin[j+1]])
+
+        # Get edge pixels
+        for i in xrange(0, len(x_grid_bin) - 1):
+            image_binned[i, -1] = \
+                func(image[x_grid_bin[i]:x_grid_bin[i+1],
+                           y_grid_bin[-1]:-1])
+        for j in xrange(0, len(y_grid_bin) - 1):
+            image_binned[-1, j] = \
+                    func(image[x_grid_bin[-1]:-1,
+                               y_grid_bin[j]:y_grid_bin[j+1]])
+        image_binned[-1, -1] = \
+                func(image[x_grid_bin[-1]:-1,
+                           y_grid_bin[-1]:-1])
+
+    elif image.ndim == 3:
+        # Write axes grids
+        x_grid_bin = np.arange(0, image.shape[1], binsize[0])
+        y_grid_bin = np.arange(0, image.shape[2], binsize[1])
+
+        # Bin image
+        image_binned = np.zeros((image.shape[0],
+                                 len(x_grid_bin),
+                                 len(y_grid_bin),)
+                                )
+
+        for k in xrange(0, image.shape[0]):
+            for i in xrange(0, len(x_grid_bin) - 1):
+                for j in xrange(0, len(y_grid_bin) - 1):
+                    image_binned[k, i, j] = \
+                            func(image[k, x_grid_bin[i]:x_grid_bin[i+1],
+                                          y_grid_bin[j]:y_grid_bin[j+1]])
+
+            # Get edge pixels
+            for i in xrange(0, len(x_grid_bin) - 1):
+                image_binned[k, i, -1] = \
+                    func(image[k, x_grid_bin[i]:x_grid_bin[i+1],
+                                  y_grid_bin[-1]:-1])
+            for j in xrange(0, len(y_grid_bin) - 1):
+                image_binned[k, -1, j] = \
+                        func(image[k, x_grid_bin[-1]:-1,
+                                      y_grid_bin[j]:y_grid_bin[j+1]])
+                image_binned[k, -1, -1] = \
+                    func(image[k, x_grid_bin[-1]:-1,
+                                  y_grid_bin[-1]:-1])
+    # Edit header
+    if header is not None:
+        header_bin = header.copy()
+
+        header_bin['NAXIS1'] = len(y_grid_bin)
+        header_bin['NAXIS2'] = len(x_grid_bin)
+        header_bin['CDELT1'] = header['CDELT1'] * binsize[0]
+        header_bin['CDELT2'] = header['CDELT2'] * binsize[1]
+        header_bin['CRPIX1'] = header['CRPIX1'] / binsize[0]
+        header_bin['CRPIX2'] = header['CRPIX2'] / binsize[1]
+
+        result = image_binned, header_bin
+    else:
+        result = image_binned
+
+    return result
+
 def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
-        return_nhi_error=True, noise_cube=None,
+        return_nhi_error=False, noise_cube=None,
         velocity_noise_range=[90,100], Tsys=30., header=None,
         fits_filename=None, fits_error_filename=None, verbose=False):
 
@@ -242,7 +347,7 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
             indices = np.where((velocity_axis > velocity_range[0]) & \
                     (velocity_axis < velocity_range[1]))[0]
             image[:] = cube[indices,:].sum(axis=0)
-        # If an image of velocity ranges provide, integrate each pixel with a
+        # If an image of velocity ranges provided, integrate each pixel with a
         # different range
         elif velocity_range[0].shape[0] == cube.shape[1]:
             image = np.zeros(cube.shape[1])
