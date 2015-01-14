@@ -44,12 +44,12 @@ class rv2d_discrete(object):
         self.param_name1 = param_name1
         self.param_name2 = param_name2
         if L_scalar is None:
-        	self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 0]))
+        	self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 1e-8]))
         else:
             self.L_scalar = L_scalar
 
         # Scale likelihoods so that min value is an integer
-        likelihoods_scaled = np.floor(self.likelihoods * L_scalar)
+        likelihoods_scaled = np.floor(self.likelihoods * self.L_scalar)
 
         # Initialize
         self.pdf = np.empty((np.sum(likelihoods_scaled), 2))

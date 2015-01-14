@@ -167,6 +167,8 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
     import numpy as np
     from astropy.io import fits
 
+
+
     # Cycle through slices of image, if 2D, only one slice
     if image.ndim == 2:
         # Write axes grids
@@ -188,7 +190,7 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
                 func(image[x_grid_bin[i]:x_grid_bin[i+1],
                            y_grid_bin[-1]:-1])
         for j in xrange(0, len(y_grid_bin) - 1):
-            image_binned[-1, j] = \
+            image_binned[i, j] = \
                     func(image[x_grid_bin[-1]:-1,
                                y_grid_bin[j]:y_grid_bin[j+1]])
         image_binned[-1, -1] = \
