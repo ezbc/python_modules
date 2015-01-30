@@ -138,7 +138,7 @@ def hrs2degs(ra=None, dec=None):
     return (ra_deg, dec_deg)
 
 def bin_image(image, binsize=(1,1), header=None, origin='lower left',
-        func=np.nansum):
+        func=np.nansum, return_weights=False):
 
     ''' Bins an image.
 
@@ -154,6 +154,9 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
         Location to begin binning.
     func : function
         Function with which to operate on the pixels being binned.
+    return_weights : bool, optional
+        Return weights for image corresponding to the number of valid pixels
+        used to create a binned pixel?
 
     Returns
     -------
@@ -197,6 +200,31 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
                 func(image[x_grid_bin[-1]:-1,
                            y_grid_bin[-1]:-1])
 
+        if return_weights:
+            # Bin image
+            image_weights = np.zeros((len(x_grid_bin), len(y_grid_bin)))
+
+            for i in xrange(0, len(x_grid_bin) - 1):
+                for j in xrange(0, len(y_grid_bin) - 1):
+                    image_weights[i, j] = \
+                        np.sum(~np.isnan(image[x_grid_bin[i]:x_grid_bin[i+1],
+                                               y_grid_bin[j]:y_grid_bin[j+1]]))
+
+            # Get edge pixels
+            for i in xrange(0, len(x_grid_bin) - 1):
+                image_weights[i, -1] = \
+                    np.sum(~np.isnan(image[x_grid_bin[i]:x_grid_bin[i+1],
+                                           y_grid_bin[-1]:-1]))
+            for j in xrange(0, len(y_grid_bin) - 1):
+                image_weights[i, j] = \
+                        np.sum(~np.isnan(image[x_grid_bin[-1]:-1,
+                                               y_grid_bin[j]:y_grid_bin[j+1]]))
+            image_weights[-1, -1] = \
+                    np.sum(~np.isnan(image[x_grid_bin[-1]:-1,
+                                           y_grid_bin[-1]:-1]))
+
+            image_weights /= np.nansum(image_weights)
+
     elif image.ndim == 3:
         # Write axes grids
         x_grid_bin = np.arange(0, image.shape[1], binsize[0])
@@ -227,6 +255,37 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
                 image_binned[k, -1, -1] = \
                     func(image[k, x_grid_bin[-1]:-1,
                                   y_grid_bin[-1]:-1])
+
+
+        if return_weights:
+            # Bin image
+            image_weights = np.zeros((image.shape[0],
+                                     len(x_grid_bin),
+                                     len(y_grid_bin),)
+                                    )
+
+            for k in xrange(0, image.shape[0]):
+                for i in xrange(0, len(x_grid_bin) - 1):
+                    for j in xrange(0, len(y_grid_bin) - 1):
+                        image_weights[k, i, j] = \
+                            np.sum(~np.isnan(image[k, x_grid_bin[i]:x_grid_bin[i+1],
+                                              y_grid_bin[j]:y_grid_bin[j+1]]))
+
+                # Get edge pixels
+                for i in xrange(0, len(x_grid_bin) - 1):
+                    image_weights[k, i, -1] = \
+                        np.sum(~np.isnan(image[k, x_grid_bin[i]:x_grid_bin[i+1],
+                                      y_grid_bin[-1]:-1]))
+                for j in xrange(0, len(y_grid_bin) - 1):
+                    image_weights[k, -1, j] = \
+                        np.sum(~np.isnan(image[k, x_grid_bin[-1]:-1,
+                                          y_grid_bin[j]:y_grid_bin[j+1]]))
+                    image_weights[k, -1, -1] = \
+                        np.sum(~np.isnan(image[k, x_grid_bin[-1]:-1,
+                                      y_grid_bin[-1]:-1]))
+
+            image_weights /= np.nansum(image_weights)
+
     # Edit header
     if header is not None:
         header_bin = header.copy()
@@ -238,9 +297,15 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
         header_bin['CRPIX1'] = header['CRPIX1'] / binsize[0]
         header_bin['CRPIX2'] = header['CRPIX2'] / binsize[1]
 
-        result = image_binned, header_bin
+        if return_weights:
+            result = image_binned, header_bin, image_weights
+        else:
+            result = image_binned, header_bin
     else:
-        result = image_binned
+        if return_weights:
+            result = image_binned, image_weights
+        else:
+            result = image_binned
 
     return result
 
@@ -283,7 +348,8 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
 
     import numpy as np
 
-    velocity_range = np.asarray(velocity_range)
+    if type(velocity_range) is not np.ndarray:
+        velocity_range = np.asarray(velocity_range)
 
     #if velocity_range.ndim != 1 | velocity_range.ndim != 2:
     #    raise ValueError('velocity_range must be pair or a list of pairs' + \
@@ -300,31 +366,31 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
         image = np.empty((cube.shape[1],
                           cube.shape[2]))
         image[:,:] = np.NaN
+
         # If multiple velocity ranges, then include velocities between each
         # one
-        if velocity_range.ndim == 2:
-            if velocity_range[0].ndim == cube.shape[1:]:
-                raise ValueError('3D multi vel range not yet implemented')
-                '''
-                indices = np.zeros(cube.shape)
-                for i in xrange(0, indices.shape[0]):
-                    for j in xrange(0, indices.shape[1]):
-                        indices[:, i,j] = (velocity_range[0, i, j] < \
-                                        velocity_axis) & \
-                                       (velocity_range[1, i, j] > \
-                                        velocity_axis)
-                indices = (velocity_range[0] < velocity_axis) & \
-                          (velocity_range[1] > velocity_axis)
-                indices = np.where(indices == 1)[0]
-                '''
-                image[:,:] = cube[indices].sum(axis=0)
+        if velocity_range.ndim == 3:
+            if velocity_range.shape[1] == cube.shape[1]:
+                #raise ValueError('3D multi vel range not yet implemented')
+                for i in xrange(0, cube.shape[1]):
+                    for j in xrange(0, cube.shape[2]):
+                        indices = (velocity_range[0, i, j] < velocity_axis) & \
+                                  (velocity_range[1, i, j] > velocity_axis)
+                        image[i, j] = np.sum(cube[indices, i, j])
+                # Calculate image error
+                if return_nhi_error:
+                    image_error = np.empty((cube.shape[1],
+                                            cube.shape[2]))
+                    for i in xrange(0, cube.shape[1]):
+                        for j in xrange(0, cube.shape[2]):
+                            indices = \
+                                (velocity_range[0, i, j] < velocity_axis) & \
+                                (velocity_range[1, i, j] > velocity_axis)
+                        image_error[i, j] = \
+                                (noise_cube[indices, i, j]**2).sum(axis=0)**0.5
             else:
-                indices = np.zeros(cube.shape[0])
-                for i in xrange(0, velocity_range.shape[0]):
-                    indices += (velocity_axis > velocity_range[i, 0]) & \
-                                (velocity_axis < velocity_range[i, 1])
-                indices = np.where(indices == 1)[0]
-                image[:,:] = cube[indices,:,:].sum(axis=0)
+                raise ValueError('Incorrect velocity range shape')
+
         # If only one velocity range provided, integrate from lower to upper
         elif velocity_range.ndim == 1:
             indices = np.where((velocity_axis > velocity_range[0]) & \
@@ -332,12 +398,12 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
 
             image[:,:] = cube[indices,:,:].sum(axis=0)
 
-        # Calculate image error
-        if return_nhi_error:
-            image_error = np.empty((cube.shape[1],
-                              cube.shape[2]))
-            image_error[:,:] = np.NaN
-            image_error[:,:] = (noise_cube[indices,:,:]**2).sum(axis=0)**0.5
+            # Calculate image error
+            if return_nhi_error:
+                image_error = np.empty((cube.shape[1],
+                                  cube.shape[2]))
+                image_error[:,:] = np.NaN
+                image_error[:,:] = (noise_cube[indices,:,:]**2).sum(axis=0)**0.5
     # If the cube is unraveled, one dimension velocity, and one dimension
     # spatial
     if cube.ndim == 2:
@@ -347,12 +413,11 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
         if velocity_range.ndim == 1:
             image[:] = np.NaN
             indices = np.where((velocity_axis > velocity_range[0]) & \
-                    (velocity_axis < velocity_range[1]))[0]
+                               (velocity_axis < velocity_range[1]))[0]
             image[:] = cube[indices,:].sum(axis=0)
         # If an image of velocity ranges provided, integrate each pixel with a
         # different range
-        elif velocity_range[0].shape[0] == cube.shape[1]:
-            image = np.zeros(cube.shape[1])
+        elif velocity_range.shape[1] == cube.shape[1]:
             for i in xrange(0, cube.shape[1]):
                 indices = (velocity_range[0, i] < velocity_axis) & \
                           (velocity_range[1, i] > velocity_axis)
