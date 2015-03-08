@@ -545,9 +545,9 @@ def calculate_nh2(nhi_image = None, av_image = None, dgr = 1.1e-1):
 
     import numpy as np
 
-    nh_image = 0.5 * (av_image / dgr - nhi_image)
+    nh2_image = 0.5 * (av_image / dgr - nhi_image)
 
-    return nh_image
+    return nh2_image
 
 def calculate_nh2_error(nhi_image_error=None, av_image_error=None, dgr=1.1e-1):
 

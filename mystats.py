@@ -79,6 +79,85 @@ class rv2d_discrete(object):
 
         return params
 
+class rv3d_discrete(object):
+
+    ''' A generic discrete 3D random variable class meant for subclassing.
+    Similar to scipy.stats.rv_discrete.
+
+    Parameters
+    ----------
+    likelihoods : array-like
+        N x M X P array of relative likelihoods corresponding to parameter 1
+        2, and 3 values.
+    param_grid1, param_grid2, param_grid3: array-like
+        Parameter values corresponding to element positions of likelihoods.
+        The lengths of param_grid1, param_grid2 and param_grid3 must be N and M
+        and P respectively.
+    param_name1, param_name2, param_name3 : str
+        Names of parameters 1, 2 and 3.
+    L_scalar : float
+        Inverse scalar of the likelihoods to calculate the 3D PDF. The
+        likelihoods are divided by the minimum non-zero likelihood otherwise.
+
+    Examples
+    --------
+
+
+    '''
+
+    import numpy as np
+
+    def __init__(self, likelihoods=None, param_grid1=None, param_grid2=None,
+            param_grid3=None, param_name1='param1', param_name2='param2',
+            param_name3='param3', L_scalar=None):
+
+        super(rv3d_discrete, self).__init__()
+        self.likelihoods = np.squeeze(likelihoods)
+        self.likelihoods[self.likelihoods < 1e-16] = 0.0
+        self.pdf = None
+        self.param_grid1 = param_grid1
+        self.param_grid2 = param_grid2
+        self.param_grid3 = param_grid3
+        self.param_name1 = param_name1
+        self.param_name2 = param_name2
+        self.param_name3 = param_name3
+        if L_scalar is None:
+        	self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 1e-8]))
+        else:
+            self.L_scalar = L_scalar
+
+        # Scale likelihoods so that min value is an integer
+        likelihoods_scaled = np.floor(self.likelihoods * self.L_scalar)
+
+        # Initialize
+        self.pdf = np.empty((np.sum(likelihoods_scaled), 3))
+        count = 0
+
+        # Create numbers of parameter pairs proportional to the parameter pair
+        # likelihood
+        for i, param1 in enumerate(param_grid1):
+            for j, param2 in enumerate(param_grid2):
+                for k, param3 in enumerate(param_grid3):
+                    L = likelihoods_scaled[i, j, k]
+                    if L > 0:
+                        self.pdf[count:count + L] = (param1, param2, param3)
+                        count += L
+
+    def rvs(self,):
+
+        ''' Returns parameters random sample from the pdf.
+        '''
+
+        from numpy.random import randint
+
+        # Get a random index of the pdf
+        index = randint(0, len(self.pdf[:, 0]))
+
+        # extract the parameters from the pdf
+        params = self.pdf[index]
+
+        return params
+
 def calc_symmetric_error(x, y=None, alpha=0.05):
 
     '''
@@ -98,7 +177,8 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
     from scipy.integrate import simps as integrate
 
     if len(x) < 4:
-    	raise ValueError('x and y must have lengths > 3')
+    	#raise ValueError('x and y must have lengths > 3')
+        return x[0], 0, 0
 
     # Create histogram with bin widths normalized by the density of values
     if y is None:

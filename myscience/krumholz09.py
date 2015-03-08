@@ -13,6 +13,7 @@ def calc_rh2(h_sd, phi_CNM = None,
         G_0 = 1.0, # Radiation field
         return_fractions=False
         ):
+
     '''
     Calculates ratio of molecular hydrogen to atomic hydrogen surface
     density using the model from Krumholz et al. 2008 given a total hydrogen
