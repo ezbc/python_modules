@@ -4,7 +4,7 @@
 Module for using the model of Krumholz et al. (2009)
 '''
 
-def calc_rh2(h_sd, phi_CNM = None,
+def calc_rh2(h_sd, phi_cnm = None,
         Z = 1.0, # metallicity
         a = 0.2, # ?
         f_diss = 0.1, # fraction of absorbing H2 which disociates
@@ -53,7 +53,7 @@ def calc_rh2(h_sd, phi_CNM = None,
     # normalized radiation field strength, EQ 7
     chi = ((f_diss * sigma_d_solar * c * E_0_solar) \
             * (1.0 + (3.1 * Z**0.365))) \
-            / (31.0 * phi_CNM * R_d_solar)
+            / (31.0 * phi_cnm * R_d_solar)
 
     # dust-adjusted radiation field, EQ 10
     psi = chi * (2.5 + chi) / (2.5 + (chi * np.e))
@@ -136,7 +136,7 @@ def calc_T_cnm(phi_cnm, Z=1.0):
 
     import numpy as np
 
-    T_cnm2 = np.arange(1, 200, 0.01) / 100.0
+    T_cnm2 = np.arange(1, 300, 0.01) / 100.0
     Z = np.asarray(Z)
 
     numerator = 20.0 * T_cnm2**-0.2 * np.exp(1.5 / T_cnm2) * \

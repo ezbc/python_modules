@@ -112,7 +112,8 @@ class rv3d_discrete(object):
             param_name3='param3', L_scalar=None):
 
         super(rv3d_discrete, self).__init__()
-        self.likelihoods = np.squeeze(likelihoods)
+        #self.likelihoods = np.squeeze(likelihoods)
+        self.likelihoods = likelihoods
         self.likelihoods[self.likelihoods < 1e-16] = 0.0
         self.pdf = None
         self.param_grid1 = param_grid1
