@@ -374,8 +374,8 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
                 #raise ValueError('3D multi vel range not yet implemented')
                 for i in xrange(0, cube.shape[1]):
                     for j in xrange(0, cube.shape[2]):
-                        indices = (velocity_range[0, i, j] < velocity_axis) & \
-                                  (velocity_range[1, i, j] > velocity_axis)
+                        indices = (velocity_range[0, i, j] <= velocity_axis) & \
+                                  (velocity_range[1, i, j] >= velocity_axis)
                         image[i, j] = np.sum(cube[indices, i, j])
                 # Calculate image error
                 if return_nhi_error:
@@ -384,8 +384,8 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
                     for i in xrange(0, cube.shape[1]):
                         for j in xrange(0, cube.shape[2]):
                             indices = \
-                                (velocity_range[0, i, j] < velocity_axis) & \
-                                (velocity_range[1, i, j] > velocity_axis)
+                                (velocity_range[0, i, j] <= velocity_axis) & \
+                                (velocity_range[1, i, j] >= velocity_axis)
                         image_error[i, j] = \
                                 (noise_cube[indices, i, j]**2).sum(axis=0)**0.5
             else:
@@ -393,8 +393,8 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
 
         # If only one velocity range provided, integrate from lower to upper
         elif velocity_range.ndim == 1:
-            indices = np.where((velocity_axis > velocity_range[0]) & \
-                               (velocity_axis < velocity_range[1]))[0]
+            indices = np.where((velocity_axis >= velocity_range[0]) & \
+                               (velocity_axis <= velocity_range[1]))[0]
 
             image[:,:] = cube[indices,:,:].sum(axis=0)
 
@@ -412,15 +412,15 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
         # range
         if velocity_range.ndim == 1:
             image[:] = np.NaN
-            indices = np.where((velocity_axis > velocity_range[0]) & \
-                               (velocity_axis < velocity_range[1]))[0]
+            indices = np.where((velocity_axis >= velocity_range[0]) & \
+                               (velocity_axis <= velocity_range[1]))[0]
             image[:] = cube[indices,:].sum(axis=0)
         # If an image of velocity ranges provided, integrate each pixel with a
         # different range
         elif velocity_range.shape[1] == cube.shape[1]:
             for i in xrange(0, cube.shape[1]):
-                indices = (velocity_range[0, i] < velocity_axis) & \
-                          (velocity_range[1, i] > velocity_axis)
+                indices = (velocity_range[0, i] <= velocity_axis) & \
+                          (velocity_range[1, i] >= velocity_axis)
                 image[i] = np.sum(cube[indices, i])
 
         # Calculate image error
@@ -455,7 +455,7 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
                 header, clobber = True, output_verify = 'fix')
 
     if return_nhi_error:
-        nhi_image_error = image_error * 1.823e-2
+        nhi_image_error = image_error * 1.823e-2 * delta_v
         return nhi_image, nhi_image_error
     else:
         return nhi_image

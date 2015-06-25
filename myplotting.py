@@ -171,11 +171,12 @@ def delete_overlapping_xlabels3(fig, ax):
     while overlaps:
         i = np.argmax(bbox_overlaps)
         new_major_text[i] = ''
-        bboxes[i].set_points(np.array([[-np.Inf, -np.Inf], [-np.Inf, -np.Inf]]))
+        bboxes[i].set_points(np.array([[np.nan, np.nan], [np.nan, np.nan]]))
         bbox_overlaps = check_overlaps(bboxes)
         overlaps = any(bbox_overlaps)
 
     ax.set_xticklabels(new_major_text)
+
 
 def check_overlaps(bboxes):
 
@@ -187,13 +188,34 @@ def check_overlaps(bboxes):
     overlaps = [0] * len(bboxes)
     for i, box in enumerate(bboxes):
         for other_box in bboxes:
-            if (box != other_box) & (box.get_points()[0,0] != -np.Inf):
-                overlaps[i] += box.overlaps(other_box)
-
+            if (box != other_box):
+                #overlaps[i] += box.overlaps(other_box)
+                overlaps[i] += check_overlaps(box, other_box)
     return overlaps
 
 
+def check_overlaps(bbox1, bbox2):
+    """
+    Returns True if this bounding box overlaps with the given
+    bounding box *other*. OR IF NANA!
+    """
+    ax1, ay1, ax2, ay2 = bbox1._get_extents()
+    bx1, by1, bx2, by2 = bbox2._get_extents()
 
+    if ax2 < ax1:
+        ax2, ax1 = ax1, ax2
+    if ay2 < ay1:
+        ay2, ay1 = ay1, ay2
+    if bx2 < bx1:
+        bx2, bx1 = bx1, bx2
+    if by2 < by1:
+        by2, by1 = by1, by2
 
+    if np.isnan(np.sum(extents1)) or np.isnan(np.sum(extents2)):
+        return False
 
+    return not ((bx2 < ax1) or
+                (by2 < ay1) or
+                (bx1 > ax2) or
+                (by1 > ay2))
 

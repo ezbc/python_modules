@@ -29,7 +29,6 @@ def lnlike(theta, x, y, yerr):
     inv_sigma2 = 1.0/(yerr**2 + model**2*np.exp(2*lnf))
 
     logL = -0.5*(np.sum((y-model)**2*inv_sigma2 - np.log(inv_sigma2)))
-    print theta, logL
     return logL
 
 # Log likelihood priors
@@ -48,7 +47,7 @@ def lnprob(theta, x, y, yerr):
 
 # initialize the walkers in a tiny Gaussian ball around the maximum likelihood
 # result
-ndim, nwalkers = 3, 100
+ndim, nwalkers = 3, 10
 pos = [np.array((-1, 4.2, 1)) + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
 
 pos = [(0, 0, 0) + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
@@ -59,7 +58,7 @@ sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(x, y, yerr),
         threads=1)
 
 # Run the sampler
-sampler.run_mcmc(pos, 500)
+sampler.run_mcmc(pos, 100)
 
 # Flatten the chain
 samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
