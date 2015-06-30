@@ -697,6 +697,50 @@ def test_bootstrap():
 def main():
     test_bootstrap()
 
+# Likelihood calculations
+
+def calc_logL(model, data, data_error=None, weights=None):
+
+    '''
+    Calculates log likelihood
+
+    http://www.physics.utah.edu/~detar/phys6720/handouts/curve_fit/curve_fit/node2.html
+
+    '''
+
+    import numpy as np
+
+    if data_error is None:
+        data_error = np.std(data)
+
+    if weights is None:
+        weights = 1.0
+        data_weighted = data
+        data_error_weighted = data_error
+        model_weighted = model
+    else:
+        data_weighted = np.zeros(np.sum(weights))
+        data_error_weighted = np.zeros(np.sum(weights))
+        model_weighted = np.zeros(np.sum(weights))
+        weights /= np.nanmin(weights)
+        count = 0
+        for i in xrange(len(data)):
+            data_weighted[count:count + weights[i]] = data[i]
+            data_error_weighted[count:count + weights[i]] = data_error[i]
+            model_weighted[count:count + weights[i]] = model[i]
+            count += weights[i]
+
+    #logL = -np.nansum((data - model)**2 / (2 * (data_error)**2))
+    logL = -np.nansum((data_weighted - model_weighted)**2 / \
+            (2 * (data_error_weighted)**2))
+
+    return logL
+
+def gauss(x, width, amp, x0):
+    import numpy as np
+
+    return amp * np.exp(-(x - x0)**2 / (2 * width**2))
+
 if __name__ == '__main__':
 	main()
 
