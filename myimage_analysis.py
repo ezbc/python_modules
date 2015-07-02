@@ -9,6 +9,8 @@ import mymath
 import mycoords
 import matplotlib.pyplot as plt
 import pyfits as pf
+import warnings
+warnings.filterwarnings('ignore')
 
 def subtract_background(image, degree=1, fit_regions=None):
 
@@ -175,8 +177,8 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
     # Cycle through slices of image, if 2D, only one slice
     if image.ndim == 2:
         # Write axes grids
-        x_grid_bin = np.arange(0, image.shape[0], binsize[0])
-        y_grid_bin = np.arange(0, image.shape[1], binsize[1])
+        x_grid_bin = np.arange(0, image.shape[0], binsize[0], dtype=int)
+        y_grid_bin = np.arange(0, image.shape[1], binsize[1], dtype=int)
 
         # Bin image
         image_binned = np.zeros((len(x_grid_bin), len(y_grid_bin)))
@@ -227,8 +229,8 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
 
     elif image.ndim == 3:
         # Write axes grids
-        x_grid_bin = np.arange(0, image.shape[1], binsize[0])
-        y_grid_bin = np.arange(0, image.shape[2], binsize[1])
+        x_grid_bin = np.arange(0, image.shape[1], binsize[0], dtype=int)
+        y_grid_bin = np.arange(0, image.shape[2], binsize[1], dtype=int)
 
         # Bin image
         image_binned = np.zeros((image.shape[0],
