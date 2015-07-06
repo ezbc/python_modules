@@ -319,7 +319,10 @@ class Cloud():
         # Errors add in square
         # mean = sum(a_i) / n
         # error on mean = sqrt(sum(a_i**2 / n**2))
-        noise_func = lambda x: np.nansum(x**2)**0.5 / x[~np.isnan(x)].size
+        noise_func = lambda x, axis: np.nansum(x**2, axis=axis)**0.5 / \
+                                     np.sum(~np.isnan(x[axis]))
+        def noise_func(x, axis):
+            return np.nanmean(x, axis=axis)
 
         self.av_error_data_bin, self.av_header_bin = \
                 bin_image(self.av_error_data,
@@ -417,7 +420,8 @@ class Cloud():
                             velocity_noise_range=self.hi_noise_vel_range,
                                 header=self.hi_header_bin,
                                 Tsys=self.Tsys,
-                                filename=self.hi_error_bin_filename)
+                                #filename=self.hi_error_bin_filename,
+                                )
 
         self.nhi_image_bin, self.nhi_image_error_bin = \
                 calculate_nhi(cube=self.hi_data_bin,

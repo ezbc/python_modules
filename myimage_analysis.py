@@ -139,7 +139,7 @@ def hrs2degs(ra=None, dec=None):
 
     return (ra_deg, dec_deg)
 
-def bin_image(image, binsize=(1,1), header=None, origin='lower left',
+def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         func=np.nansum, return_weights=False):
 
     ''' Bins an image.
@@ -155,7 +155,82 @@ def bin_image(image, binsize=(1,1), header=None, origin='lower left',
     origin : string
         Location to begin binning.
     func : function
-        Function with which to operate on the pixels being binned.
+        Function with which to operate on the pixels being binned. Must accept
+        image as first argument and an axis to bin as the second argument.
+    return_weights : bool, optional
+        Return weights for image corresponding to the number of valid pixels
+        used to create a binned pixel?
+
+    Returns
+    -------
+    image_binned : array-like
+        Binned image.
+    header_binned : astropy.io.Header, optional
+        If header is provided, edited header is returned.
+
+http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-numpy-2d-array
+
+    '''
+
+    import numpy as np
+    from astropy.io import fits
+
+    #if not operation.lower() in ['sum', 'mean', 'average', 'avg']:
+    #    raise ValueError("Operation not supported.")
+
+    # write new shape given binsize
+    new_shape = np.array(ndarray.shape) / binsize
+    shape_excess = np.array(ndarray.shape) % binsize
+
+    if ndarray.ndim != len(new_shape):
+        raise ValueError("Shape mismatch: {} -> {}".format(ndarray.shape,
+                                                           new_shape))
+
+    # Trim image to allow for binning
+    for axis in xrange(ndarray.ndim):
+        axis_length = ndarray.shape[axis]
+        excess = shape_excess[axis]
+
+        # trim elements
+        trim_indices = np.arange(excess)
+
+        trim_indices[excess / 2: -1] = \
+            range(axis_length - 1 - excess / 2, axis_length - 1)
+
+        ndarray = np.delete(ndarray, trim_indices, axis=axis)
+
+    # reshape trimmed array
+    compression_pairs = [(d, c//d) for d,c in zip(new_shape,
+                                                  ndarray.shape)]
+    flattened = [l for p in compression_pairs for l in p]
+    ndarray = ndarray.reshape(flattened)
+
+    # bin each axis
+    for i in range(len(new_shape)):
+        axis = -1*(i+1)
+
+        ndarray = func(ndarray, axis)
+
+    return ndarray
+
+def _bin_image(image, binsize=(1,1), header=None, origin='lower left',
+        func=np.nansum, return_weights=False):
+
+    ''' Bins an image.
+
+    Parameters
+    ----------
+    image : array-like
+        2D image or 3D to be binned. First two axes will be binned.
+    binsize : tuple
+        Integer number of pixels to bin in x,y directions
+    header : astropy.io.Header, optional
+        Header
+    origin : string
+        Location to begin binning.
+    func : function
+        Function with which to operate on the pixels being binned. Must accept
+        image as first argument and an axis to bin as the second argument.
     return_weights : bool, optional
         Return weights for image corresponding to the number of valid pixels
         used to create a binned pixel?
