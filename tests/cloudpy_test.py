@@ -8,13 +8,14 @@ if 1:
 
         from numpy.testing import assert_almost_equal
 
-        residuals = np.random.normal(loc=-2, scale=1.0, size=10000)
+        residuals = np.random.normal(loc=-1, scale=1.0, size=10000)
+        residuals[:3000] = np.random.uniform(high=3, size=3000)
 
         mask, intercept = cloudpy._get_residual_mask(residuals, plot_args={})
 
         print('true = -1', 'found = ', intercept)
 
-        assert_almost_equal(-2, intercept, decimal=0)
+        assert_almost_equal(-1, intercept, decimal=0)
 
 if 0:
     class TestCloudpy():
@@ -121,15 +122,19 @@ if 0:
 
         if 1:
             def test_plotting(self):
-                cloud = cloudpy.load(self.cloud_filename)
+                #cloud = cloudpy.load(self.cloud_filename)
 
-                cloud._write_final_params()
+                #cloud._write_final_params()
+
+                props = \
+                    cloudpy.load(\
+                        '/d/bip3/ezbc/multicloud/data/props.pickle')
 
                 likelihood_filename = \
                         '/d/bip3/ezbc/perseus/figures/likelihood/' + \
                         'perseus_likelihood_planck_bin_scaled_wd.png'
 
-                cloudpy.plot_likelihoods_hist(cloud,
+                cloudpy.plot_likelihoods_hist(props=props,
                                   plot_axes=('widths', 'dgrs'),
                                   show=0,
                                   returnimage=False,

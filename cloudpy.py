@@ -80,6 +80,10 @@ class Cloud():
 
         if self.diagnostic_filename is not None:
             import sys
+            import os
+
+            print('\nWriting output to \n' + self.diagnostic_filename)
+            os.system('rm -rf ' + self.diagnostic_filename)
 
             self._orig_stdout = sys.stdout
             self._diagnostics = file(self.diagnostic_filename, 'a')
@@ -274,20 +278,20 @@ class Cloud():
 
         # Calulate chi^2 for best fit models
         # ----------------------------------
-        nhi_image_temp = calculate_nhi(cube=self.hi_data,
+        nhi_image_temp = calculate_nhi(cube=self.hi_data_bin,
                                        velocity_axis=self.hi_vel_axis,
                                        velocity_range=vel_range_max,
-                                       noise_cube=self.hi_error_data,
+                                       noise_cube=self.hi_error_data_bin,
                                        return_nhi_error=False)
 
-        self.av_image_model = nhi_image_temp * dgr_max + intercept_max
+        self.av_image_model_bin = nhi_image_temp * dgr_max + intercept_max
 
-        std = np.sqrt(np.nansum((self.av_data[~self.mask] - \
-                                      self.av_image_model[~self.mask])**2 \
-                                     / (self.av_data[~self.mask].size - 2)))
+        std = np.sqrt(np.nansum((self.av_data_bin - \
+                                      self.av_image_model_bin)**2 \
+                                     / (self.av_data_bin.size - 2)))
 
         # Derive new av data error
-        self.av_error_data = std * np.ones(self.av_error_data.shape)
+        self.av_error_data_bin = std * np.ones(self.av_error_data_bin.shape)
 
         self.iter_vars[self.iter_step]['init_likelihood_results']['std'] = \
                 std
@@ -425,24 +429,30 @@ class Cloud():
                               return_nhi_error=True,
                               )
 
+        if 1:
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            plt.imshow(self.nhi_image_bin, origin='lower')
+            plt.colorbar()
+            plt.title(self.region)
+            plt.savefig('/usr/users/ezbc/Desktop/' + self.region + '.png')
+
         # Calculate MLE for parameters with unbinned data
         # -----------------------------------------------
         #self._derive_bin_mask()
+        if self.verbose:
+            print('\n\nCalculating MLE parameters with unbinned data...')
+
         results = \
             _calc_likelihoods(
                               hi_cube=self.hi_data_bin,
-                              nhi_image=self.nhi_image_bin,
                               av_image=self.av_data_bin,
                               av_image_error=self.av_error_data_bin,
                               hi_vel_axis=self.hi_vel_axis,
-                              #image_weights=bin_weights[~mask],
-                              #vel_center=vel_center_masked,
                               width_grid=self.width_grid,
                               dgr_grid=self.dgr_grid,
                               intercept_grid=self.intercept_grid,
                               vel_center=self.vel_center,
-                              #results_filename='',
-                              #return_likelihoods=True,
                               likelihood_filename=self.likelihood_filename,
                               clobber=self.clobber_likelihoods,
                               verbose=self.verbose,
@@ -464,10 +474,13 @@ class Cloud():
         # number of degrees of freedom see equation 15.1.6 in Numerical Recipes
         self._calc_model_error(vel_range_max, dgr_max, intercept_max)
 
+        if self.verbose:
+            print('\n\nCalculating MLE parameters with binned data...')
+
         results = \
             _calc_likelihoods(
                               hi_cube=self.hi_data_bin,
-                              nhi_image=self.nhi_image_bin,
+                              #nhi_image=self.nhi_image_bin,
                               av_image=self.av_data_bin,
                               av_image_error=self.av_error_data_bin,
                               hi_vel_axis=self.hi_vel_axis,
@@ -512,7 +525,7 @@ class Cloud():
 
         # solve for DGR using linear least squares
         if self.verbose:
-            print('\nBeginning iterative DGR calculations + masking...')
+            print('\n\tBeginning iterative DGR calculations + masking...')
 
         # Iterate masking pixels which are correlated and rederiving a linear
         # least squares solution for the DGR
@@ -547,9 +560,9 @@ class Cloud():
 
             # Create model with the DGR
             if self.verbose:
-                print('Iteration {0:.0f} results:'.format(iteration))
-                print('\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
-                print('\tIntercept = {0:.2f} mag'.format(intercept))
+                print('\t\tIteration {0:.0f} results:'.format(iteration))
+                print('\t\t\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
+                print('\t\t\tIntercept = {0:.2f} mag'.format(intercept))
                 print('')
 
             av_image_model = self.nhi_image * dgr_new + intercept
@@ -586,7 +599,7 @@ class Cloud():
 
             if self.verbose:
                 npix = mask.size - np.sum(mask)
-                print('\tNumber of non-masked pixels = {0:.0f}'.format(npix))
+                print('\t\t\tNumber of non-masked pixels = {0:.0f}'.format(npix))
 
             # Record variables
             masking_results[iteration] = {}
@@ -675,6 +688,30 @@ class Cloud():
         self.props['intercept_grid'] = self.intercept_grid
         self.props['likelihoods'] = props['likelihoods']
 
+    def _plot_likelihoods(self,):
+
+        # Plot the likelihoods
+        if 'likelihood_filename_base' in self.plot_args:
+
+            import os
+
+            filename_wd = self.plot_args['likelihood_filename_base'] + \
+                          self.plot_args['iter_ext'] + '_wd.png'
+            filename_wi = self.plot_args['likelihood_filename_base'] + \
+                          self.plot_args['iter_ext'] + '_wi.png'
+
+
+            if self.iter_step == 0:
+                os.system('rm -rf ' + \
+                        self.plot_args['likelihood_filename_base'] + '*')
+
+            plot_likelihoods_hist(cloud=self,
+                                  filename=filename_wd,
+                                  plot_axes=('widths', 'dgrs'))
+            plot_likelihoods_hist(cloud=self,
+                                  filename=filename_wi,
+                                  plot_axes=('widths', 'intercepts'))
+
     def load_cloud_properties(self, prop_filename):
 
         import json
@@ -738,19 +775,32 @@ class Cloud():
         vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
                                        np.array(vel_range_new)))
 
+
         while vel_range_diff > self.VEL_RANGE_DIFF_THRES:
+            print('\nIteration ' + str(self.iter_step))
+
             vel_range_new = \
                     self._iterate_mle_calc(vel_range=vel_range,
                                            )
 
+            # Write parameters
+            self._write_final_params()
+
+            # Check to see if likelihoods should be plotted
+            self._plot_likelihoods()
+
+
             vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
                                            np.array(vel_range_new)))
+
+            print('\t\tVel range old = {0:.1f} to {1:.1f}'.format(*vel_range))
+            print('\t\tVel range new = ' + \
+                    '{0:.1f} to {1:.1f}'.format(*vel_range_new))
 
             vel_range = vel_range_new
 
             self.iter_step += 1
 
-        self._write_final_params()
 
         if self._diagnostics is not None:
             import sys
@@ -762,7 +812,6 @@ class Cloud():
             # Set to none so class can be pickled
             self._diagnostics = None
             self._orig_stdout = None
-
 
 '''
 Module Functions
@@ -837,7 +886,7 @@ def _calc_likelihoods(
         if intercept_grid is None:
             intercept_grid = np.linspace(0, 1, 1)
 
-        likelihoods = np.zeros((len(width_grid),
+        likelihoods = np.empty((len(width_grid),
                                 len(dgr_grid),
                                 len(intercept_grid)))
 
@@ -845,12 +894,61 @@ def _calc_likelihoods(
         total = float(likelihoods.size)
         count = 0
 
-        for j, vel_width in enumerate(width_grid):
-            # Construct N(HI) image outside of DGR loop, then apply
-            # dgr_grid in loop
+        if 0:
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            plt.imshow(av_image_error,
+                       origin='lower', aspect='auto')
+            plt.colorbar()
+            plt.savefig('/usr/users/ezbc/Desktop/resid.png')
 
-            # use the hi cube and vel range if no nhi image provided
-            if nhi_image is None:
+
+        if nhi_image is not None:
+            # Remove nans
+            mask = ((av_image != av_image) | \
+                    (av_image_error != av_image_error) | \
+                    (av_image_error == 0) | \
+                    (nhi_image != nhi_image))
+
+            av_image = av_image[~mask]
+            av_image_error = av_image_error[~mask]
+            nhi_image = nhi_image[~mask]
+
+            print_vel_range = False
+
+            # Cycle through DGR to estimate error
+            width_grid = np.linspace(0, 1, 1)
+
+            for j, vel_width in enumerate(width_grid):
+                for k, dgr in enumerate(dgr_grid):
+                    for m, intercept in enumerate(intercept_grid):
+                        # Create model of Av with N(HI) and DGR
+                        av_image_model = nhi_image * dgr + intercept
+
+                        logL = calc_logL(av_image_model,
+                                         av_image,
+                                         data_error=av_image_error,
+                                         #weights=image_weights
+                                         )
+
+                        #print logL
+                        likelihoods[j, k, m] = logL
+        else:
+            print_vel_range = True
+
+            # Remove nans
+            hi_cube[hi_cube != hi_cube] = 0.0
+            mask = ((av_image != av_image) | \
+                    (av_image_error != av_image_error) | \
+                    (av_image_error == 0))
+
+            av_image = av_image[~mask]
+            av_image_error = av_image_error[~mask]
+            hi_cube = hi_cube[:, ~mask]
+
+            for j, vel_width in enumerate(width_grid):
+                # Construct N(HI) image outside of DGR loop, then apply
+                # dgr_grid in loop
                 vel_range = np.array((vel_center - vel_width / 2.,
                                       vel_center + vel_width / 2.))
                 nhi_image = calculate_nhi(cube=hi_cube,
@@ -858,28 +956,20 @@ def _calc_likelihoods(
                                           velocity_range=vel_range,
                                           return_nhi_error=False)
 
-            # Cycle through DGR to estimate error
-            for k, dgr in enumerate(dgr_grid):
-                for m, intercept in enumerate(intercept_grid):
-                    # Create model of Av with N(HI) and DGR
-                    av_image_model = nhi_image * dgr + intercept
+                # Cycle through DGR to estimate error
+                for k, dgr in enumerate(dgr_grid):
+                    for m, intercept in enumerate(intercept_grid):
+                        # Create model of Av with N(HI) and DGR
+                        av_image_model = nhi_image * dgr + intercept
 
-                    logL = calc_logL(av_image_model,
-                                     av_image,
-                                     data_error=av_image_error,
-                                     weights=image_weights)
+                        logL = calc_logL(av_image_model,
+                                         av_image,
+                                         data_error=av_image_error,
+                                         )
 
-                    likelihoods[j, k, m] = logL
+                        #print logL
 
-                    if 0:
-                        # Shows progress each 10%
-                        if verbose:
-                            count += 1
-                            abs_step = int((total * 1)/10) or 10
-                            if count and not count % abs_step:
-                                print "\t{0:.0%} processed".format(count/total)
-
-            nhi_image = None
+                        likelihoods[j, k, m] = logL
 
     # Load file of likelihoods
     elif not perform_mle:
@@ -910,7 +1000,8 @@ def _calc_likelihoods(
 
     if 0:
         import matplotlib.pyplot as plt
-        plt.imshow(likelihoods[:, :, 0], origin='lower')
+        plt.imshow(likelihoods[:, :, 0], origin='lower', aspect='auto')
+        plt.colorbar()
         plt.show()
 
     # Derive marginal distributions of both centers and widths
@@ -936,21 +1027,22 @@ def _calc_likelihoods(
 
     # Get values of best-fit model parameters
     max_loc = np.where(likelihoods == np.max(likelihoods))
-    print max_loc
+    #print max_loc
     width_max = width_grid[max_loc[0][0]]
     dgr_max = dgr_grid[max_loc[1][0]]
     intercept_max = intercept_grid[max_loc[2][0]]
 
     if verbose:
-        print('\nWidth confint = ' + \
-                '{0:.2f} +{1:.2f}/-{2:.2f} km/s'.format(width_confint[0],
-                                        width_confint[2],
-                                               np.abs(width_confint[1])))
-        print('\nDGR confint = ' + \
+        if print_vel_range:
+            print('\n\t\t\tWidth confint = ' + \
+                    '{0:.2f} +{1:.2f}/-{2:.2f} km/s'.format(width_confint[0],
+                                            width_confint[2],
+                                                   np.abs(width_confint[1])))
+        print('\n\t\t\tDGR confint = ' + \
             '{0:.2f} +{1:.2f}/-{2:.2f} 10^20 cm^2 mag'.format(dgr_confint[0],
                                                     dgr_confint[2],
                                                     np.abs(dgr_confint[1])))
-        print('\nintercept confint = ' + \
+        print('\n\t\t\tintercept confint = ' + \
         '{0:.2f} +{1:.2f}/-{2:.2f} 10^20 cm^2 mag'.format(intercept_confint[0],
                                                 intercept_confint[2],
                                                 np.abs(intercept_confint[1])))
@@ -1006,11 +1098,11 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                                 ~np.isnan(residuals)]
 
     #if not use_GMM:
-    if 1:
+    if 0:
         #
         #print('histing')
         counts, bin_edges = np.histogram(np.ravel(residuals_crop),
-                                         bins=100,
+                                         bins=500,
                                          )
         p0=(1, np.nanmax(counts), 0)
 
@@ -1033,6 +1125,9 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                    min=-2,
                    max=2,
                    )
+
+        #bin_edges = residuals_crop
+        #counts = np.ones(residuals_crop.size - 1)
 
         def norm(params, bin_edges, counts):
             width = params['width'].value
@@ -1057,12 +1152,34 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                 params['x0'].value)
 
     if 1:
-        g = GMM(n_init=4, n_iter=100000)
+        g = GMM()
         g.fit(residuals_crop)
-        fit_params = [g.covars_[0,0], 1, g.means_[0,0]]
-        print('gmm covars', g.covars_)
-        print('gmm mean', fit_params[2])
-        print('gmm width', fit_params[0])
+        fit_params = [g.covars_[0,0]**0.5, 1, g.means_[0,0]]
+        #print("mean : %f, std : %f" % (g.means_[0, 0], g.covars_[0, 0]**0.5))
+
+        x_fit = np.linspace(np.nanmin(residuals),
+                            np.nanmax(residuals),
+                            1000)
+        y_fit = np.exp(g.score_samples(x_fit)[0])
+
+        #fit_params[0] = y_fit[y_fit == 2.35 * max(y_fit)]/2.0
+
+        if 0:
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            counts, bin_edges = np.histogram(residuals[~np.isnan(residuals)],
+                                             bins=500,
+                                             normed=True
+                                             )
+            residual_thres = residual_width_scale * np.abs(fit_params[0]) + \
+                             fit_params[2]
+            plt.plot(x_fit, y_fit / y_fit.max() * counts.max())
+            plt.plot(bin_edges[:-1], counts)
+            plt.title("mean : %f, var : %f" % \
+                      (g.means_[0, 0], g.covars_[0, 0]))
+            plt.axvline(residual_thres, color='k', linewidth=2)
+            plt.xlim(-2,3)
+            plt.show()
 
 
     # Include only residuals within 3 sigma
@@ -1071,6 +1188,8 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
     mask = residuals > residual_thres
 
     if 'residual_hist_filename_base' in plot_args:
+        import os
+
         x_fit = np.linspace(np.nanmin(residuals),
                             np.nanmax(residuals),
                             1000)
@@ -1078,8 +1197,13 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         y_fit = gauss(x_fit, *fit_params)
         y_fit / np.nanmax(residuals)
 
+        #y_fit = np.exp(g.eval(x_fit)[0])
+
         filename = plot_args['residual_hist_filename_base'] + \
                     plot_args['iter_ext'] + '.png'
+
+        if plot_args['iter_ext'] == '0_0':
+            os.system('rm -rf ' + plot_args['residual_hist_filename_base'] + '*')
 
         #print('\nSaving residual mask PDF figure to\n' + results_filename)
         plot_mask_residuals(residuals=residuals,
@@ -1090,8 +1214,13 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                             show=0)
 
     if 'residual_map_filename_base' in plot_args:
+        import os
+
         filename = plot_args['residual_map_filename_base'] + \
                     plot_args['iter_ext'] + '.png'
+
+        if plot_args['iter_ext'] == '0_0':
+            os.system('rm -rf ' + plot_args['residual_map_filename_base'] + '*')
 
         #print('\nSaving residual mask PDF figure to\n' + results_filename)
         plot_residual_map(residuals=residuals,
@@ -1135,10 +1264,9 @@ def load(filename):
 
     return cloud
 
-
 def plot_likelihoods_hist(cloud=None, props=None, limits=None,
-        returnimage=False, plot_axes=('widths','dgr_grid'), show=0, filename='',
-        contour_confs=(0.95,)):
+        returnimage=False, plot_axes=('widths','dgr_grid'), show=0,
+        filename='', contour_confs=(0.95,)):
 
     ''' Plots a heat map of likelihoodelation values as a function of velocity
     width and velocity center.
@@ -1177,7 +1305,8 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
     fig, ax_image = plt.subplots()
 
     # Define parameters from cloud
-    props = cloud.props
+    if cloud is not None:
+        props = cloud.props
 
     if plot_axes[0] == 'widths':
     	x_grid = props['width_grid']
@@ -1188,7 +1317,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         x_extent = x_grid[0], x_grid[-1]
         ax_image.set_xlabel(r'Velocity Width [km/s]')
         x_sum_axes = (1, 2)
-        y_pdf_label = r'Width PDF'
+        y_pdf_label = 'Width PDF'
         if limits is None:
             x_limits = (x_grid[0], x_grid[-1])
         else:
@@ -1202,7 +1331,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         y_extent = y_grid[0], y_grid[-1]
         ax_image.set_ylabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
         y_sum_axes = (0, 2)
-        x_pdf_label = r'DGR PDF'
+        x_pdf_label = 'DGR PDF'
         if limits is None:
             y_limits = (y_grid[0], y_grid[-1])
         else:
@@ -1216,7 +1345,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         y_extent = y_grid[0], y_grid[-1]
         ax_image.set_ylabel(r'Intercept [mag]')
         y_sum_axes = (0, 1)
-        x_pdf_label = r'Intercept PDF'
+        x_pdf_label = 'Intercept PDF'
         if limits is None:
             y_limits = (y_grid[0], y_grid[-1])
         else:
@@ -1391,9 +1520,15 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
 
         ax_image.clabel(cs, cs.levels, fmt=fmt, fontsize=9, inline=1)
 
+        x_path = cs.collections[0].get_paths()[0].vertices[:,0]
+        y_path = cs.collections[0].get_paths()[0].vertices[:,1]
+
+        x_min, x_max = np.min(x_path)*0.75, np.max(x_path)*1.25
+        y_min, y_max = np.min(y_path)*0.75, np.max(y_path)*1.25
+
     try:
-        ax_image.set_xlim(x_limits)
-        ax_image.set_ylim(y_limits)
+        ax_image.set_xlim((x_min, x_max))
+        ax_image.set_ylim((y_min, y_max))
     except UnboundLocalError:
         pass
 
@@ -1566,8 +1701,8 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
     ax.set_display_coord_system("fk5")
     ax.set_ticklabel_type("hms", "dms")
 
-    ax.set_xlabel('Right Ascension (J2000)',)
-    ax.set_ylabel('Declination (J2000)',)
+    ax.set_xlabel('Right Ascension [J2000]',)
+    ax.set_ylabel('Declination [J2000]',)
 
     # colorbar
     cb = ax.cax.colorbar(im)
@@ -1579,7 +1714,7 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
         ax.set_ylim(limits[1],limits[3])
 
     # Write label to colorbar
-    cb.set_label_text(r'A$_V$ (Mag)',)
+    cb.set_label_text(r'$A_V$ [Mag]',)
 
     if filename is not None:
         plt.savefig(filename, bbox_inches='tight')
