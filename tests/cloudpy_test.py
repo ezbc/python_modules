@@ -3,7 +3,7 @@
 import cloudpy
 import numpy as np
 
-if 1:
+if 0:
     def Test_get_residual_mask():
 
         from numpy.testing import assert_almost_equal
@@ -157,8 +157,153 @@ if 0:
                 self.cloud._iterate_mle_calc(hi_vel_range=[-10,10],
                                           )
 
+if 1:
+    def test_calc_likelihoods_1():
+        from numpy.testing import assert_array_almost_equal
+        from numpy.testing import assert_almost_equal
 
+        av_image = np.array([[0, 0, 0, 0, 0],
+                             [0, 1, 1, 1, 0],
+                             [0, 1, 2, 1, 0],
+                             [0, 1, 1, 1, 0],
+                             [0, 0, 0, 0, 0]])
 
+        #av_image_error = np.random.normal(0.1, size=av_image.shape)
+        av_image_error = 0.1 * av_image
+
+        #nhi_image = av_image + np.random.normal(0.1, size=av_image.shape)
+        nhi_image = 5 * av_image
+
+        # add intercept
+        intercept_answer = 0.7
+        av_image = av_image + intercept_answer
+
+        width_grid = np.arange(0, 10, 0.1)
+        dgr_grid = np.arange(0, 2, 0.1)
+        intercept_grid = np.arange(-2, 2, 0.1)
+        vel_center = 1
+
+        results = \
+            cloudpy._calc_likelihoods(
+                              nhi_image=nhi_image,
+                              av_image=av_image,
+                              av_image_error=av_image_error,
+                              dgr_grid=dgr_grid,
+                              intercept_grid=intercept_grid,
+                              )
+
+        dgr_answer = 1/5.0
+
+        assert_almost_equal(results['intercept_max'], intercept_answer)
+        assert_almost_equal(results['dgr_max'], dgr_answer)
+
+if 1:
+    def test_calc_likelihoods_2():
+        from numpy.testing import assert_array_almost_equal
+        from numpy.testing import assert_almost_equal
+        from myimage_analysis import calculate_nhi
+
+        av_image = np.array([[0, 0, 0, 0, 0],
+                             [0, 1, 1, 1, 0],
+                             [0, 1, 2, 1, 0],
+                             [0, 1, 1, 1, 0],
+                             [0, 0, 0, 0, 0]])
+
+        #av_image_error = np.random.normal(0.1, size=av_image.shape)
+        av_image_error = 0.1 * np.ones(av_image.shape)
+
+        #nhi_image = av_image + np.random.normal(0.1, size=av_image.shape)
+        hi_cube = np.zeros((5, 5, 5))
+
+        # make inner channels correlated with av
+        hi_cube[:, :, :] = np.array(
+            [
+             [[  1., 0., 0., 0., 0.],
+              [  0., 0., 0., 0., 0.],
+              [  0., 0., 0., 0., 0.],
+              [  0., 0., 0., 0., 0.],
+              [  1., 0., 0., 0., 10.],],
+
+             [[  0., 0., 0., 0., 0.],
+              [  0., 0., 2., 0., 0.],
+              [  0., 0., 4., 0., 0.],
+              [  0., 0., 2., 0., 0.],
+              [  0., 0., 0., 0., 0.],],
+
+             [[  0., 0., 0., 0., 0.],
+              [  0., 0., 0., 2., 0.],
+              [  0., 0., 0., 2., 0.],
+              [  0., 0., 0., 2., 0.],
+              [  0., 0., 0., 0., 0.],],
+
+             [[  0., 0., 0., 0., 0.],
+              [  0., 2., 0., 0., 0.],
+              [  0., 2., 0., 0., 0.],
+              [  0., 2., 0., 0., 0.],
+              [  0., 0., 0., 0., 0.],],
+
+             [[  0., 0., 0., 0., 0.],
+              [  0., 0., 0., 0., 0.],
+              [  0., 0., 0., 0., 0.],
+              [  0., 0., 0., 0., 0.],
+              [  1., 0., 0., 0., 0.2],],
+             ]
+             )
+
+        # make edge channels totally uncorrelated
+        #hi_cube[(0, 4), :, :] = np.arange(0, 25).reshape(5,5)
+        #hi_cube[(0, 4), :, :] = - np.ones((5,5))
+
+        hi_vel_axis = np.arange(0, 5, 1)
+
+        # add intercept
+        intercept_answer = 0.7
+        av_image = av_image + intercept_answer
+
+        width_grid = np.arange(0, 5, 1)
+        dgr_grid = np.arange(0, 1, 0.1)
+        intercept_grid = np.arange(-1, 2, 0.1)
+        vel_center = 2
+
+        results = \
+            cloudpy._calc_likelihoods(
+                              hi_cube=hi_cube / 1.832e-2,
+                              hi_vel_axis=hi_vel_axis,
+                              vel_center=vel_center,
+                              av_image=av_image,
+                              av_image_error=av_image_error,
+                              width_grid=width_grid,
+                              dgr_grid=dgr_grid,
+                              intercept_grid=intercept_grid,
+                              )
+
+        dgr_answer = 1/2.0
+        width_answer = 2
+        width = results['width_max']
+        dgr = results['dgr_max']
+        intercept = results['intercept_max']
+        print width
+
+        if 0:
+            width = width_answer
+            intercept = intercept_answer
+            dgr = dgr_answer
+
+        vel_range = (vel_center - width / 2.0, vel_center + width / 2.0)
+
+        nhi_image = calculate_nhi(cube=hi_cube,
+                                  velocity_axis=hi_vel_axis,
+                                  velocity_range=vel_range) / 1.823e-2
+
+        print('residuals = ')
+        print(av_image - (nhi_image * dgr + intercept))
+        print('dgr', dgr)
+        print('intercept', intercept)
+        print('width', width)
+
+        assert_almost_equal(results['intercept_max'], intercept_answer)
+        assert_almost_equal(results['dgr_max'], dgr_answer)
+        assert_almost_equal(results['width_max'], width_answer)
 
 #Test_get_residual_mask()
 

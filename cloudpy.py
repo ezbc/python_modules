@@ -12,12 +12,23 @@ Module Classes
 
 class Cloud():
 
-    def __init__(self, av_filename, hi_filename, av_error_filename=None,
-            hi_error_filename=None, cloud_prop_filename=None, dgr_grid=None,
-            intercept_grid=None, width_grid=None, threshold_delta_dgr=0.0001,
+    def __init__(self, av_filename,
+            hi_filename,
+            av_error_filename=None,
+            hi_error_filename=None,
+            cloud_prop_filename=None,
+            dgr_grid=None,
+            intercept_grid=None,
+            width_grid=None,
+            threshold_delta_dgr=0.0001,
             residual_width_scale=3.0,
-            verbose=False, clobber_likelihoods=True, likelihood_filename='',
-            hi_noise_vel_range=[0,1], binsize=1,
+            av_error=None,
+            av_background=None,
+            verbose=False,
+            clobber_likelihoods=True,
+            likelihood_filename='',
+            hi_noise_vel_range=[0,1],
+            binsize=1,
             vel_range_diff_thres=2.0,
             init_vel_range=[0,1],
             diagnostic_filename=None,
@@ -62,6 +73,9 @@ class Cloud():
         if av_error_filename is not None:
             self.av_error_data, self.av_error_header = \
                     fits.getdata(av_error_filename, header=True)
+        elif av_error is not None:
+            self.av_error_data, self.av_error_header = \
+                    np.ones(self.av_data.shape) * av_error, self.av_header
         else:
             self.av_error_data = None
         if hi_error_filename is not None and path.isfile(hi_error_filename):
@@ -71,6 +85,10 @@ class Cloud():
             self.hi_error_data = None
         if cloud_prop_filename is not None:
             self.load_cloud_properties(cloud_prop_filename)
+
+        if av_background is not None:
+            self.av_background = av_background
+            self.av_data = self.av_data - av_background
 
         # Make velocity axis for HI cube
         self.hi_vel_axis = make_velocity_axis(self.hi_header)
@@ -281,7 +299,6 @@ class Cloud():
         nhi_image_temp = calculate_nhi(cube=self.hi_data_bin,
                                        velocity_axis=self.hi_vel_axis,
                                        velocity_range=vel_range_max,
-                                       noise_cube=self.hi_error_data_bin,
                                        return_nhi_error=False)
 
         self.av_image_model_bin = nhi_image_temp * dgr_max + intercept_max
@@ -333,7 +350,7 @@ class Cloud():
         # Hi image
         self.hi_data_bin, self.hi_header_bin = \
                 bin_image(self.hi_data,
-                          binsize=(binsize, binsize),
+                          binsize=(1, binsize, binsize),
                           header=self.hi_header,
                           func=np.nanmean)
 
@@ -390,6 +407,9 @@ class Cloud():
         self.av_error_data[mask] = np.nan
         self.hi_data[:, mask] = np.nan
 
+        if self.verbose:
+            print('\n\tBinning data...')
+
         # Bin the data
         self._bin_data()
 
@@ -414,23 +434,29 @@ class Cloud():
                     clobber=True)
 
         # Rederive N(HI) images from binned data
-        self.hi_error_data_bin = \
-                calculate_noise_cube(cube=self.hi_data_bin,
-                                velocity_axis=self.hi_vel_axis,
-                            velocity_noise_range=self.hi_noise_vel_range,
-                                header=self.hi_header_bin,
-                                Tsys=self.Tsys,
-                                #filename=self.hi_error_bin_filename,
-                                )
+        if 0:
+            self.hi_error_data_bin = \
+                    calculate_noise_cube(cube=self.hi_data_bin,
+                                    velocity_axis=self.hi_vel_axis,
+                                velocity_noise_range=self.hi_noise_vel_range,
+                                    header=self.hi_header_bin,
+                                    Tsys=self.Tsys,
+                                    #filename=self.hi_error_bin_filename,
+                                    )
 
-        self.nhi_image_bin, self.nhi_image_error_bin = \
+            self.nhi_image_bin, self.nhi_image_error_bin = \
+                    calculate_nhi(cube=self.hi_data_bin,
+                                  velocity_axis=self.hi_vel_axis,
+                                  velocity_range=vel_range,
+                                  noise_cube=self.hi_error_data_bin,
+                                  velocity_noise_range=self.hi_noise_vel_range,
+                                  Tsys=self.Tsys,
+                                  return_nhi_error=True,
+                                  )
+        self.nhi_image_bin = \
                 calculate_nhi(cube=self.hi_data_bin,
                               velocity_axis=self.hi_vel_axis,
                               velocity_range=vel_range,
-                              noise_cube=self.hi_error_data_bin,
-                              velocity_noise_range=self.hi_noise_vel_range,
-                              Tsys=self.Tsys,
-                              return_nhi_error=True,
                               )
 
         if 1:
@@ -441,11 +467,20 @@ class Cloud():
             plt.title(self.region)
             plt.savefig('/usr/users/ezbc/Desktop/' + self.region + '.png')
 
+        if 'av_bin_map_filename_base' in self.plot_args:
+            filename = self.plot_args['av_bin_map_filename_base'] + \
+                       str(self.iter_step) + '.png'
+            plot_av_bin_map(self.av_data,
+                            self.av_data_bin,
+                            av_header=self.av_header,
+                            av_header_bin=self.av_header_bin,
+                            filename=filename)
+
         # Calculate MLE for parameters with unbinned data
         # -----------------------------------------------
         #self._derive_bin_mask()
         if self.verbose:
-            print('\n\nCalculating MLE parameters with unbinned data...')
+            print('\n\n\tCalculating MLE parameters with initial errors...')
 
         results = \
             _calc_likelihoods(
@@ -479,7 +514,7 @@ class Cloud():
         self._calc_model_error(vel_range_max, dgr_max, intercept_max)
 
         if self.verbose:
-            print('\n\nCalculating MLE parameters with binned data...')
+            print('\n\n\tCalculating MLE parameters with revised errors...')
 
         results = \
             _calc_likelihoods(
@@ -533,7 +568,7 @@ class Cloud():
 
         # Iterate masking pixels which are correlated and rederiving a linear
         # least squares solution for the DGR
-        # ----------------------------------------------------------------------
+        #----------------------------------------------------------------------
         masking_results = {}
         delta_dgr = 1e10
         dgr = 1e10
@@ -626,7 +661,7 @@ class Cloud():
                                       results_filename=results_filename)
 
         # Create model of Av
-        self.av_model = dgr * self.nhi_image
+        self.av_model = dgr * self.nhi_image + intercept
         self.mask = mask
         self.av_model[self.mask] = np.nan
         self.iter_vars[self.iter_step]['masking_var'] = masking_results
@@ -781,7 +816,8 @@ class Cloud():
 
 
         while vel_range_diff > self.VEL_RANGE_DIFF_THRES:
-            print('\nIteration ' + str(self.iter_step))
+            if self.verbose:
+                print('\nIteration ' + str(self.iter_step))
 
             vel_range_new = \
                     self._iterate_mle_calc(vel_range=vel_range,
@@ -793,19 +829,20 @@ class Cloud():
             # Check to see if likelihoods should be plotted
             self._plot_likelihoods()
 
-
             vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
                                            np.array(vel_range_new)))
 
-            print('\t\tVel range old = {0:.1f} to {1:.1f}'.format(*vel_range))
-            print('\t\tVel range new = ' + \
-                    '{0:.1f} to {1:.1f}'.format(*vel_range_new))
+            if self.verbose:
+                print('\t\tVel range old = ' + \
+                      '{0:.1f} to {1:.1f}'.format(*vel_range))
+                print('\t\tVel range new = ' + \
+                      '{0:.1f} to {1:.1f}'.format(*vel_range_new))
 
             vel_range = vel_range_new
 
             self.iter_step += 1
 
-
+        # Write prints to file?
         if self._diagnostics is not None:
             import sys
 
@@ -816,6 +853,7 @@ class Cloud():
             # Set to none so class can be pickled
             self._diagnostics = None
             self._orig_stdout = None
+
 
 '''
 Module Functions
@@ -953,8 +991,10 @@ def _calc_likelihoods(
             for j, vel_width in enumerate(width_grid):
                 # Construct N(HI) image outside of DGR loop, then apply
                 # dgr_grid in loop
+
                 vel_range = np.array((vel_center - vel_width / 2.,
                                       vel_center + vel_width / 2.))
+
                 nhi_image = calculate_nhi(cube=hi_cube,
                                           velocity_axis=hi_vel_axis,
                                           velocity_range=vel_range,
@@ -1002,11 +1042,10 @@ def _calc_likelihoods(
     # Normalize the likelihoods
     likelihoods = likelihoods / np.nansum(likelihoods)
 
-    if 0:
-        import matplotlib.pyplot as plt
-        plt.imshow(likelihoods[:, :, 0], origin='lower', aspect='auto')
-        plt.colorbar()
-        plt.show()
+    #print width_grid
+    #print dgr_grid
+    #print intercept_grid
+    #print likelihoods
 
     # Derive marginal distributions of both centers and widths
     intercept_likelihood = np.sum(likelihoods, axis=(0, 1)) / \
@@ -1031,10 +1070,23 @@ def _calc_likelihoods(
 
     # Get values of best-fit model parameters
     max_loc = np.where(likelihoods == np.max(likelihoods))
-    #print max_loc
+
     width_max = width_grid[max_loc[0][0]]
     dgr_max = dgr_grid[max_loc[1][0]]
     intercept_max = intercept_grid[max_loc[2][0]]
+
+    if 0:
+        import matplotlib.pyplot as plt
+        plt.imshow(likelihoods[:, :, max_loc[2][0]], origin='lower', aspect='auto',
+                   extent=[width_grid[0], width_grid[-1], dgr_grid[0],
+                           dgr_grid[-1]])
+        plt.colorbar()
+        plt.show()
+        plt.imshow(likelihoods[:, 0, :], origin='lower', aspect='auto',
+                   extent=[width_grid[0], width_grid[-1], intercept_grid[0],
+                           intercept_grid[-1]])
+        plt.colorbar()
+        plt.show()
 
     if verbose:
         if print_vel_range:
@@ -1207,7 +1259,8 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                     plot_args['iter_ext'] + '.png'
 
         if plot_args['iter_ext'] == '0_0':
-            os.system('rm -rf ' + plot_args['residual_hist_filename_base'] + '*')
+            os.system('rm -rf ' + plot_args['residual_hist_filename_base'] + \
+                      '*')
 
         #print('\nSaving residual mask PDF figure to\n' + results_filename)
         plot_mask_residuals(residuals=residuals,
@@ -1499,7 +1552,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         fractions = (1.0 - np.asarray(contour_confs))
         levels = (fractions * image.max())
 
-        cs = ax_image.contour(image.T, levels=levels, origin='lower',
+        cs = ax_image.contour(image.T, levels=levels,
                 extent=extent,
                 colors='k'
                 )
@@ -1524,17 +1577,30 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
 
         ax_image.clabel(cs, cs.levels, fmt=fmt, fontsize=9, inline=1)
 
-        x_path = cs.collections[0].get_paths()[0].vertices[:,0]
-        y_path = cs.collections[0].get_paths()[0].vertices[:,1]
+        if limits is None:
+            try:
+                x_path = cs.collections[0].get_paths()[0].vertices[:,0]
+                y_path = cs.collections[0].get_paths()[0].vertices[:,1]
 
-        x_min, x_max = np.min(x_path)*0.75, np.max(x_path)*1.25
-        y_min, y_max = np.min(y_path)*0.75, np.max(y_path)*1.25
+                x_offset = np.max(x_path)*0.25
+                y_offset = np.max(y_path)*0.25
 
-    try:
-        ax_image.set_xlim((x_min, x_max))
-        ax_image.set_ylim((y_min, y_max))
-    except UnboundLocalError:
-        pass
+                x_min, x_max = np.min(x_path) - x_offset,\
+                               np.max(x_path) + x_offset
+                y_min, y_max = np.min(y_path) - y_offset,\
+                               np.max(y_path) + y_offset
+
+                try:
+                    ax_image.set_xlim((x_min, x_max))
+                    ax_image.set_ylim((y_min, y_max))
+                except UnboundLocalError:
+                    pass
+            except IndexError:
+                pass
+
+    if limits is not None:
+        ax_image.set_xlim(limits[0],limits[1])
+        ax_image.set_ylim(limits[2],limits[3])
 
     if 0:
     #if npix is not None or av_threshold is not None:
@@ -1725,4 +1791,131 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
     if show:
         plt.show()
 
+def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
+        filename=None):
+
+    # Import external modules
+    import matplotlib.pyplot as plt
+    import matplotlib
+    import numpy as np
+    from mpl_toolkits.axes_grid1 import ImageGrid
+    import pyfits as pf
+    import matplotlib.pyplot as plt
+    import pywcsgrid2 as wcs
+    import pywcs
+    from pylab import cm # colormaps
+    from matplotlib.patches import Polygon
+
+    # Set up plot aesthetics
+    plt.clf()
+    colormap = plt.cm.gist_ncar
+    #color_cycle = [colormap(i) for i in np.linspace(0, 0.9, len(flux_list))]
+    font_scale = 15
+    params = {
+              'figure.figsize': (3.6, 3.6),
+             }
+    plt.rcParams.update(params)
+
+    # Create figure instance
+    fig = plt.figure()
+
+    nrows_ncols=(1,1)
+    ngrids=1
+
+    # Original map
+    # ------------
+    imagegrid = ImageGrid(fig, (2,1,1),
+                 nrows_ncols=nrows_ncols,
+                 ngrids=ngrids,
+                 cbar_mode="each",
+                 cbar_location='right',
+                 cbar_pad="2%",
+                 cbar_size='3%',
+                 axes_pad=1,
+                 axes_class=(wcs.Axes,
+                             dict(header=av_header)),
+                 aspect=True,
+                 label_mode='L',
+                 share_all=True)
+
+    # create axes
+    ax = imagegrid[0]
+    cmap = cm.jet # colormap
+    # show the image
+    im = ax.imshow(av_map,
+            interpolation='nearest',origin='lower',
+            cmap=cmap,
+            #norm=matplotlib.colors.LogNorm()
+            #vmin=-1,
+            #vmax=1
+            )
+
+    # Asthetics
+    ax.set_display_coord_system("fk5")
+    ax.set_ticklabel_type("hms", "dms")
+
+    ax.set_xlabel('Right Ascension [J2000]',)
+    ax.set_ylabel('Declination [J2000]',)
+
+    # colorbar
+    cb = ax.cax.colorbar(im)
+    cmap.set_bad(color='w')
+    # plot limits
+    limits = None
+    if limits is not None:
+        ax.set_xlim(limits[0],limits[2])
+        ax.set_ylim(limits[1],limits[3])
+
+    # Write label to colorbar
+    cb.set_label_text(r'$A_V$ [Mag]',)
+
+    # Binned map
+    # ----------
+    imagegrid = ImageGrid(fig, (2,1,2),
+                 nrows_ncols=nrows_ncols,
+                 ngrids=ngrids,
+                 cbar_mode="each",
+                 cbar_location='right',
+                 cbar_pad="2%",
+                 cbar_size='3%',
+                 axes_pad=1,
+                 axes_class=(wcs.Axes,
+                             dict(header=av_header_bin)),
+                 aspect=True,
+                 label_mode='L',
+                 share_all=True)
+
+    # create axes
+    ax = imagegrid[0]
+    cmap = cm.jet # colormap
+    # show the image
+    im = ax.imshow(av_bin_map,
+            interpolation='nearest',origin='lower',
+            cmap=cmap,
+            #norm=matplotlib.colors.LogNorm()
+            #vmin=-1,
+            #vmax=1
+            )
+
+    # Asthetics
+    ax.set_display_coord_system("fk5")
+    ax.set_ticklabel_type("hms", "dms")
+
+    ax.set_xlabel('Right Ascension [J2000]',)
+    ax.set_ylabel('Declination [J2000]',)
+
+    # colorbar
+    cb = ax.cax.colorbar(im)
+    cmap.set_bad(color='w')
+    # plot limits
+    limits = None
+    if limits is not None:
+        ax.set_xlim(limits[0],limits[2])
+        ax.set_ylim(limits[1],limits[3])
+
+    # Write label to colorbar
+    cb.set_label_text(r'$A_V$ [Mag]',)
+
+    if filename is not None:
+        plt.savefig(filename, bbox_inches='tight')
 

@@ -245,6 +245,15 @@ def test_bin_image():
 
     assert_array_almost_equal(binned, answer)
 
+    # Test binsize being a float
+    binned = bin_image(unbinned, binsize=(1.1, 2.0), func=np.nansum)
+
+    answer = np.array([[1, 5],
+                       [9, 13],
+                       [17, 21]])
+
+    assert_array_almost_equal(binned, answer)
+
     # Bin
     if 0:
         def func(image, axis=None):
@@ -269,7 +278,7 @@ def test_bin_image():
     assert_array_almost_equal(n, answer)
 
 
-if 0:
+if 1:
     def main():
         import pyfits as fits
         from myimage_analysis import bin_image
@@ -294,7 +303,7 @@ if 0:
         fits.writeto(av_dir + 'test.fits', av_data_binned, av_header_binned,
                 clobber=True)
 
-        if 0:
+        if 1:
             plt.imshow(av_data, origin='lower left')
             plt.show()
             plt.imshow(av_data_binned, origin='lower left')
@@ -309,16 +318,18 @@ if 0:
         hi_data[hi_data > 10] = np.nan
 
         hi_data_binned, hi_header_binned = bin_image(hi_data,
-                                               binsize=(11, 11),
+                                               binsize=(1, 11, 11),
                                                func=np.nanmean,
                                                header=hi_header)
-        print hi_data.shape, hi_data_binned.shape
+
         fits.writeto(hi_dir + 'test.fits', hi_data_binned, hi_header_binned,
                 clobber=True)
 
         plt.imshow(hi_data[500], origin='lower left')
+        plt.colorbar()
         plt.show()
         plt.imshow(hi_data_binned[500], origin='lower left')
+        plt.colorbar()
         plt.show()
 
 if __name__ == '__main__':

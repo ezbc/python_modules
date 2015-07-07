@@ -168,7 +168,7 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
     header_binned : astropy.io.Header, optional
         If header is provided, edited header is returned.
 
-http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-numpy-2d-array
+    http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-numpy-2d-array
 
     '''
 
@@ -177,6 +177,8 @@ http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-nump
 
     #if not operation.lower() in ['sum', 'mean', 'average', 'avg']:
     #    raise ValueError("Operation not supported.")
+
+    binsize = np.array(binsize, dtype=int)
 
     # write new shape given binsize
     new_shape = np.array(ndarray.shape) / binsize
@@ -194,8 +196,12 @@ http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-nump
         # trim elements
         trim_indices = np.arange(excess)
 
-        trim_indices[excess / 2: -1] = \
-            range(axis_length - 1 - excess / 2, axis_length - 1)
+        if excess % 2 == 1:
+            end_indices = range(axis_length - excess / 2 - 1, axis_length)
+        else:
+            end_indices = range(axis_length - excess / 2, axis_length)
+
+        trim_indices[excess / 2: excess] = end_indices
 
         ndarray = np.delete(ndarray, trim_indices, axis=axis)
 
@@ -211,7 +217,32 @@ http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-nump
 
         ndarray = func(ndarray, axis)
 
-    return ndarray
+    # Edit header
+    if header is not None:
+        header_bin = header.copy()
+
+        header_bin['NAXIS1'] = new_shape[0]
+        header_bin['NAXIS2'] = new_shape[1]
+        header_bin['CRVAL1'] = header['CRVAL1'] / binsize[0] + \
+                               (excess / 2) * header['CDELT1']
+        header_bin['CRVAL2'] = header['CRVAL2'] / binsize[1] + \
+                               (excess / 2) * header['CDELT2']
+        header_bin['CDELT1'] = header['CDELT1'] * binsize[0]
+        header_bin['CDELT2'] = header['CDELT2'] * binsize[1]
+        header_bin['CRPIX1'] = header['CRPIX1'] / binsize[0]
+        header_bin['CRPIX2'] = header['CRPIX2'] / binsize[1]
+
+        if return_weights:
+            result = ndarray, header_bin, ndarray
+        else:
+            result = ndarray, header_bin
+    else:
+        if return_weights:
+            result = ndarray, ndarray
+        else:
+            result = ndarray
+
+    return result
 
 def _bin_image(image, binsize=(1,1), header=None, origin='lower left',
         func=np.nansum, return_weights=False):
