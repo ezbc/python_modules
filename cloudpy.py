@@ -401,8 +401,9 @@ class Cloud():
         self._iterate_residual_masking()
 
         # delete next two lines
-        mask = (self.av_data < 1.0)
-        self.iter_vars[self.iter_step]['mask'] = mask
+        if 0:
+            mask = (self.av_data < 1.0)
+            self.iter_vars[self.iter_step]['mask'] = mask
 
         # Apply mask to data, then bin data to avoid correlated pixels
         # ------------------------------------------------------------
@@ -463,7 +464,7 @@ class Cloud():
                               velocity_range=vel_range,
                               )
 
-        if 1:
+        if 0:
             import matplotlib.pyplot as plt
             plt.clf(); plt.close()
             plt.imshow(self.nhi_image_bin, origin='lower')
@@ -565,6 +566,14 @@ class Cloud():
         if init_mask is not None:
             mask += init_mask
 
+        if 1:
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            av_image = self.av_data.copy()
+            av_image[mask] = np.nan
+            plt.imshow(av_image, origin="lower", aspect="auto")
+            plt.savefig('/usr/users/ezbc/Desktop/av_init.png')
+
         # solve for DGR using linear least squares
         if self.verbose:
             print('\n\tBeginning iterative DGR calculations + masking...')
@@ -650,6 +659,9 @@ class Cloud():
             #masking_results[iteration]['width'] = width
             masking_results[iteration]['intercept'] = intercept
             masking_results[iteration]['mask'] = mask
+
+            #if dgr == 1e10:
+            #    mask[self.av_data > 1] = 1
 
             # Reset while loop conditions
             delta_dgr = np.abs(dgr - dgr_new)
