@@ -17,7 +17,7 @@ if 0:
 
         assert_almost_equal(-1, intercept, decimal=0)
 
-if 0:
+if 1:
     class TestCloudpy():
 
         def setup(self):
@@ -54,6 +54,24 @@ if 0:
             self.cloud_filename = \
                     '/d/bip3/ezbc/multicloud/data/cloud.pickle'
 
+            # Plot args
+            residual_hist_filename_base = self.figure_dir + \
+                                          'diagnostics/residuals/' + \
+                                          self.region + '_residual_hist'
+            residual_map_filename_base = self.figure_dir + 'diagnostics/residuals/' + \
+                                          self.region + '_residual_map'
+            likelihood_filename_base = self.figure_dir + 'diagnostics/likelihoods/' + \
+                                          self.region + '_likelihood'
+            av_bin_map_filename_base = self.figure_dir + 'diagnostics/maps/' + \
+                                          self.region + '_bin_map'
+
+            plot_args = {
+                    'residual_hist_filename_base': residual_hist_filename_base,
+                    'residual_map_filename_base': residual_map_filename_base,
+                    'likelihood_filename_base': likelihood_filename_base,
+                    'av_bin_map_filename_base' : av_bin_map_filename_base,
+                    }
+
             width_grid = np.arange(1, 75, 6*0.16667)
             dgr_grid = np.arange(0.001, 0.3, 5e-3)
             intercept_grid = np.arange(-2, 2, 0.1)
@@ -81,6 +99,7 @@ if 0:
                                   verbose=True,
                                   clobber_likelihoods=True,
                                   binsize=self.binsize,
+                                  plot_args=plot_args,
                                   )
 
             if 0:
@@ -105,6 +124,45 @@ if 0:
                 print('\nSaving cloud...')
                 cloudpy.save(self.cloud, self.cloud_filename)
 
+        if 1:
+            def test_mle_derivation(self,):
+
+                from numpy.testing import assert_array_almost_equal
+                from numpy.testing import assert_almost_equal
+                from myimage_analysis import calculate_nhi
+
+                dgr = 0.1 # cm^2 10^-20 mag
+                intercept = 1 # mag
+                width = 20 # km/s
+
+                vel_range = (self.cloud.vel_center - width / 2.0,
+                             self.cloud.vel_center + width / 2.0)
+
+                nhi_image = calculate_nhi(cube=self.cloud.hi_data,
+                                          velocity_axis=self.cloud.hi_vel_axis,
+                                          velocity_range=vel_range)
+
+                # Create mock Av_data
+                if 0:
+                    av_data_mock = dgr * nhi_image + intercept
+
+                    self.cloud.av_data = av_data_mock
+
+                    self.cloud.run_analysis(region_filename=self.region_filename,
+                                            region=self.region)
+
+                    print('\nSaving cloud...')
+                    cloudpy.save(self.cloud, self.cloud_filename)
+                else:
+                    self.cloud = cloudpy.load(self.cloud_filename)
+
+                dgr_mle = self.cloud.props['dust2gas_ratio_max']['value']
+                intercept_mle = self.cloud.props['intercept_max']['value']
+                width_mle = self.cloud.props['hi_velocity_width_max']['value']
+
+                assert_almost_equal(dgr_mle, dgr, decimal=1)
+                assert_almost_equal(intercept_mle, intercept, decimal=1)
+                assert_almost_equal(width_mle, width, decimal=-1)
 
         if 0:
             def test_write_final_params(self,):
@@ -120,7 +178,7 @@ if 0:
 
                 self.cloud._write_final_params()
 
-        if 1:
+        if 0:
             def test_plotting(self):
                 #cloud = cloudpy.load(self.cloud_filename)
 
@@ -137,7 +195,7 @@ if 0:
                 cloudpy.plot_likelihoods_hist(props=props,
                                   plot_axes=('widths', 'dgrs'),
                                   show=0,
-                                  returnimage=False,
+                                  returnimage=false,
                                   filename=likelihood_filename,
                                   limits=[0, 15, 0.1, 0.2],
                                   )
@@ -157,7 +215,8 @@ if 0:
                 self.cloud._iterate_mle_calc(hi_vel_range=[-10,10],
                                           )
 
-if 1:
+
+if 0:
     def test_calc_likelihoods_1():
         from numpy.testing import assert_array_almost_equal
         from numpy.testing import assert_almost_equal
@@ -197,11 +256,14 @@ if 1:
         assert_almost_equal(results['intercept_max'], intercept_answer)
         assert_almost_equal(results['dgr_max'], dgr_answer)
 
-if 1:
+if 0:
     def test_calc_likelihoods_2():
         from numpy.testing import assert_array_almost_equal
         from numpy.testing import assert_almost_equal
         from myimage_analysis import calculate_nhi
+        import matplotlib.pyplot as plt
+        from matplotlib import cm
+        from mpl_toolkits.axes_grid1 import ImageGrid
 
         av_image = np.array([[0, 0, 0, 0, 0],
                              [0, 1, 1, 1, 0],
@@ -250,6 +312,33 @@ if 1:
              ]
              )
 
+        if 1:
+            fig = plt.figure(figsize=(4,4))
+            imagegrid = ImageGrid(fig, (1,1,1),
+                         nrows_ncols=(1,5),
+                         ngrids=5,
+                         cbar_mode="single",
+                         cbar_location='top',
+                         cbar_pad="2%",
+                         cbar_size='3%',
+                         axes_pad=0.1,
+                         aspect=True,
+                         label_mode='L',
+                         share_all=True)
+            cmap = cm.get_cmap('Greys', 5)
+            for i in xrange(5):
+                im = imagegrid[i].imshow(hi_cube[i, :, :],
+                                         origin='lower',
+                                         #aspect='auto',
+                                         cmap=cmap,
+                                         interpolation='none',
+                                         vmin=0,
+                                         vmax=4)
+            #cb = imagegrid[i].cax.colorbar(im)
+            cbar = imagegrid.cbar_axes[0].colorbar(im)
+            #plt.title('HI Cube')
+            plt.savefig('/usr/users/ezbc/Desktop/hi_cube.png')
+
         # make edge channels totally uncorrelated
         #hi_cube[(0, 4), :, :] = np.arange(0, 25).reshape(5,5)
         #hi_cube[(0, 4), :, :] = - np.ones((5,5))
@@ -257,8 +346,39 @@ if 1:
         hi_vel_axis = np.arange(0, 5, 1)
 
         # add intercept
-        intercept_answer = 0.7
+        intercept_answer = 0.9
         av_image = av_image + intercept_answer
+
+        if 1:
+            fig = plt.figure(figsize=(4,4))
+            params = {
+              'figure.figsize': (1, 1),
+              #'figure.titlesize': font_scale,
+             }
+            plt.rcParams.update(params)
+            imagegrid = ImageGrid(fig, (1,1,1),
+                         nrows_ncols=(1,1),
+                         ngrids=1,
+                         cbar_mode="single",
+                         cbar_location='top',
+                         cbar_pad="2%",
+                         cbar_size='3%',
+                         axes_pad=0.1,
+                         aspect=True,
+                         label_mode='L',
+                         share_all=True)
+            cmap = cm.get_cmap('Greys', 5)
+            im = imagegrid[0].imshow(av_image,
+                                         origin='lower',
+                                         #aspect='auto',
+                                         cmap=cmap,
+                                         interpolation='none',
+                                         vmin=0,
+                                         vmax=4)
+            #cb = imagegrid[i].cax.colorbar(im)
+            cbar = imagegrid.cbar_axes[0].colorbar(im)
+            #plt.title('HI Cube')
+            plt.savefig('/usr/users/ezbc/Desktop/av.png')
 
         width_grid = np.arange(0, 5, 1)
         dgr_grid = np.arange(0, 1, 0.1)
@@ -294,6 +414,56 @@ if 1:
         nhi_image = calculate_nhi(cube=hi_cube,
                                   velocity_axis=hi_vel_axis,
                                   velocity_range=vel_range) / 1.823e-2
+        if 1:
+            fig = plt.figure(figsize=(4,4))
+            imagegrid = ImageGrid(fig, (1,1,1),
+                         nrows_ncols=(1,1),
+                         ngrids=1,
+                         cbar_mode="single",
+                         cbar_location='top',
+                         cbar_pad="2%",
+                         cbar_size='3%',
+                         axes_pad=0.1,
+                         aspect=True,
+                         label_mode='L',
+                         share_all=True)
+            cmap = cm.get_cmap('Greys', 5)
+            im = imagegrid[0].imshow(nhi_image,
+                                     origin='lower',
+                                     #aspect='auto',
+                                     cmap=cmap,
+                                     interpolation='none',
+                                     vmin=0,
+                                     vmax=4)
+            #cb = imagegrid[i].cax.colorbar(im)
+            cbar = imagegrid.cbar_axes[0].colorbar(im)
+            #plt.title('HI Cube')
+            plt.savefig('/usr/users/ezbc/Desktop/nhi.png')
+        if 1:
+            fig = plt.figure(figsize=(4,4))
+            imagegrid = ImageGrid(fig, (1,1,1),
+                         nrows_ncols=(1,1),
+                         ngrids=1,
+                         cbar_mode="single",
+                         cbar_location='top',
+                         cbar_pad="2%",
+                         cbar_size='3%',
+                         axes_pad=0.1,
+                         aspect=True,
+                         label_mode='L',
+                         share_all=True)
+            cmap = cm.get_cmap('Greys', 5)
+            im = imagegrid[0].imshow(nhi_image * dgr + intercept,
+                                         origin='lower',
+                                         #aspect='auto',
+                                         cmap=cmap,
+                                         interpolation='none',
+                                         vmin=0,
+                                         vmax=4)
+            #cb = imagegrid[i].cax.colorbar(im)
+            cbar = imagegrid.cbar_axes[0].colorbar(im)
+            #plt.title('HI Cube')
+            plt.savefig('/usr/users/ezbc/Desktop/av_model.png')
 
         print('residuals = ')
         print(av_image - (nhi_image * dgr + intercept))
@@ -304,8 +474,5 @@ if 1:
         assert_almost_equal(results['intercept_max'], intercept_answer)
         assert_almost_equal(results['dgr_max'], dgr_answer)
         assert_almost_equal(results['width_max'], width_answer)
-
-#Test_get_residual_mask()
-
 
 

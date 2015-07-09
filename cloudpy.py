@@ -400,6 +400,10 @@ class Cloud():
         # Finally, derive the mask to be used in calculation
         self._iterate_residual_masking()
 
+        # delete next two lines
+        mask = (self.av_data < 1.0)
+        self.iter_vars[self.iter_step]['mask'] = mask
+
         # Apply mask to data, then bin data to avoid correlated pixels
         # ------------------------------------------------------------
         mask = self.iter_vars[self.iter_step]['mask']
@@ -523,12 +527,11 @@ class Cloud():
                               av_image=self.av_data_bin,
                               av_image_error=self.av_error_data_bin,
                               hi_vel_axis=self.hi_vel_axis,
+                              vel_center=self.vel_center,
                               #image_weights=bin_weights[~mask],
-                              #vel_center=vel_center_masked,
                               width_grid=self.width_grid,
                               dgr_grid=self.dgr_grid,
                               intercept_grid=self.intercept_grid,
-                              vel_center=self.vel_center,
                               #results_filename='',
                               #return_likelihoods=True,
                               likelihood_filename=self.likelihood_filename,
@@ -688,6 +691,9 @@ class Cloud():
         self.props['hi_velocity_range_max'] =  {}
         self.props['av_threshold'] = {}
         self.props['co_threshold'] = {}
+        self.props['hi_velocity_width_max']['value'] = \
+                props['width_max']
+        self.props['hi_velocity_width_max']['unit'] = 'km/s'
         self.props['hi_velocity_width']['value'] = \
                 props['width_confint'][0]
         self.props['hi_velocity_width']['unit'] = 'km/s'
