@@ -398,7 +398,7 @@ class Cloud():
         self.iter_vars[self.iter_step]['nhi_image_error'] = self.nhi_error_image
 
         # Finally, derive the mask to be used in calculation
-        self._iterate_residual_masking()
+        self._iterate_residual_masking2()
 
         # delete next two lines
         if 0:
@@ -647,6 +647,201 @@ class Cloud():
 
             # Mask non-white noise, i.e. correlated residuals.
             mask[mask_new] = 1
+
+            if self.verbose:
+                npix = mask.size - np.sum(mask)
+                print('\t\t\tNumber of non-masked pixels = {0:.0f}'.format(npix))
+
+            # Record variables
+            masking_results[iteration] = {}
+            masking_results[iteration]['residuals'] = residuals
+            masking_results[iteration]['dgr'] = dgr_new
+            #masking_results[iteration]['width'] = width
+            masking_results[iteration]['intercept'] = intercept
+            masking_results[iteration]['mask'] = mask
+
+            #if dgr == 1e10:
+            #    mask[self.av_data > 1] = 1
+
+            # Reset while loop conditions
+            delta_dgr = np.abs(dgr - dgr_new)
+            dgr = dgr_new
+            iteration += 1
+
+        # Plot results
+        if 0:
+            mask_new = get_residual_mask(residuals,
+                                      residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
+                                      plot_progress=plot_progress,
+                                      results_filename=results_filename)
+
+        # Create model of Av
+        self.av_model = dgr * self.nhi_image + intercept
+        self.mask = mask
+        self.av_model[self.mask] = np.nan
+        self.iter_vars[self.iter_step]['masking_var'] = masking_results
+        self.iter_vars[self.iter_step]['mask'] = mask
+
+
+    def _get_faint_mask(self, init_fraction=0.1):
+
+        self._av_data_sorted = np.sort(self.av_data, axis=None)
+        self._mask_init_fraction = init_fraction
+
+        self._mask_pixel_number = int(self.av_data.size * init_fraction)
+
+        self._mask_threshold = self._av_data_sorted[self._mask_pixel_number]
+
+        mask = (self.av_data > self._mask_threshold)
+
+        return mask
+
+    def _add_pixels_to_mask(self, additional_fraction=0.01):
+
+        self._mask_pixel_number = \
+                int(self.av_data.size * (self._mask_init_fraction +
+                                         additional_fraction))
+
+        self._mask_threshold = self._av_data_sorted[self._mask_pixel_number]
+
+        mask = self.av_data > self._mask_threshold
+
+        return mask
+
+    def _trim_mask(self, mask_to_trim, trim_mask, abs_mask=None):
+
+        mask = mask_to_trim + trim_mask
+
+        mask[trim_mask == 0] = 0
+
+        if abs_mask is not None:
+            mask += abs_mask
+
+        return mask
+
+    def _iterate_residual_masking2(self,):
+
+        '''
+
+        Returns
+        -------
+        av_model : numpy array
+        mask : numpy array
+        dgr : float
+
+        '''
+
+        import numpy as np
+
+        # Mask out nans
+        mask = self._prep_mask()
+
+        # Apply initial mask to exclude throughout process
+        init_mask = self.region_mask
+        if init_mask is not None:
+            mask += init_mask
+
+        mask_faint = self._get_faint_mask()
+
+        if 1:
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            av_image = self.av_data.copy()
+            av_image[mask_faint] = np.nan
+            plt.imshow(av_image, origin="lower", aspect="auto")
+            plt.savefig('/usr/users/ezbc/Desktop/av_init.png')
+
+        mask = self._trim_mask(mask, mask_faint, init_mask)
+
+
+        # solve for DGR using linear least squares
+        if self.verbose:
+            print('\n\tBeginning iterative DGR calculations + masking...')
+            print('\n\tUsing faint masking method')
+
+        # Iterate masking pixels which are correlated and rederiving a linear
+        # least squares solution for the DGR
+        #----------------------------------------------------------------------
+        masking_results = {}
+        delta_dgr = 1e10
+        dgr = 1e10
+        iteration = 0
+
+        while delta_dgr > self.THRESHOLD_DELTA_DGR:
+
+            mask_faint = self._add_pixels_to_mask()
+
+            if 1:
+                import matplotlib.pyplot as plt
+                plt.clf(); plt.close()
+                av_image = self.av_data.copy()
+                av_image[mask] = np.nan
+                plt.imshow(av_image, origin="lower", aspect="auto")
+                plt.savefig('/usr/users/ezbc/Desktop/av_iter.png')
+                plt.show()
+
+            mask = self._trim_mask(mask, mask_faint, init_mask)
+
+            results = \
+                _calc_likelihoods(
+                                  nhi_image=self.nhi_image[~mask],
+                                  av_image=self.av_data[~mask],
+                                  av_image_error=self.av_error_data[~mask],
+                                  #image_weights=bin_weights[~mask],
+                                  #vel_center=vel_center_masked,
+                                  #width_grid=np.arange(0,1,1),
+                                  dgr_grid=self.dgr_grid,
+                                  intercept_grid=self.intercept_grid,
+                                  vel_center=self.vel_center,
+                                  #results_filename='',
+                                  #return_likelihoods=True,
+                                  likelihood_filename=self.likelihood_filename,
+                                  clobber=self.clobber_likelihoods,
+                                  verbose=self.verbose,
+                                  )
+
+            # Unpack output of likelihood calculation
+            dgr_new = results['dgr_max']
+            intercept = results['intercept_max']
+
+            # Create model with the DGR
+            if self.verbose:
+                print('\t\tIteration {0:.0f} results:'.format(iteration))
+                print('\t\t\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
+                print('\t\t\tIntercept = {0:.2f} mag'.format(intercept))
+                print('')
+
+            av_image_model = self.nhi_image * dgr_new + intercept
+            residuals = self.av_data - av_image_model
+            residuals[mask] = np.nan
+
+            # plot progress
+            if 0:
+                if plot_args is not None:
+                    plot_residual_map(residuals,
+                                      header=av_header,
+                                      dgr=dgr_new)
+
+            if 0:
+                if iteration == 0:
+                    plot_filename = self.plot_args['results_filename']
+                else:
+                    plot_filename = None
+
+            # Include only residuals which are white noise
+            self.plot_args['iter_ext'] = str(self.iter_step) + '_' + \
+                                         str(iteration)
+            self.plot_args['av_header'] = self.av_header
+            mask_residuals, intercept = \
+                _get_residual_mask(residuals,
+                               residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
+                               plot_args=self.plot_args
+                               )
+
+            #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
+
+            # Mask non-white noise, i.e. correlated residuals.
+            mask = self._trim_mask(mask, mask_residuals, init_mask)
 
             if self.verbose:
                 npix = mask.size - np.sum(mask)
