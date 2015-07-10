@@ -140,7 +140,7 @@ def hrs2degs(ra=None, dec=None):
     return (ra_deg, dec_deg)
 
 def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
-        func=np.nansum, return_weights=False):
+        statistic=np.nansum, return_weights=False):
 
     ''' Bins an image.
 
@@ -154,9 +154,8 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         Header
     origin : string
         Location to begin binning.
-    func : function
-        Function with which to operate on the pixels being binned. Must accept
-        image as first argument and an axis to bin as the second argument.
+    statistic : function
+        Function with which to operate on the pixels being binned.
     return_weights : bool, optional
         Return weights for image corresponding to the number of valid pixels
         used to create a binned pixel?
@@ -174,6 +173,8 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
 
     import numpy as np
     from astropy.io import fits
+    from scipy.stats import binned_statistic_2d
+    from scipy.stats import binned_statistic_dd
 
     #if not operation.lower() in ['sum', 'mean', 'average', 'avg']:
     #    raise ValueError("Operation not supported.")
@@ -204,18 +205,66 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         trim_indices[excess / 2: excess] = end_indices
 
         ndarray = np.delete(ndarray, trim_indices, axis=axis)
+        #statistic = lambda x: [print(element) for element in x]
 
-    # reshape trimmed array
-    compression_pairs = [(d, c//d) for d,c in zip(new_shape,
-                                                  ndarray.shape)]
-    flattened = [l for p in compression_pairs for l in p]
-    ndarray = ndarray.reshape(flattened)
+    if 0:
+        # reshape trimmed array
+        compression_pairs = [(d, c//d) for d,c in zip(new_shape,
+                                                      ndarray.shape)]
+        flattened = [l for p in compression_pairs for l in p]
+        ndarray = ndarray.reshape(flattened)
 
-    # bin each axis
-    for i in range(len(new_shape)):
-        axis = -1*(i+1)
+        # bin each axis
+        for i in range(len(new_shape)):
+            axis = -1*(i+1)
 
-        ndarray = func(ndarray, axis)
+            ndarray = func(ndarray, axis)
+    else:
+        if len(binsize) == 2:
+            xx, yy = np.meshgrid(np.arange(0, ndarray.shape[0], 1),
+                                 np.arange(0, ndarray.shape[1], 1))
+
+            ndarray_bin = binned_statistic_2d(xx.T.ravel(),
+                                              yy.T.ravel(),
+                                              values=ndarray.ravel(),
+                                              bins=new_shape,
+                                              statistic=statistic)[0]
+
+            if return_weights:
+                count = lambda x: np.size(x[~np.isnan(x)])
+
+                weights = binned_statistic_2d(xx.T.ravel(),
+                                              yy.T.ravel(),
+                                              values=ndarray.ravel(),
+                                              bins=new_shape,
+                                              statistic=count)[0]
+        if len(binsize) == 3:
+            xx, yy = np.meshgrid(np.arange(0, ndarray.shape[1], 1),
+                                 np.arange(0, ndarray.shape[2], 1))
+
+            ndarray_bin = np.empty((ndarray.shape[0],
+                                    new_shape[1],
+                                    new_shape[2]))
+
+            for i in xrange(ndarray.shape[0]):
+                ndarray_bin[i, :, :] = binned_statistic_2d(xx.T.ravel(),
+                                            yy.T.ravel(),
+                                            values=ndarray[i, :, :].ravel(),
+                                            bins=new_shape[1:],
+                                            statistic=statistic)[0]
+
+            if return_weights:
+                weights = np.empty((ndarray.shape[0],
+                                    new_shape[1],
+                                    new_shape[2]))
+                count = lambda x: np.size(x[~np.isnan(x)])
+                for i in xrange(ndarray.shape[0]):
+
+                    weights[i, :, :] = binned_statistic_2d(xx.T.ravel(),
+                                                yy.T.ravel(),
+                                                values=ndarray[i, :, :].ravel(),
+                                                bins=new_shape[1:],
+                                                statistic=count)[0]
 
     # Edit header
     if header is not None:
@@ -233,14 +282,14 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         header_bin['CRPIX2'] = header['CRPIX2'] / binsize[1]
 
         if return_weights:
-            result = ndarray, header_bin, ndarray
+            result = ndarray_bin, header_bin, weights
         else:
-            result = ndarray, header_bin
+            result = ndarray_bin, header_bin
     else:
         if return_weights:
-            result = ndarray, ndarray
+            result = ndarray_bin, weights
         else:
-            result = ndarray
+            result = ndarray_bin
 
     return result
 

@@ -221,15 +221,15 @@ def test_bin_image():
     #       [ 4,  5,  6,  7],
     #       [ 8,  9, 10, 11]])
 
-    binned = bin_image(unbinned, binsize=(2, 2), func=np.nansum)
+    binned = bin_image(unbinned, binsize=(2, 2), statistic=np.nansum)
 
-    answer = np.array([[26, 34],
+    answer = np.array([[10, 18],
                        ])
 
     assert_array_almost_equal(binned, answer)
 
     # bin whole axis
-    binned = bin_image(unbinned, binsize=(3, 1), func=np.nansum)
+    binned = bin_image(unbinned, binsize=(3, 1), statistic=np.nansum)
 
     answer = np.array([[12, 15, 18, 21],
                        ])
@@ -237,7 +237,7 @@ def test_bin_image():
     assert_array_almost_equal(binned, answer)
 
     # Bin
-    binned = bin_image(unbinned, binsize=(1, 2), func=np.nansum)
+    binned = bin_image(unbinned, binsize=(1, 2), statistic=np.nansum)
 
     answer = np.array([[1, 5],
                        [9, 13],
@@ -246,7 +246,7 @@ def test_bin_image():
     assert_array_almost_equal(binned, answer)
 
     # Test binsize being a float
-    binned = bin_image(unbinned, binsize=(1.1, 2.0), func=np.nansum)
+    binned = bin_image(unbinned, binsize=(1.1, 2.0), statistic=np.nansum)
 
     answer = np.array([[1, 5],
                        [9, 13],
@@ -256,10 +256,10 @@ def test_bin_image():
 
     # Bin
     if 0:
-        def func(image, axis=None):
+        def statistic(image, axis=None):
             return np.nansum(image, axis=axis)
 
-        binned = bin_image(unbinned, binsize=(1, 2), func=func)
+        binned = bin_image(unbinned, binsize=(1, 2), statistic=statistic)
 
         answer = np.array([[1, 13],
                            [41, 85],
@@ -295,7 +295,7 @@ if 1:
 
         av_data_binned, av_header_binned = bin_image(av_data,
                                                binsize=(11, 11),
-                                               func=np.nanmean,
+                                               statistic=np.nanmean,
                                                header=av_header)
 
         print av_data.shape, av_data_binned.shape
@@ -319,7 +319,7 @@ if 1:
 
         hi_data_binned, hi_header_binned = bin_image(hi_data,
                                                binsize=(1, 11, 11),
-                                               func=np.nanmean,
+                                               statistic=np.nanmean,
                                                header=hi_header)
 
         fits.writeto(hi_dir + 'test.fits', hi_data_binned, hi_header_binned,

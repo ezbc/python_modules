@@ -124,6 +124,75 @@ if 1:
                 print('\nSaving cloud...')
                 cloudpy.save(self.cloud, self.cloud_filename)
 
+
+        if 0:
+            def test_faint_masking(self,):
+
+                from numpy.testing import assert_array_almost_equal
+                from numpy.testing import assert_almost_equal
+
+                self.cloud.av_data = np.arange(0,9).reshape(3, 3,)
+
+                mask_faint = self.cloud._get_faint_mask()
+                mask_faint_answer = np.array([[0, 1, 1],
+                                              [1, 1, 1],
+                                              [1, 1, 1]])
+
+                assert_array_almost_equal(mask_faint, mask_faint_answer)
+
+                # Test including more pixels
+                mask_new = self.cloud._add_pixels_to_mask()
+
+                mask_new_answer = np.array([[0, 0, 1],
+                                            [1, 1, 1],
+                                            [1, 1, 1]])
+
+                assert_array_almost_equal(mask_new, mask_new_answer)
+
+                # Test combo of region mask with new mask
+                mask_region = np.array([[1, 0, 0],
+                                        [0, 0, 0],
+                                        [0, 0, 0]])
+
+                mask_combo = self.cloud._combine_masks(mask_region, mask_new)
+
+                mask_combo_answer = np.array([[1, 0, 1],
+                                              [1, 1, 1],
+                                              [1, 1, 1]])
+
+                assert_array_almost_equal(mask_combo, mask_combo_answer)
+
+                # Test combo subtraction of region mask with new mask
+                mask_region = np.array([[1, 0, 0],
+                                        [0, 0, 0],
+                                        [0, 0, 0]])
+
+                mask_combo = self.cloud._combine_masks(mask_region, mask_new,
+                                                    child_action='subtract')
+
+                mask_combo_answer = np.array([[1, 0, 1],
+                                              [1, 1, 1],
+                                              [1, 1, 1]])
+
+                assert_array_almost_equal(mask_combo, mask_combo_answer)
+
+
+                mask_new = np.array([[1, 0, 1],
+                                     [1, 0, 1],
+                                     [1, 1, 1]])
+
+                mask_combo = self.cloud._combine_masks(mask_region, mask_new,
+                                                    child_action='subtract')
+
+                mask_combo_answer = np.array([[1, 0, 1],
+                                              [1, 1, 1],
+                                              [1, 1, 1]])
+
+                assert_array_almost_equal(mask_combo, mask_combo_answer)
+
+
+
+
         if 1:
             def test_mle_derivation(self,):
 

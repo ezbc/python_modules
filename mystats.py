@@ -712,6 +712,8 @@ def calc_logL(model, data, data_error=None, weights=None):
 
     if data_error is None:
         data_error = np.std(data)
+    if isinstance(data_error, int):
+        data_error = data_error * np.ones(data.shape)
 
     if weights is None:
         weights = 1.0
@@ -719,12 +721,13 @@ def calc_logL(model, data, data_error=None, weights=None):
         data_error_weighted = data_error
         model_weighted = model
     else:
+        weights = weights[weights > 0]
+        weights = np.array(weights / np.nanmin(weights), dtype=int)
         data_weighted = np.zeros(np.sum(weights))
         data_error_weighted = np.zeros(np.sum(weights))
         model_weighted = np.zeros(np.sum(weights))
-        weights /= np.nanmin(weights)
         count = 0
-        for i in xrange(len(data)):
+        for i in xrange(0, len(weights)):
             data_weighted[count:count + weights[i]] = data[i]
             data_error_weighted[count:count + weights[i]] = data_error[i]
             model_weighted[count:count + weights[i]] = model[i]

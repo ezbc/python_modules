@@ -329,30 +329,28 @@ class Cloud():
                 bin_image(self.av_data,
                           binsize=(binsize, binsize),
                           header=self.av_header,
-                          func=np.nanmean,
+                          statistic=np.nanmean,
                           return_weights=True)
 
         # Av image error
         # Errors add in square
         # mean = sum(a_i) / n
         # error on mean = sqrt(sum(a_i**2 / n**2))
-        noise_func = lambda x, axis: np.nansum(x**2, axis=axis)**0.5 / \
-                                     np.sum(~np.isnan(x[axis]))
-        def noise_func(x, axis):
-            return np.nanmean(x, axis=axis)
+        noise_func = lambda x: np.nansum(x**2)**0.5 / \
+                                     np.sum(~np.isnan(x))
 
         self.av_error_data_bin, self.av_header_bin = \
                 bin_image(self.av_error_data,
                           binsize=(binsize, binsize),
                           header=self.av_header,
-                          func=noise_func,)
+                          statistic=noise_func,)
 
         # Hi image
         self.hi_data_bin, self.hi_header_bin = \
                 bin_image(self.hi_data,
                           binsize=(1, binsize, binsize),
                           header=self.hi_header,
-                          func=np.nanmean)
+                          statistic=np.nanmean)
 
     def _iterate_mle_calc(self, vel_range=None,):
 
@@ -497,12 +495,35 @@ class Cloud():
                               dgr_grid=self.dgr_grid,
                               intercept_grid=self.intercept_grid,
                               vel_center=self.vel_center,
+                              image_weights=self.bin_weights,
                               likelihood_filename=self.likelihood_filename,
                               clobber=self.clobber_likelihoods,
                               verbose=self.verbose,
                               )
 
         self.iter_vars[self.iter_step]['init_likelihood_results'] = results
+
+        if 1:
+            self.iter_vars[self.iter_step]['scaled_likelihood_results'] = results
+            likelihood_filename_base = \
+                    '/d/bip3/ezbc/perseus/figures/likelihood/' + \
+                    'perseus_likelihood_lee12_init_'
+            self._write_final_params()
+
+            plot_likelihoods_hist(cloud=self,
+                          plot_axes=('widths', 'dgrs'),
+                          show=0,
+                          returnimage=False,
+                          filename=likelihood_filename_base + 'wd.png',
+                          limits=[0, 60, 0.0, 0.2],
+                          )
+            plot_likelihoods_hist(cloud=self,
+                          plot_axes=('widths', 'intercepts'),
+                          show=0,
+                          returnimage=False,
+                          filename=likelihood_filename_base + 'wi.png',
+                          limits=[0, 60, -1.0, 2.0],
+                          )
 
         # Unpack output of likelihood calculation
         dgr_max = results['dgr_max']
@@ -524,17 +545,14 @@ class Cloud():
         results = \
             _calc_likelihoods(
                               hi_cube=self.hi_data_bin,
-                              #nhi_image=self.nhi_image_bin,
                               av_image=self.av_data_bin,
                               av_image_error=self.av_error_data_bin,
                               hi_vel_axis=self.hi_vel_axis,
                               vel_center=self.vel_center,
-                              #image_weights=bin_weights[~mask],
+                              image_weights=self.bin_weights[~mask],
                               width_grid=self.width_grid,
                               dgr_grid=self.dgr_grid,
                               intercept_grid=self.intercept_grid,
-                              #results_filename='',
-                              #return_likelihoods=True,
                               likelihood_filename=self.likelihood_filename,
                               clobber=self.clobber_likelihoods,
                               verbose=self.verbose,
@@ -562,9 +580,9 @@ class Cloud():
         mask = self._prep_mask()
 
         # Apply initial mask to exclude throughout process
-        init_mask = self.region_mask
-        if init_mask is not None:
-            mask += init_mask
+        mask_init = self.region_mask
+        if mask_init is not None:
+            mask += mask_init
 
         if 1:
             import matplotlib.pyplot as plt
@@ -682,11 +700,10 @@ class Cloud():
         self.iter_vars[self.iter_step]['masking_var'] = masking_results
         self.iter_vars[self.iter_step]['mask'] = mask
 
-
     def _get_faint_mask(self, init_fraction=0.1):
 
         self._av_data_sorted = np.sort(self.av_data, axis=None)
-        self._mask_init_fraction = init_fraction
+        self._mask_pixel_fraction = init_fraction
 
         self._mask_pixel_number = int(self.av_data.size * init_fraction)
 
@@ -698,9 +715,10 @@ class Cloud():
 
     def _add_pixels_to_mask(self, additional_fraction=0.01):
 
+        self._mask_pixel_fraction += additional_fraction
+
         self._mask_pixel_number = \
-                int(self.av_data.size * (self._mask_init_fraction +
-                                         additional_fraction))
+                int(self.av_data.size * self._mask_pixel_fraction)
 
         self._mask_threshold = self._av_data_sorted[self._mask_pixel_number]
 
@@ -716,6 +734,27 @@ class Cloud():
 
         if abs_mask is not None:
             mask += abs_mask
+
+        return mask
+
+    def _combine_masks(self, mask_parent, mask_child, child_action='add'):
+
+        ''' Mask will be wherever the parent is masked. The child will mask
+         unmasked elements from the parent
+
+        Parameters
+        ----------
+        child_action : str
+            if 'add', then child is added to parent
+            if 'subtract' then child is subtracted from parent
+        '''
+
+        mask = np.copy(mask_parent)
+
+        if child_action == 'add':
+            mask[mask_child] = 1
+        elif child_action == 'subtract':
+            mask[~mask_child] = 0
 
         return mask
 
@@ -737,22 +776,22 @@ class Cloud():
         mask = self._prep_mask()
 
         # Apply initial mask to exclude throughout process
-        init_mask = self.region_mask
-        if init_mask is not None:
-            mask += init_mask
+        mask_init = self.region_mask
+        if mask_init is not None:
+            mask += mask_init
 
         mask_faint = self._get_faint_mask()
+
+
+        mask = self._combine_masks(mask_init, mask_faint)
 
         if 1:
             import matplotlib.pyplot as plt
             plt.clf(); plt.close()
             av_image = self.av_data.copy()
-            av_image[mask_faint] = np.nan
+            av_image[mask] = np.nan
             plt.imshow(av_image, origin="lower", aspect="auto")
             plt.savefig('/usr/users/ezbc/Desktop/av_init.png')
-
-        mask = self._trim_mask(mask, mask_faint, init_mask)
-
 
         # solve for DGR using linear least squares
         if self.verbose:
@@ -769,7 +808,6 @@ class Cloud():
 
         while delta_dgr > self.THRESHOLD_DELTA_DGR:
 
-            mask_faint = self._add_pixels_to_mask()
 
             if 1:
                 import matplotlib.pyplot as plt
@@ -777,10 +815,13 @@ class Cloud():
                 av_image = self.av_data.copy()
                 av_image[mask] = np.nan
                 plt.imshow(av_image, origin="lower", aspect="auto")
-                plt.savefig('/usr/users/ezbc/Desktop/av_iter.png')
+                plt.savefig('/usr/users/ezbc/Desktop/av_iter' + \
+                            str(self.iter_step) + '_' + \
+                            str(iteration) + '.png')
                 plt.show()
 
-            mask = self._trim_mask(mask, mask_faint, init_mask)
+            if self.verbose:
+                print('\t\tIteration {0:.0f} results:'.format(iteration))
 
             results = \
                 _calc_likelihoods(
@@ -805,11 +846,11 @@ class Cloud():
             intercept = results['intercept_max']
 
             # Create model with the DGR
-            if self.verbose:
-                print('\t\tIteration {0:.0f} results:'.format(iteration))
-                print('\t\t\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
-                print('\t\t\tIntercept = {0:.2f} mag'.format(intercept))
-                print('')
+            if 0:
+                if self.verbose:
+                    print('\t\t\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
+                    print('\t\t\tIntercept = {0:.2f} mag'.format(intercept))
+                    print('')
 
             av_image_model = self.nhi_image * dgr_new + intercept
             residuals = self.av_data - av_image_model
@@ -841,7 +882,18 @@ class Cloud():
             #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
 
             # Mask non-white noise, i.e. correlated residuals.
-            mask = self._trim_mask(mask, mask_residuals, init_mask)
+            mask = self._combine_masks(mask, mask_residuals)
+
+            if 1:
+                import matplotlib.pyplot as plt
+                plt.clf(); plt.close()
+                av_image = self.av_data.copy()
+                av_image[mask] = np.nan
+                plt.imshow(av_image, origin="lower", aspect="auto")
+                plt.savefig('/usr/users/ezbc/Desktop/av_residmask_iter' + \
+                            str(self.iter_step) + '_' + \
+                            str(iteration) + '.png')
+                plt.show()
 
             if self.verbose:
                 npix = mask.size - np.sum(mask)
@@ -862,6 +914,12 @@ class Cloud():
             delta_dgr = np.abs(dgr - dgr_new)
             dgr = dgr_new
             iteration += 1
+
+            # Derive new mask
+            mask_faint = self._add_pixels_to_mask()
+            mask = self._combine_masks(mask, mask_faint,
+                                       child_action='subtract')
+            mask = self._combine_masks(mask_init, mask)
 
         # Plot results
         if 0:
@@ -1067,7 +1125,6 @@ class Cloud():
             self._diagnostics = None
             self._orig_stdout = None
 
-
 '''
 Module Functions
 
@@ -1168,6 +1225,8 @@ def _calc_likelihoods(
             av_image = av_image[~mask]
             av_image_error = av_image_error[~mask]
             nhi_image = nhi_image[~mask]
+            if image_weights is not None:
+                image_weights = image_weights[~mask]
 
             print_vel_range = False
 
@@ -1183,7 +1242,6 @@ def _calc_likelihoods(
                         logL = calc_logL(av_image_model,
                                          av_image,
                                          data_error=av_image_error,
-                                         #weights=image_weights
                                          )
 
                         #print logL
@@ -1200,6 +1258,28 @@ def _calc_likelihoods(
             av_image = av_image[~mask]
             av_image_error = av_image_error[~mask]
             hi_cube = hi_cube[:, ~mask]
+
+            # Weight images
+            image_weights = None
+            if image_weights is not None:
+                weights = image_weights[~mask]
+                indices = np.where(weights > 0)
+                weights = weights[indices]
+                data = av_image[indices]
+                model = hi_cube[:, indices]
+                error = av_image_error[indices]
+
+                weights = np.array(weights / np.nanmin(weights), dtype=int)
+                av_image = np.zeros(np.sum(weights))
+                av_image_error = np.zeros(np.sum(weights))
+                hi_cube = np.array(hi_cube, np.zeros(np.sum(weights)))
+                count = 0
+                for i in xrange(0, len(weights)):
+                    av_image[count:count + weights[i]] = data[i]
+                    av_image_error[count:count + weights[i]] = \
+                            error[i]
+                    hi_cube[:,count:count + weights[i]] = model[:, i]
+                    count += weights[i]
 
             for j, vel_width in enumerate(width_grid):
                 # Construct N(HI) image outside of DGR loop, then apply
@@ -1308,11 +1388,11 @@ def _calc_likelihoods(
                                             width_confint[2],
                                                    np.abs(width_confint[1])))
         print('\n\t\t\tDGR confint = ' + \
-            '{0:.2f} +{1:.2f}/-{2:.2f} 10^20 cm^2 mag'.format(dgr_confint[0],
+            '{0:.2f} +{1:.2f}/-{2:.2f} 10^-20 cm^2 mag'.format(dgr_confint[0],
                                                     dgr_confint[2],
                                                     np.abs(dgr_confint[1])))
-        print('\n\t\t\tintercept confint = ' + \
-        '{0:.2f} +{1:.2f}/-{2:.2f} 10^20 cm^2 mag'.format(intercept_confint[0],
+        print('\n\t\t\tIntercept confint = ' + \
+        '{0:.2f} +{1:.2f}/-{2:.2f} mag'.format(intercept_confint[0],
                                                 intercept_confint[2],
                                                 np.abs(intercept_confint[1])))
 
