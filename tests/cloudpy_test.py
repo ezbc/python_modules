@@ -193,7 +193,7 @@ if 1:
 
 
 
-        if 1:
+        if 0:
             def test_mle_derivation(self,):
 
                 from numpy.testing import assert_array_almost_equal
@@ -325,7 +325,7 @@ if 0:
         assert_almost_equal(results['intercept_max'], intercept_answer)
         assert_almost_equal(results['dgr_max'], dgr_answer)
 
-if 0:
+if 1:
     def test_calc_likelihoods_2():
         from numpy.testing import assert_array_almost_equal
         from numpy.testing import assert_almost_equal

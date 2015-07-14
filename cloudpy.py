@@ -1219,12 +1219,14 @@ class Cloud():
             self._diagnostics = None
             self._orig_stdout = None
 
+class KeyboardInterruptError(Exception): pass
+
 '''
 Module Functions
 
 '''
 
-def _calc_likelihoods(
+def _calc_likelihoods__(
         hi_cube=None,
         hi_vel_axis=None,
         nhi_image=None,
@@ -1266,6 +1268,7 @@ def _calc_likelihoods(
     from os import path
     from astropy.io import fits
     from mystats import calc_symmetric_error, calc_logL
+    import multiprocessing as mp
 
     # Check if likelihood grid should be derived
     if likelihood_filename is not None:
@@ -1391,6 +1394,329 @@ def _calc_likelihoods(
                         #print logL
 
                         likelihoods[j, k, m] = logL
+
+    # Load file of likelihoods
+    elif not perform_mle:
+        print('Reading likelihood grid file:')
+        print(likelihood_filename)
+
+        hdu = fits.open(likelihood_filename)
+        likelihoods = hdu[0].data
+
+        if len(width_grid) != likelihoods.shape[0] or \
+           len(dgr_grid) != likelihoods.shape[1]:
+            raise ValueError('Specified parameter grid not the same as in' + \
+                    'loaded data likelihoods.')
+
+        likelihoods = np.ma.array(likelihoods,
+                mask=(likelihoods != likelihoods))
+
+    # Normalize the log likelihoods
+    likelihoods -= np.nanmax(likelihoods)
+
+    # Convert to likelihoods
+    likelihoods = np.exp(likelihoods)
+
+    likelihoods[np.isnan(likelihoods)] = 0.0
+
+    # Normalize the likelihoods
+    likelihoods = likelihoods / np.nansum(likelihoods)
+
+    #print width_grid
+    #print dgr_grid
+    #print intercept_grid
+    #print likelihoods
+
+    # Derive marginal distributions of both centers and widths
+    intercept_likelihood = np.sum(likelihoods, axis=(0, 1)) / \
+                                  np.sum(likelihoods)
+
+    width_likelihood = np.sum(likelihoods, axis=(1, 2)) / \
+            np.sum(likelihoods)
+
+    dgr_likelihood = np.sum(likelihoods, axis=(0, 2)) / \
+            np.sum(likelihoods)
+
+    # Derive confidence intervals of parameters
+    width_confint = calc_symmetric_error(width_grid,
+                                   width_likelihood,
+                                   alpha=1.0 - conf)
+    dgr_confint = calc_symmetric_error(dgr_grid,
+                                 dgr_likelihood,
+                                 alpha=1.0 - conf)
+    intercept_confint = calc_symmetric_error(intercept_grid,
+                                 intercept_likelihood,
+                                 alpha=1.0 - conf)
+
+    # Get values of best-fit model parameters
+    max_loc = np.where(likelihoods == np.max(likelihoods))
+
+    width_max = width_grid[max_loc[0][0]]
+    dgr_max = dgr_grid[max_loc[1][0]]
+    intercept_max = intercept_grid[max_loc[2][0]]
+
+    if 0:
+        import matplotlib.pyplot as plt
+        plt.imshow(likelihoods[:, :, max_loc[2][0]], origin='lower', aspect='auto',
+                   extent=[width_grid[0], width_grid[-1], dgr_grid[0],
+                           dgr_grid[-1]])
+        plt.colorbar()
+        plt.show()
+        plt.imshow(likelihoods[:, 0, :], origin='lower', aspect='auto',
+                   extent=[width_grid[0], width_grid[-1], intercept_grid[0],
+                           intercept_grid[-1]])
+        plt.colorbar()
+        plt.show()
+
+    if verbose:
+        if print_vel_range:
+            print('\n\t\t\tWidth confint = ' + \
+                    '{0:.2f} +{1:.2f}/-{2:.2f} km/s'.format(width_confint[0],
+                                            width_confint[2],
+                                                   np.abs(width_confint[1])))
+        print('\n\t\t\tDGR confint = ' + \
+            '{0:.2f} +{1:.2f}/-{2:.2f} 10^-20 cm^2 mag'.format(dgr_confint[0],
+                                                    dgr_confint[2],
+                                                    np.abs(dgr_confint[1])))
+        print('\n\t\t\tIntercept confint = ' + \
+        '{0:.2f} +{1:.2f}/-{2:.2f} mag'.format(intercept_confint[0],
+                                                intercept_confint[2],
+                                                np.abs(intercept_confint[1])))
+
+    # Write PDF
+    if vel_center is None:
+        vel_center = 0.0
+
+    upper_lim = (np.nanmean(vel_center) + width_confint[0]/2.)
+    lower_lim = (np.nanmean(vel_center) - width_confint[0]/2.)
+    upper_lim_error = width_confint[2]**2
+    lower_lim_error = width_confint[1]**2
+
+    vel_range_confint = (lower_lim, upper_lim, lower_lim_error,
+                         upper_lim_error)
+    vel_range_max = (vel_center - width_max/2.0, vel_center + width_max/2.0)
+
+    results = {
+               'vel_range_confint': vel_range_confint,
+               'width_confint': width_confint,
+               'dgr_confint': dgr_confint,
+               'intercept_confint': intercept_confint,
+               'likelihoods': likelihoods,
+               'width_likelihood': width_likelihood,
+               'dgr_likelihood': dgr_likelihood,
+               'intercept_likelihood': intercept_likelihood,
+               'width_max': width_max,
+               'dgr_max': dgr_max,
+               'intercept_max': intercept_max,
+               'vel_range_max': vel_range_max
+               }
+
+    if not return_likelihoods:
+        return vel_range_confint, dgr_confint
+    else:
+        return results
+
+def _calc_likelihoods(
+        hi_cube=None,
+        hi_vel_axis=None,
+        nhi_image=None,
+        av_image=None,
+        av_image_error=None,
+        bin_weights=None,
+        use_bin_weights=False,
+        vel_center=None,
+        width_grid=None,
+        dgr_grid=None,
+        intercept_grid=None,
+        plot_results=False,
+        results_filename='',
+        return_likelihoods=True,
+        likelihood_filename=None,
+        clobber=False,
+        conf=0.68,
+        threshold_delta_dgr=0.0005,
+        verbose=False,
+        ):
+
+    '''
+    Parameters
+    ----------
+
+    Returns
+    -------
+    vel_range : tuple
+        Lower and upper bound of HI velocity range in km/s which provides the
+        best likelihoodelated N(HI) distribution with Av.
+    likelihoods : array-like, optional
+        Array of Pearson likelihoodelation coefficients likelihoodesponding to each
+        permutation through the velocity centers and velocity widths.
+
+    '''
+
+    import numpy as np
+    from myimage_analysis import calculate_nhi
+    from os import path
+    from astropy.io import fits
+    from mystats import calc_symmetric_error, calc_logL
+    import multiprocessing as mp
+
+    # Check if likelihood grid should be derived
+    if likelihood_filename is not None:
+        if not path.isfile(likelihood_filename):
+            perform_mle = True
+            write_mle = True
+        elif clobber:
+            perform_mle = True
+            write_mle = True
+        else:
+            perform_mle = False
+            write_mle = False
+    # If no filename provided, do not read file and do not write file
+    else:
+        write_mle = False
+        perform_mle = True
+
+    if perform_mle:
+        # calculate the likelihoodelation coefficient for each velocity
+        # range
+        if width_grid is None:
+            width_grid = np.linspace(0, 1, 1)
+        if dgr_grid is None:
+            dgr_grid = np.linspace(0, 1, 1)
+        if intercept_grid is None:
+            intercept_grid = np.linspace(0, 1, 1)
+
+        likelihoods = np.empty((len(width_grid),
+                                len(dgr_grid),
+                                len(intercept_grid)))
+
+        # Progress bar parameters
+        total = float(likelihoods.size)
+        count = 0
+
+        if 0:
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            plt.imshow(av_image_error,
+                       origin='lower', aspect='auto')
+            plt.colorbar()
+            plt.savefig('/usr/users/ezbc/Desktop/resid.png')
+
+
+        if nhi_image is not None:
+            # Remove nans
+            mask = ((av_image != av_image) | \
+                    (av_image_error != av_image_error) | \
+                    (av_image_error == 0) | \
+                    (nhi_image != nhi_image))
+
+            av_image = av_image[~mask]
+            av_image_error = av_image_error[~mask]
+            nhi_image = nhi_image[~mask]
+            if use_bin_weights and bin_weights is not None:
+                bin_weights = bin_weights[~mask]
+
+            print_vel_range = False
+
+            # Cycle through DGR to estimate error
+            width_grid = np.linspace(0, 1, 1)
+
+            for j, vel_width in enumerate(width_grid):
+                for k, dgr in enumerate(dgr_grid):
+                    for m, intercept in enumerate(intercept_grid):
+                        # Create model of Av with N(HI) and DGR
+                        av_image_model = nhi_image * dgr + intercept
+
+                        logL = calc_logL(av_image_model,
+                                         av_image,
+                                         data_error=av_image_error,
+                                         )
+
+                        #print logL
+                        likelihoods[j, k, m] = logL
+        else:
+            print_vel_range = True
+
+            # Remove nans
+            if not use_bin_weights:
+                hi_cube[hi_cube != hi_cube] = 0.0
+                mask = ((av_image != av_image) | \
+                        (av_image_error != av_image_error) | \
+                        (av_image_error == 0))
+
+                av_image = av_image[~mask]
+                av_image_error = av_image_error[~mask]
+                hi_cube = hi_cube[:, ~mask]
+
+            # Weight images
+            #bin_weights = None
+            if use_bin_weights and bin_weights is not None:
+
+                av_image, av_image_error, hi_cube = \
+                    _prep_weighted_data(av_image=av_image,
+                                        av_image_error=av_image_error,
+                                        hi_cube=hi_cube,
+                                        weights=bin_weights)
+
+            def worker(args):
+
+                j = args['j']
+                vel_width = args['vel_width']
+                likelihoods = np.empty((len(dgr_grid), len(intercept_grid)))
+                output = args['output']
+
+                try:
+                    vel_range = np.array((vel_center - vel_width / 2.,
+                                          vel_center + vel_width / 2.))
+
+                    nhi_image = calculate_nhi(cube=hi_cube,
+                                              velocity_axis=hi_vel_axis,
+                                              velocity_range=vel_range,
+                                              return_nhi_error=False)
+
+                    # Cycle through DGR to estimate error
+                    for k, dgr in enumerate(dgr_grid):
+                        for m, intercept in enumerate(intercept_grid):
+                            # Create model of Av with N(HI) and DGR
+                            av_image_model = nhi_image * dgr + intercept
+
+                            logL = calc_logL(av_image_model,
+                                             av_image,
+                                             data_error=av_image_error,
+                                             )
+
+                            likelihoods[k, m] = logL
+
+                    output.put([j, likelihoods])
+
+                except KeyboardInterrupt:
+                    raise KeyboardInterruptError()
+
+            processes = []
+            output = mp.Queue()
+
+            args = {'likelihoods': likelihoods,
+                    'output': output
+                    }
+
+            for j, vel_width in enumerate(width_grid):
+                # Construct N(HI) image outside of DGR loop, then apply
+                # dgr_grid in loop
+
+                args['j'] = j
+                args['vel_width'] = vel_width
+
+                try:
+                    processes.append(mp.Process(target=worker,
+                                                args=(args,)))
+
+                    processes[j].start()
+                except KeyboardInterrupt():
+                    p.terminate()
+
+            for p in processes:
+                result = output.get()
+                likelihoods[result[0], :, :] = result[1]
 
     # Load file of likelihoods
     elif not perform_mle:
