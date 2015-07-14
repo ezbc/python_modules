@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python -W ignore::DeprecationWarning
 
 
 import numpy as np
@@ -191,7 +191,9 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
     confidence = (1.0 - alpha)
 
     # area under whole function
-    area = integrate(y, x)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",category=DeprecationWarning)
+        area = integrate(y, x)
 
     # Get weighted average of PDF
     mid_pos = np.argmin(np.abs(x - np.average(x, weights=y)))

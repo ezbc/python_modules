@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python -W ignore::DeprecationWarning
 
 # Import external modules
 import numpy as np
@@ -35,6 +35,8 @@ class Cloud():
             diagnostic_filename=None,
             use_bin_weights=False,
             use_only_binned_data=False,
+            binned_data_filename_ext=None,
+            weights_filename=None,
             plot_args={}):
 
         # Import external modules
@@ -47,6 +49,7 @@ class Cloud():
         self.hi_filename = hi_filename
         self.av_error_filename = av_error_filename
         self.hi_error_filename = hi_error_filename
+        self.av_error = av_error
         self.dgr_grid = dgr_grid
         self.width_grid = width_grid
         self.intercept_grid = intercept_grid
@@ -64,15 +67,16 @@ class Cloud():
         self.init_vel_range = init_vel_range
         self.plot_args = plot_args
         self.diagnostic_filename = diagnostic_filename
-        self.PIXEL_MASK_INCREASE_FRACTION=pixel_mask_increase_fraction
+        self.PIXEL_MASK_INCREASE_FRACTION = pixel_mask_increase_fraction
         self.iter_vars = {}
+        self.binned_data_filename_ext = binned_data_filename_ext
+        self.weights_filename = weights_filename
 
         # Initialize empty variables
         self.av_data_bin = None
         self.av_error_data_bin = None
         self.hi_data_bin = None
         self.hi_error_data_bin = None
-
 
         # Load data
         self.av_data, self.av_header = fits.getdata(av_filename, header=True)
@@ -93,8 +97,22 @@ class Cloud():
         if cloud_prop_filename is not None:
             self.load_cloud_properties(cloud_prop_filename)
 
+        # Use only binned data throughout the analysis?
+        # Either load the binned images or create new images
         if self.use_only_binned_data:
-            self._bin_data()
+            filenames = self._prepare_bin_filenames()
+            if binned_data_filename_ext is not None:
+                load_data = self._check_files(filenames)
+                write_data = True
+            else:
+                load_data = False
+                write_data = False
+
+            if not load_data:
+                self._bin_data(write_data=write_data)
+            else:
+                self._load_bin_data()
+
             self.av_data = self.av_data_bin
             self.av_error_data = self.av_error_data_bin
             self.hi_data = self.hi_data_bin
@@ -125,6 +143,54 @@ class Cloud():
 
         else:
             self._diagnostics = None
+
+    def _load_bin_data(self,):
+
+        import pyfits as fits
+
+        print('\n\tLoading binned data...')
+
+        self.av_data_bin, self.av_header_bin = \
+                fits.getdata(self.av_filename_bin, header=True)
+        self.av_error_data_bin, self.av_error_header_bin = \
+                fits.getdata(self.av_error_filename_bin, header=True)
+        self.hi_data_bin, self.hi_header_bin = \
+                fits.getdata(self.hi_filename_bin, header=True)
+        if self.use_bin_weights:
+            self.bin_weights = \
+                    fits.getdata(self.hi_filename_bin, header=False)
+        else:
+            self.bin_weights = None
+
+    def _check_files(self, filenames):
+
+        from os import path
+
+        if self.use_bin_weights:
+            filenames.append(self.weights_filename)
+
+        existing = np.zeros(len(filenames))
+
+        for i, filename in enumerate(filenames):
+            existing[i] = path.isfile(filename)
+
+        return np.alltrue(existing)
+
+    def _prepare_bin_filenames(self,):
+
+        ext = self.binned_data_filename_ext
+
+        self.av_filename_bin = self.av_filename.replace('.fits', ext + '.fits')
+        self.hi_filename_bin = self.hi_filename.replace('.fits', ext + '.fits')
+        if self.av_error_filename is None:
+            self.av_error_filename_bin = \
+                    self.av_filename.replace('.fits', '_error' + ext + '.fits')
+        else:
+            self.av_error_filename_bin = \
+                    self.av_filename.replace('.fits', ext + '.fits')
+
+        return [self.av_filename_bin, self.av_error_filename_bin, \
+                self.hi_filename_bin,]
 
     def _calc_vel_center(self, hi_data, single_vel_center=True):
 
@@ -318,10 +384,9 @@ class Cloud():
                                        return_nhi_error=False)
 
         self.av_image_model_bin = nhi_image_temp * dgr_max + intercept_max
-
-        std = np.sqrt(np.nansum((self.av_data_bin - \
-                                      self.av_image_model_bin)**2 \
-                                     / (self.av_data_bin.size - 2)))
+        numerator = (self.av_data_bin - self.av_image_model_bin)**2
+        denominator = np.sum(~np.isnan(self.av_data_bin)) - 3
+        std = np.sqrt(np.nansum(numerator) / denominator)
 
         #std = np.nanstd(self.av_data_bin - self.av_image_model_bin)
 
@@ -331,10 +396,11 @@ class Cloud():
         self.iter_vars[self.iter_step]['init_likelihood_results']['std'] = \
                 std
 
-    def _bin_data(self,):
+    def _bin_data(self, write_data=False):
 
         from myimage_analysis import calculate_nhi, calculate_noise_cube, \
                 bin_image
+        import pyfits as fits
 
         if self.verbose:
             print('\n\tBinning data...')
@@ -371,6 +437,18 @@ class Cloud():
                           binsize=(1, binsize, binsize),
                           header=self.hi_header,
                           statistic=np.nanmean)
+
+
+        if write_data:
+            fits.writeto(self.hi_filename_bin, self.hi_data_bin,
+                         self.hi_header_bin, clobber=True)
+            fits.writeto(self.av_filename_bin, self.av_data_bin,
+                         self.av_header_bin, clobber=True)
+            fits.writeto(self.av_error_filename_bin, self.av_error_data_bin,
+                         self.av_error_header_bin, clobber=True)
+            if self.use_bin_weights:
+                fits.writeto(self.weights_filename, self.bin_weights,
+                             self.av_header_bin, clobber=True)
 
     def _iterate_mle_calc(self, vel_range=None,):
 
@@ -436,46 +514,30 @@ class Cloud():
         if not self.use_only_binned_data:
             self._bin_data()
 
-        # Write binned filenames
-        self.av_bin_filename = \
-                self.av_filename.replace('.fits', '_bin.fits')
-        self.av_error_bin_filename = \
-                self.hi_error_filename.replace('.fits', '_bin.fits')
-        self.hi_bin_filename = \
-                self.hi_filename.replace('.fits', '_bin.fits')
-        self.hi_error_bin_filename = \
-                self.hi_error_filename.replace('.fits', '_bin.fits')
+            # Write binned filenames
+            self.av_bin_filename = \
+                    self.av_filename.replace('.fits', '_bin.fits')
+            self.av_error_bin_filename = \
+                    self.hi_error_filename.replace('.fits', '_bin.fits')
+            self.hi_bin_filename = \
+                    self.hi_filename.replace('.fits', '_bin.fits')
+            self.hi_error_bin_filename = \
+                    self.hi_error_filename.replace('.fits', '_bin.fits')
 
-        # Remove binned data
-        _check_file(self.av_bin_filename,
-                    clobber=True)
-        _check_file(self.av_error_bin_filename,
-                    clobber=True)
-        _check_file(self.hi_bin_filename,
-                    clobber=True)
-        _check_file(self.hi_error_bin_filename,
-                    clobber=True)
+            # Remove binned data
+            _check_file(self.av_bin_filename,
+                        clobber=True)
+            _check_file(self.av_error_bin_filename,
+                        clobber=True)
+            _check_file(self.hi_bin_filename,
+                        clobber=True)
+            _check_file(self.hi_error_bin_filename,
+                        clobber=True)
+        else:
+            self.av_data_bin = self.av_data
+            self.av_error_data_bin = self.av_error_data
+            self.hi_data_bin = self.hi_data
 
-        # Rederive N(HI) images from binned data
-        if 0:
-            self.hi_error_data_bin = \
-                    calculate_noise_cube(cube=self.hi_data_bin,
-                                    velocity_axis=self.hi_vel_axis,
-                                velocity_noise_range=self.hi_noise_vel_range,
-                                    header=self.hi_header_bin,
-                                    Tsys=self.Tsys,
-                                    #filename=self.hi_error_bin_filename,
-                                    )
-
-            self.nhi_image_bin, self.nhi_image_error_bin = \
-                    calculate_nhi(cube=self.hi_data_bin,
-                                  velocity_axis=self.hi_vel_axis,
-                                  velocity_range=vel_range,
-                                  noise_cube=self.hi_error_data_bin,
-                                  velocity_noise_range=self.hi_noise_vel_range,
-                                  Tsys=self.Tsys,
-                                  return_nhi_error=True,
-                                  )
         self.nhi_image_bin = \
                 calculate_nhi(cube=self.hi_data_bin,
                               velocity_axis=self.hi_vel_axis,
@@ -515,7 +577,7 @@ class Cloud():
                               dgr_grid=self.dgr_grid,
                               intercept_grid=self.intercept_grid,
                               vel_center=self.vel_center,
-                              image_weights=self.bin_weights,
+                              bin_weights=self.bin_weights,
                               use_bin_weights=self.use_bin_weights,
                               likelihood_filename=self.likelihood_filename,
                               clobber=self.clobber_likelihoods,
@@ -570,7 +632,7 @@ class Cloud():
                               av_image_error=self.av_error_data_bin,
                               hi_vel_axis=self.hi_vel_axis,
                               vel_center=self.vel_center,
-                              image_weights=self.bin_weights,
+                              bin_weights=self.bin_weights,
                               use_bin_weights=self.use_bin_weights,
                               width_grid=self.width_grid,
                               dgr_grid=self.dgr_grid,
@@ -632,7 +694,7 @@ class Cloud():
                                   nhi_image=self.nhi_image[~mask],
                                   av_image=self.av_data[~mask],
                                   av_image_error=self.av_error_data[~mask],
-                                  #image_weights=bin_weights[~mask],
+                                  #bin_weights=bin_weights[~mask],
                                   #vel_center=vel_center_masked,
                                   #width_grid=np.arange(0,1,1),
                                   dgr_grid=self.dgr_grid,
@@ -833,7 +895,7 @@ class Cloud():
         while delta_dgr > self.THRESHOLD_DELTA_DGR:
 
 
-            if 1:
+            if 0:
                 import matplotlib.pyplot as plt
                 plt.clf(); plt.close()
                 av_image = self.av_data.copy()
@@ -854,7 +916,7 @@ class Cloud():
                                       nhi_image=self.nhi_image[~mask],
                                       av_image=self.av_data[~mask],
                                       av_image_error=self.av_error_data[~mask],
-                                      #image_weights=bin_weights[~mask],
+                                      #bin_weights=bin_weights[~mask],
                                       #vel_center=vel_center_masked,
                                       #width_grid=np.arange(0,1,1),
                                       dgr_grid=self.dgr_grid,
@@ -919,7 +981,7 @@ class Cloud():
             mask_residuals = \
                     self._combine_masks(mask_residuals, mask_residuals_new)
 
-            if 1:
+            if 0:
                 import matplotlib.pyplot as plt
                 plt.clf(); plt.close()
                 av_image = self.av_data.copy()
@@ -1168,7 +1230,7 @@ def _calc_likelihoods(
         nhi_image=None,
         av_image=None,
         av_image_error=None,
-        image_weights=None,
+        bin_weights=None,
         use_bin_weights=False,
         vel_center=None,
         width_grid=None,
@@ -1258,8 +1320,8 @@ def _calc_likelihoods(
             av_image = av_image[~mask]
             av_image_error = av_image_error[~mask]
             nhi_image = nhi_image[~mask]
-            if use_bin_weights and image_weights is not None:
-                image_weights = image_weights[~mask]
+            if use_bin_weights and bin_weights is not None:
+                bin_weights = bin_weights[~mask]
 
             print_vel_range = False
 
@@ -1294,14 +1356,14 @@ def _calc_likelihoods(
                 hi_cube = hi_cube[:, ~mask]
 
             # Weight images
-            #image_weights = None
-            if use_bin_weights and image_weights is not None:
+            #bin_weights = None
+            if use_bin_weights and bin_weights is not None:
 
                 av_image, av_image_error, hi_cube = \
                     _prep_weighted_data(av_image=av_image,
                                         av_image_error=av_image_error,
                                         hi_cube=hi_cube,
-                                        weights=image_weights)
+                                        weights=bin_weights)
 
             for j, vel_width in enumerate(width_grid):
                 # Construct N(HI) image outside of DGR loop, then apply
@@ -1522,7 +1584,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
 
     '''
 
-    import numpy as np
+    #import numpy as np
     from mystats import gauss
     from scipy.optimize import curve_fit, minimize
     from sklearn.mixture import GMM, DPGMM
@@ -1537,7 +1599,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         #
         #print('histing')
         counts, bin_edges = np.histogram(np.ravel(residuals_crop),
-                                         bins=50,
+                                         bins=100,
                                          )
         p0=(0.1, np.nanmax(counts), 0)
 
@@ -1546,19 +1608,20 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         # Set parameter limits and initial guesses
         params = Parameters()
         params.add('width',
-                   value=p0[0],
-                   min=0.01,
+                   value=0.1,
+                   min=0.05,
                    max=10,
                    )
         params.add('amp',
-                   value=p0[1],
+                   value=np.nanmax(counts),
                    min=0,
                    max=2 * np.nanmax(counts),
                    )
         params.add('x0',
-                   value=p0[2],
+                   value=0,
                    min=-2,
                    max=2,
+                   vary=False,
                    )
 
         #bin_edges = residuals_crop
@@ -1580,7 +1643,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         result = minimize(norm,
                           params,
                           args=(bin_edges[:-1], counts),
-                          method='powell'
+                          method='nelder'
                           )
 
         #print('done fitting')
@@ -1752,11 +1815,11 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         props = cloud.props
 
     if plot_axes[0] == 'widths':
-    	x_grid = props['width_grid']
-    	x_confint = (props['hi_velocity_width']['value'],
-    	             props['hi_velocity_width_error']['value'][0],
-    	             props['hi_velocity_width_error']['value'][1],
-    	             )
+        x_grid = props['width_grid']
+        x_confint = (props['hi_velocity_width']['value'],
+                     props['hi_velocity_width_error']['value'][0],
+                     props['hi_velocity_width_error']['value'][1],
+                     )
         x_extent = x_grid[0], x_grid[-1]
         ax_image.set_xlabel(r'Velocity Width [km/s]')
         x_sum_axes = (1, 2)
@@ -1766,11 +1829,11 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         else:
             x_limits = limits[:2]
     if plot_axes[1] == 'dgrs':
-    	y_grid = props['dgr_grid']
-    	y_confint = (props['dust2gas_ratio']['value'],
-    	             props['dust2gas_ratio_error']['value'][0],
-    	             props['dust2gas_ratio_error']['value'][1],
-    	             )
+        y_grid = props['dgr_grid']
+        y_confint = (props['dust2gas_ratio']['value'],
+                     props['dust2gas_ratio_error']['value'][0],
+                     props['dust2gas_ratio_error']['value'][1],
+                     )
         y_extent = y_grid[0], y_grid[-1]
         ax_image.set_ylabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
         y_sum_axes = (0, 2)
@@ -1780,11 +1843,11 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         else:
             y_limits = limits[2:]
     if plot_axes[1] == 'intercepts':
-    	y_grid = props['intercept_grid']
-    	y_confint = (props['intercept']['value'],
-    	             props['intercept_error']['value'][0],
-    	             props['intercept_error']['value'][1],
-    	             )
+        y_grid = props['intercept_grid']
+        y_confint = (props['intercept']['value'],
+                     props['intercept_error']['value'][0],
+                     props['intercept_error']['value'][1],
+                     )
         y_extent = y_grid[0], y_grid[-1]
         ax_image.set_ylabel(r'Intercept [mag]')
         y_sum_axes = (0, 1)
@@ -1990,12 +2053,12 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
 
     if 0:
     #if npix is not None or av_threshold is not None:
-    	text = ''
+        text = ''
         if npix is not None:
             text += r'N$_{\rm pix}$ = ' + \
                      '{0:.0f}'.format(npix)
             if av_threshold is not None:
-            	text += '\n'
+                text += '\n'
         if av_threshold is not None:
             text += r'$A_V$ threshold = {0:.1f} mag'.format(av_threshold)
             text += '\n'
@@ -2311,4 +2374,77 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
 
     if filename is not None:
         plt.savefig(filename, bbox_inches='tight')
+
+def plot_dgr_intercept_progression(cloud, filename=None, show=True,
+        title=None):
+
+    # Import external modules
+    import matplotlib.pyplot as plt
+    import matplotlib
+    import numpy as np
+    from scipy.integrate import simps as integrate
+
+    nrows = len(cloud.iter_vars)
+
+    # Set up plot aesthetics
+    # ----------------------
+    plt.close;plt.clf()
+    font_scale = 9
+    params = {
+              'figure.figsize': (2 * nrows, 2 * nrows),
+              #'figure.titlesize': font_scale,
+             }
+    plt.rcParams.update(params)
+
+    # Create figure instance
+    fig, axes = plt.subplots(nrows=2, ncols=nrows)
+
+    for i in xrange(0, nrows):
+
+        ax1 = axes[0, i]
+        ax2 = axes[1, i]
+
+        iter_dict = cloud.iter_vars[i]['masking_var']
+
+        n_points = len(iter_dict)
+        dgrs = np.empty(n_points)
+        intercepts = np.empty(n_points)
+        npix = np.empty(n_points)
+
+        for j, iteration in enumerate(iter_dict):
+            dgrs[j] = iter_dict[iteration]['dgr']
+            intercepts[j] = iter_dict[iteration]['intercept']
+            npix[j] = np.sum(~iter_dict[iteration]['mask'])
+
+        ax1.plot(npix, dgrs,
+                 linestyle='',
+                 marker='o',
+                 )
+        ax2.plot(npix, intercepts,
+                 linestyle='',
+                 marker='o',
+                 )
+
+        ax2.set_xlabel(r'Number of Unmasked Pixels')
+        if i == 0:
+            ax1.set_ylabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
+            ax2.set_ylabel(r'Intercept [mag]')
+
+        ax1.locator_params(nbins = 4)
+        ax2.locator_params(nbins = 4)
+
+        vel_range = cloud.iter_vars[i]['vel_range']
+        width = np.abs(vel_range[1] - vel_range[0])
+
+        ax1.set_title(r'$\Delta_V$ = {0:.0f} km/s'.format(width))
+
+
+    if title is not None:
+        fig.suptitle(title, fontsize=font_scale)
+    if filename is not None:
+        fig.tight_layout()
+        plt.savefig(filename, bbox_inches='tight', dpi=600)
+    if show:
+        plt.show()
+
 
