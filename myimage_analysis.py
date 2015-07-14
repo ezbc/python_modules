@@ -272,14 +272,14 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
 
         header_bin['NAXIS1'] = new_shape[0]
         header_bin['NAXIS2'] = new_shape[1]
-        header_bin['CRVAL1'] = header['CRVAL1'] / binsize[0] + \
+        header_bin['CRVAL1'] = header['CRVAL1'] / binsize[-2] + \
                                (excess / 2) * header['CDELT1']
-        header_bin['CRVAL2'] = header['CRVAL2'] / binsize[1] + \
+        header_bin['CRVAL2'] = header['CRVAL2'] / binsize[-1] + \
                                (excess / 2) * header['CDELT2']
-        header_bin['CDELT1'] = header['CDELT1'] * binsize[0]
-        header_bin['CDELT2'] = header['CDELT2'] * binsize[1]
-        header_bin['CRPIX1'] = header['CRPIX1'] / binsize[0]
-        header_bin['CRPIX2'] = header['CRPIX2'] / binsize[1]
+        header_bin['CDELT1'] = header['CDELT1'] * binsize[-2]
+        header_bin['CDELT2'] = header['CDELT2'] * binsize[-1]
+        header_bin['CRPIX1'] = header['CRPIX1'] / binsize[-2]
+        header_bin['CRPIX2'] = header['CRPIX2'] / binsize[-1]
 
         if return_weights:
             result = ndarray_bin, header_bin, weights

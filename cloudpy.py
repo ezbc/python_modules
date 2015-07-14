@@ -31,7 +31,10 @@ class Cloud():
             binsize=1,
             vel_range_diff_thres=2.0,
             init_vel_range=[0,1],
+            pixel_mask_increase_fraction=0.01,
             diagnostic_filename=None,
+            use_bin_weights=False,
+            use_only_binned_data=False,
             plot_args={}):
 
         # Import external modules
@@ -54,11 +57,14 @@ class Cloud():
         self.likelihood_filename = likelihood_filename
         self.hi_noise_vel_range = hi_noise_vel_range
         self.binsize = binsize
+        self.use_bin_weights=use_bin_weights
+        self.use_only_binned_data=use_only_binned_data
         self.Tsys = 30.0 # K
         self.VEL_RANGE_DIFF_THRES = vel_range_diff_thres
         self.init_vel_range = init_vel_range
         self.plot_args = plot_args
         self.diagnostic_filename = diagnostic_filename
+        self.PIXEL_MASK_INCREASE_FRACTION=pixel_mask_increase_fraction
         self.iter_vars = {}
 
         # Initialize empty variables
@@ -66,6 +72,7 @@ class Cloud():
         self.av_error_data_bin = None
         self.hi_data_bin = None
         self.hi_error_data_bin = None
+
 
         # Load data
         self.av_data, self.av_header = fits.getdata(av_filename, header=True)
@@ -85,6 +92,15 @@ class Cloud():
             self.hi_error_data = None
         if cloud_prop_filename is not None:
             self.load_cloud_properties(cloud_prop_filename)
+
+        if self.use_only_binned_data:
+            self._bin_data()
+            self.av_data = self.av_data_bin
+            self.av_error_data = self.av_error_data_bin
+            self.hi_data = self.hi_data_bin
+            self.av_header = self.av_header_bin.copy()
+            self.av_error_header = self.av_error_header_bin.copy()
+            self.hi_header = self.hi_header_bin.copy()
 
         if av_background is not None:
             self.av_background = av_background
@@ -307,6 +323,8 @@ class Cloud():
                                       self.av_image_model_bin)**2 \
                                      / (self.av_data_bin.size - 2)))
 
+        #std = np.nanstd(self.av_data_bin - self.av_image_model_bin)
+
         # Derive new av data error
         self.av_error_data_bin = std * np.ones(self.av_error_data_bin.shape)
 
@@ -318,6 +336,8 @@ class Cloud():
         from myimage_analysis import calculate_nhi, calculate_noise_cube, \
                 bin_image
 
+        if self.verbose:
+            print('\n\tBinning data...')
 
         # Bin the images, retain only one bin_weight image since they are all
         # the same
@@ -339,10 +359,10 @@ class Cloud():
         noise_func = lambda x: np.nansum(x**2)**0.5 / \
                                      np.sum(~np.isnan(x))
 
-        self.av_error_data_bin, self.av_header_bin = \
+        self.av_error_data_bin, self.av_error_header_bin = \
                 bin_image(self.av_error_data,
                           binsize=(binsize, binsize),
-                          header=self.av_header,
+                          header=self.av_error_header,
                           statistic=noise_func,)
 
         # Hi image
@@ -393,7 +413,8 @@ class Cloud():
 
         # Write iteration step variables
         self.iter_vars[self.iter_step]['nhi_image'] = self.nhi_image
-        self.iter_vars[self.iter_step]['nhi_image_error'] = self.nhi_error_image
+        self.iter_vars[self.iter_step]['nhi_image_error'] = \
+                self.nhi_error_image
 
         # Finally, derive the mask to be used in calculation
         self._iterate_residual_masking2()
@@ -402,6 +423,7 @@ class Cloud():
         if 0:
             mask = (self.av_data < 1.0)
             self.iter_vars[self.iter_step]['mask'] = mask
+            self.plot_args['iter_ext'] = '0_0'
 
         # Apply mask to data, then bin data to avoid correlated pixels
         # ------------------------------------------------------------
@@ -410,11 +432,9 @@ class Cloud():
         self.av_error_data[mask] = np.nan
         self.hi_data[:, mask] = np.nan
 
-        if self.verbose:
-            print('\n\tBinning data...')
-
         # Bin the data
-        self._bin_data()
+        if not self.use_only_binned_data:
+            self._bin_data()
 
         # Write binned filenames
         self.av_bin_filename = \
@@ -496,6 +516,7 @@ class Cloud():
                               intercept_grid=self.intercept_grid,
                               vel_center=self.vel_center,
                               image_weights=self.bin_weights,
+                              use_bin_weights=self.use_bin_weights,
                               likelihood_filename=self.likelihood_filename,
                               clobber=self.clobber_likelihoods,
                               verbose=self.verbose,
@@ -549,7 +570,8 @@ class Cloud():
                               av_image_error=self.av_error_data_bin,
                               hi_vel_axis=self.hi_vel_axis,
                               vel_center=self.vel_center,
-                              image_weights=self.bin_weights[~mask],
+                              image_weights=self.bin_weights,
+                              use_bin_weights=self.use_bin_weights,
                               width_grid=self.width_grid,
                               dgr_grid=self.dgr_grid,
                               intercept_grid=self.intercept_grid,
@@ -688,10 +710,11 @@ class Cloud():
 
         # Plot results
         if 0:
-            mask_new = get_residual_mask(residuals,
-                                      residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
-                                      plot_progress=plot_progress,
-                                      results_filename=results_filename)
+            mask_new = \
+                get_residual_mask(residuals,
+                            residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
+                            plot_progress=plot_progress,
+                            results_filename=results_filename)
 
         # Create model of Av
         self.av_model = dgr * self.nhi_image + intercept
@@ -782,8 +805,9 @@ class Cloud():
 
         mask_faint = self._get_faint_mask()
 
-
         mask = self._combine_masks(mask_init, mask_faint)
+
+        mask_residuals = np.zeros(mask.shape, dtype=bool)
 
         if 1:
             import matplotlib.pyplot as plt
@@ -823,35 +847,45 @@ class Cloud():
             if self.verbose:
                 print('\t\tIteration {0:.0f} results:'.format(iteration))
 
-            results = \
-                _calc_likelihoods(
-                                  nhi_image=self.nhi_image[~mask],
-                                  av_image=self.av_data[~mask],
-                                  av_image_error=self.av_error_data[~mask],
-                                  #image_weights=bin_weights[~mask],
-                                  #vel_center=vel_center_masked,
-                                  #width_grid=np.arange(0,1,1),
-                                  dgr_grid=self.dgr_grid,
-                                  intercept_grid=self.intercept_grid,
-                                  vel_center=self.vel_center,
-                                  #results_filename='',
-                                  #return_likelihoods=True,
-                                  likelihood_filename=self.likelihood_filename,
-                                  clobber=self.clobber_likelihoods,
-                                  verbose=self.verbose,
-                                  )
 
-            # Unpack output of likelihood calculation
-            dgr_new = results['dgr_max']
-            intercept = results['intercept_max']
+            if 0:
+                results = \
+                    _calc_likelihoods(
+                                      nhi_image=self.nhi_image[~mask],
+                                      av_image=self.av_data[~mask],
+                                      av_image_error=self.av_error_data[~mask],
+                                      #image_weights=bin_weights[~mask],
+                                      #vel_center=vel_center_masked,
+                                      #width_grid=np.arange(0,1,1),
+                                      dgr_grid=self.dgr_grid,
+                                      intercept_grid=self.intercept_grid,
+                                      vel_center=self.vel_center,
+                                      #results_filename='',
+                                      #return_likelihoods=True,
+                                      likelihood_filename=\
+                                              self.likelihood_filename,
+                                      clobber=self.clobber_likelihoods,
+                                      verbose=self.verbose,
+                                      )
+            else:
+                results = _fit_params(
+                                      nhi_image=self.nhi_image[~mask],
+                                      av_image=self.av_data[~mask],
+                                      av_image_error=self.av_error_data[~mask],
+                                      verbose=self.verbose,
+                                      )
+
+            # add new pixels
+            mask_faint = \
+                self._add_pixels_to_mask(additional_fraction=\
+                                            self.PIXEL_MASK_INCREASE_FRACTION)
+            mask = self._combine_masks(mask, mask_faint,
+                                       child_action='subtract')
+            mask = self._combine_masks(mask_init, mask)
 
             # Create model with the DGR
-            if 0:
-                if self.verbose:
-                    print('\t\t\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
-                    print('\t\t\tIntercept = {0:.2f} mag'.format(intercept))
-                    print('')
-
+            dgr_new = results['dgr_max']
+            intercept = results['intercept_max']
             av_image_model = self.nhi_image * dgr_new + intercept
             residuals = self.av_data - av_image_model
             residuals[mask] = np.nan
@@ -873,7 +907,7 @@ class Cloud():
             self.plot_args['iter_ext'] = str(self.iter_step) + '_' + \
                                          str(iteration)
             self.plot_args['av_header'] = self.av_header
-            mask_residuals, intercept = \
+            mask_residuals_new, residual_threshold = \
                 _get_residual_mask(residuals,
                                residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
                                plot_args=self.plot_args
@@ -882,7 +916,8 @@ class Cloud():
             #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
 
             # Mask non-white noise, i.e. correlated residuals.
-            mask = self._combine_masks(mask, mask_residuals)
+            mask_residuals = \
+                    self._combine_masks(mask_residuals, mask_residuals_new)
 
             if 1:
                 import matplotlib.pyplot as plt
@@ -894,10 +929,6 @@ class Cloud():
                             str(self.iter_step) + '_' + \
                             str(iteration) + '.png')
                 plt.show()
-
-            if self.verbose:
-                npix = mask.size - np.sum(mask)
-                print('\t\t\tNumber of non-masked pixels = {0:.0f}'.format(npix))
 
             # Record variables
             masking_results[iteration] = {}
@@ -916,10 +947,11 @@ class Cloud():
             iteration += 1
 
             # Derive new mask
-            mask_faint = self._add_pixels_to_mask()
-            mask = self._combine_masks(mask, mask_faint,
-                                       child_action='subtract')
-            mask = self._combine_masks(mask_init, mask)
+            mask = self._combine_masks(mask_residuals, mask)
+
+            if self.verbose:
+                npix = mask.size - np.sum(mask)
+                print('\t\t\tNumber of non-masked pixels = {0:.0f}'.format(npix))
 
         # Plot results
         if 0:
@@ -1137,6 +1169,7 @@ def _calc_likelihoods(
         av_image=None,
         av_image_error=None,
         image_weights=None,
+        use_bin_weights=False,
         vel_center=None,
         width_grid=None,
         dgr_grid=None,
@@ -1225,7 +1258,7 @@ def _calc_likelihoods(
             av_image = av_image[~mask]
             av_image_error = av_image_error[~mask]
             nhi_image = nhi_image[~mask]
-            if image_weights is not None:
+            if use_bin_weights and image_weights is not None:
                 image_weights = image_weights[~mask]
 
             print_vel_range = False
@@ -1250,36 +1283,25 @@ def _calc_likelihoods(
             print_vel_range = True
 
             # Remove nans
-            hi_cube[hi_cube != hi_cube] = 0.0
-            mask = ((av_image != av_image) | \
-                    (av_image_error != av_image_error) | \
-                    (av_image_error == 0))
+            if not use_bin_weights:
+                hi_cube[hi_cube != hi_cube] = 0.0
+                mask = ((av_image != av_image) | \
+                        (av_image_error != av_image_error) | \
+                        (av_image_error == 0))
 
-            av_image = av_image[~mask]
-            av_image_error = av_image_error[~mask]
-            hi_cube = hi_cube[:, ~mask]
+                av_image = av_image[~mask]
+                av_image_error = av_image_error[~mask]
+                hi_cube = hi_cube[:, ~mask]
 
             # Weight images
-            image_weights = None
-            if image_weights is not None:
-                weights = image_weights[~mask]
-                indices = np.where(weights > 0)
-                weights = weights[indices]
-                data = av_image[indices]
-                model = hi_cube[:, indices]
-                error = av_image_error[indices]
+            #image_weights = None
+            if use_bin_weights and image_weights is not None:
 
-                weights = np.array(weights / np.nanmin(weights), dtype=int)
-                av_image = np.zeros(np.sum(weights))
-                av_image_error = np.zeros(np.sum(weights))
-                hi_cube = np.array(hi_cube, np.zeros(np.sum(weights)))
-                count = 0
-                for i in xrange(0, len(weights)):
-                    av_image[count:count + weights[i]] = data[i]
-                    av_image_error[count:count + weights[i]] = \
-                            error[i]
-                    hi_cube[:,count:count + weights[i]] = model[:, i]
-                    count += weights[i]
+                av_image, av_image_error, hi_cube = \
+                    _prep_weighted_data(av_image=av_image,
+                                        av_image_error=av_image_error,
+                                        hi_cube=hi_cube,
+                                        weights=image_weights)
 
             for j, vel_width in enumerate(width_grid):
                 # Construct N(HI) image outside of DGR loop, then apply
@@ -1429,6 +1451,70 @@ def _calc_likelihoods(
     else:
         return results
 
+def _fit_params(nhi_image=None,
+                av_image=None,
+                av_image_error=None,
+                verbose=False):
+
+    mask = (np.isnan(nhi_image) | \
+            np.isnan(av_image) | \
+            np.isnan(av_image_error))
+
+    b = av_image[~mask]
+    A = np.array([nhi_image[~mask], np.ones(nhi_image[~mask].shape)]).T
+    #A = np.array([nhi_image[~mask],]).T
+
+    params = np.dot(np.linalg.pinv(A), b)
+
+    if verbose:
+        print('\t\t\tDGR = {0:.2f} [10^-20 cm^2 mag]'.format(params[0]))
+        print('\t\t\tIntercept = {0:.2f} [mag]'.format(params[1]))
+
+    results = {}
+    results['dgr_max'] = params[0]
+    results['intercept_max'] = params[1]
+    #results['intercept_max'] = 0
+
+    return results
+
+def _prep_weighted_data(av_image=None,
+                        av_image_error=None,
+                        hi_cube=None,
+                        weights=None):
+
+        hi_cube[hi_cube != hi_cube] = 0.0
+        mask = ((av_image != av_image) | \
+                (av_image_error != av_image_error) | \
+                (av_image_error == 0) | \
+                (weights <= 0) | \
+                (weights != weights))
+
+        av_image = av_image[~mask]
+        av_image_error = av_image_error[~mask]
+        hi_cube = hi_cube[:, ~mask]
+        weights = weights[~mask]
+
+        # omit 0 weights
+        data = av_image
+        error = av_image_error
+        model = hi_cube
+
+        weights = np.array(weights / np.nanmin(weights), dtype=int)
+        av_image = np.zeros(np.sum(weights))
+        av_image_error = np.zeros(np.sum(weights))
+        hi_cube = np.zeros((hi_cube.shape[0], np.sum(weights)))
+        count = 0
+        for i in xrange(0, len(weights)):
+            av_image[count:count + weights[i]] = data[i]
+            av_image_error[count:count + weights[i]] = \
+                    error[i]
+            for j in xrange(0, hi_cube.shape[0]):
+                hi_cube[j, count:count + weights[i]] = model[j, i]
+            count += weights[i]
+
+
+        return (av_image, av_image_error, hi_cube)
+
 def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         use_GMM=False):
 
@@ -1439,7 +1525,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
     import numpy as np
     from mystats import gauss
     from scipy.optimize import curve_fit, minimize
-    from sklearn.mixture import GMM
+    from sklearn.mixture import GMM, DPGMM
 
     # Fit the rising portion of the residuals
     residuals_crop = residuals[(residuals < 0) & \
@@ -1447,13 +1533,13 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                                 ~np.isnan(residuals)]
 
     #if not use_GMM:
-    if 0:
+    if not use_GMM:
         #
         #print('histing')
         counts, bin_edges = np.histogram(np.ravel(residuals_crop),
-                                         bins=500,
+                                         bins=50,
                                          )
-        p0=(1, np.nanmax(counts), 0)
+        p0=(0.1, np.nanmax(counts), 0)
 
         from lmfit import minimize, Parameters
 
@@ -1461,7 +1547,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         params = Parameters()
         params.add('width',
                    value=p0[0],
-                   min=0.1,
+                   min=0.01,
                    max=10,
                    )
         params.add('amp',
@@ -1494,14 +1580,15 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         result = minimize(norm,
                           params,
                           args=(bin_edges[:-1], counts),
-                          method='nelder')
+                          method='powell'
+                          )
 
         #print('done fitting')
         fit_params = (params['width'].value, params['amp'].value,
                 params['x0'].value)
 
-    if 1:
-        g = GMM()
+    if use_GMM:
+        g = DPGMM()
         g.fit(residuals_crop)
         fit_params = [g.covars_[0,0]**0.5, 1, g.means_[0,0]]
         #print("mean : %f, std : %f" % (g.means_[0, 0], g.covars_[0, 0]**0.5))
@@ -1509,15 +1596,16 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         x_fit = np.linspace(np.nanmin(residuals),
                             np.nanmax(residuals),
                             1000)
-        y_fit = np.exp(g.score_samples(x_fit)[0])
+        #y_fit = np.exp(g.score_samples(x_fit)[0])
+        y_fit = gauss(x_fit, *fit_params)
 
         #fit_params[0] = y_fit[y_fit == 2.35 * max(y_fit)]/2.0
 
-        if 0:
+        if 1:
             import matplotlib.pyplot as plt
             plt.clf(); plt.close()
             counts, bin_edges = np.histogram(residuals[~np.isnan(residuals)],
-                                             bins=500,
+                                             bins=50,
                                              normed=True
                                              )
             residual_thres = residual_width_scale * np.abs(fit_params[0]) + \
@@ -1525,22 +1613,27 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
             plt.plot(x_fit, y_fit / y_fit.max() * counts.max())
             plt.plot(bin_edges[:-1], counts)
             plt.title("mean : %f, var : %f" % \
-                      (g.means_[0, 0], g.covars_[0, 0]))
+                      (fit_params[2], fit_params[0]))
             plt.axvline(residual_thres, color='k', linewidth=2)
-            plt.xlim(-2,3)
-            plt.show()
+            plt.xlim(-0.3, 0.3)
+            plt.savefig('/usr/users/ezbc/Desktop/residual_hist.png')
+            #plt.show()
 
 
     # Include only residuals within 3 sigma
+    #fit_parms[2] = 0
     intercept = fit_params[2]
     residual_thres = residual_width_scale * np.abs(fit_params[0]) + intercept
     mask = residuals > residual_thres
 
+    print('\t\t\tResidual threshold = {0:.2f} [mag]'.format(residual_thres))
+    print('\t\t\tResidual intercept = {0:.2f} [mag]'.format(intercept))
+
     if 'residual_hist_filename_base' in plot_args:
         import os
 
-        x_fit = np.linspace(np.nanmin(residuals),
-                            np.nanmax(residuals),
+        x_fit = np.linspace(-10,
+                            10,
                             1000)
 
         y_fit = gauss(x_fit, *fit_params)
@@ -1578,7 +1671,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                           filename=filename,
                           show=0)
 
-    return mask, intercept
+    return mask, residual_thres
 
 def _check_file(filename, clobber=False, verbose=False):
 
@@ -1958,12 +2051,14 @@ def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
 
     ax = fig.add_subplot(111)
 
+    xlim = (-1, 2.0)
+
     residuals_nonans = np.ravel(residuals[~np.isnan(residuals)])
 
     counts, bin_edges = \
         np.histogram(residuals_nonans,
-                                 bins=residuals_nonans.size / 100,
-                                 )
+                     bins=20,
+                     )
 
     bin_edges_ext = np.zeros(len(counts) + 1)
     counts_ext = np.zeros(len(counts) + 1)
@@ -1972,23 +2067,28 @@ def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
     bin_edges_ext[1:] = bin_edges[:-1]
     counts_ext[0] = 0
     counts_ext[1:] = counts
+    bin_edges_ext = np.hstack([xlim[0], bin_edges_ext, xlim[1]])
+    counts_ext = np.hstack([0, counts_ext, 0])
 
     # Normalize so area = 1
     #counts_ext /= np.nansum(counts_ext) * (bin_edges_ext[2] - bin_edges_ext[1])
-    counts_ext = counts_ext / integrate(counts_ext, x=bin_edges_ext)
-    counts_ext /= counts_ext.max()
+    #counts_ext = counts_ext / integrate(counts_ext, x=bin_edges_ext)
+    #counts_ext /= counts_ext.max()
     y_fit /= np.max(y_fit)
     y_fit *= np.max(counts_ext)
 
-    ax.plot(bin_edges_ext, counts_ext, drawstyle='steps-mid',
+    pdf_max = bin_edges_ext[counts_ext == counts_ext.max()][0]
+    print('\t\t\tResidual max = {0:.2f} [mag]'.format(pdf_max))
+
+    ax.plot(bin_edges_ext, counts_ext, drawstyle='steps-pre',
             linewidth=1.5)
     ax.plot(x_fit, y_fit,
             linewidth=2,
             alpha=0.6)
     ax.set_xlim([np.nanmin(bin_edges_ext) - \
                  np.abs(0.8 * np.nanmin(bin_edges_ext)),4])
-    ax.set_xlim([-1, 4])
-    ax.set_ylim([-0.1, 1.1])
+    ax.set_xlim(xlim)
+    ax.set_ylim([-0.1, None])
     ax.axvline(residual_thres,
                color='k',
                linestyle='--',

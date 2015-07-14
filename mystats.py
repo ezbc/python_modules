@@ -4,6 +4,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import warnings
+warnings.filterwarnings('ignore')
 
 class rv2d_discrete(object):
 
