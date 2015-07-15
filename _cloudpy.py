@@ -187,7 +187,7 @@ class Cloud():
                     self.av_filename.replace('.fits', '_error' + ext + '.fits')
         else:
             self.av_error_filename_bin = \
-                    self.av_error_filename.replace('.fits', ext + '.fits')
+                    self.av_filename.replace('.fits', ext + '.fits')
 
         return [self.av_filename_bin, self.av_error_filename_bin, \
                 self.hi_filename_bin,]
@@ -495,7 +495,7 @@ class Cloud():
                 self.nhi_error_image
 
         # Finally, derive the mask to be used in calculation
-        self._iterate_residual_masking2()
+        self._iterate_residual_masking()
 
         # delete next two lines
         if 0:
@@ -646,145 +646,6 @@ class Cloud():
 
         return results['vel_range_max']
 
-    def _iterate_residual_masking(self,):
-
-        '''
-
-        Returns
-        -------
-        av_model : numpy array
-        mask : numpy array
-        dgr : float
-
-        '''
-
-        import numpy as np
-
-        # Mask out nans
-        mask = self._prep_mask()
-
-        # Apply initial mask to exclude throughout process
-        mask_init = self.region_mask
-        if mask_init is not None:
-            mask += mask_init
-
-        if 1:
-            import matplotlib.pyplot as plt
-            plt.clf(); plt.close()
-            av_image = self.av_data.copy()
-            av_image[mask] = np.nan
-            plt.imshow(av_image, origin="lower", aspect="auto")
-            plt.savefig('/usr/users/ezbc/Desktop/av_init.png')
-
-        # solve for DGR using linear least squares
-        if self.verbose:
-            print('\n\tBeginning iterative DGR calculations + masking...')
-
-        # Iterate masking pixels which are correlated and rederiving a linear
-        # least squares solution for the DGR
-        #----------------------------------------------------------------------
-        masking_results = {}
-        delta_dgr = 1e10
-        dgr = 1e10
-        iteration = 0
-
-        while delta_dgr > self.THRESHOLD_DELTA_DGR:
-            results = \
-                _calc_likelihoods(
-                                  nhi_image=self.nhi_image[~mask],
-                                  av_image=self.av_data[~mask],
-                                  av_image_error=self.av_error_data[~mask],
-                                  #bin_weights=bin_weights[~mask],
-                                  #vel_center=vel_center_masked,
-                                  #width_grid=np.arange(0,1,1),
-                                  dgr_grid=self.dgr_grid,
-                                  intercept_grid=self.intercept_grid,
-                                  vel_center=self.vel_center,
-                                  #results_filename='',
-                                  #return_likelihoods=True,
-                                  likelihood_filename=self.likelihood_filename,
-                                  clobber=self.clobber_likelihoods,
-                                  verbose=self.verbose,
-                                  )
-
-            # Unpack output of likelihood calculation
-            dgr_new = results['dgr_max']
-            intercept = results['intercept_max']
-
-            # Create model with the DGR
-            if self.verbose:
-                print('\t\tIteration {0:.0f} results:'.format(iteration))
-                print('\t\t\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
-                print('\t\t\tIntercept = {0:.2f} mag'.format(intercept))
-                print('')
-
-            av_image_model = self.nhi_image * dgr_new + intercept
-            residuals = self.av_data - av_image_model
-            residuals[mask] = np.nan
-
-            # plot progress
-            if 0:
-                if plot_args is not None:
-                    plot_residual_map(residuals,
-                                      header=av_header,
-                                      dgr=dgr_new)
-
-            if 0:
-                if iteration == 0:
-                    plot_filename = self.plot_args['results_filename']
-                else:
-                    plot_filename = None
-
-            # Include only residuals which are white noise
-            self.plot_args['iter_ext'] = str(self.iter_step) + '_' + \
-                                         str(iteration)
-            self.plot_args['av_header'] = self.av_header
-            mask_new, intercept = \
-                _get_residual_mask(residuals,
-                               residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
-                               plot_args=self.plot_args
-                               )
-
-            #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
-
-            # Mask non-white noise, i.e. correlated residuals.
-            mask[mask_new] = 1
-
-            if self.verbose:
-                npix = mask.size - np.sum(mask)
-                print('\t\t\tNumber of non-masked pixels = {0:.0f}'.format(npix))
-
-            # Record variables
-            masking_results[iteration] = {}
-            masking_results[iteration]['residuals'] = residuals
-            masking_results[iteration]['dgr'] = dgr_new
-            #masking_results[iteration]['width'] = width
-            masking_results[iteration]['intercept'] = intercept
-            masking_results[iteration]['mask'] = mask
-
-            #if dgr == 1e10:
-            #    mask[self.av_data > 1] = 1
-
-            # Reset while loop conditions
-            delta_dgr = np.abs(dgr - dgr_new)
-            dgr = dgr_new
-            iteration += 1
-
-        # Plot results
-        if 0:
-            mask_new = \
-                get_residual_mask(residuals,
-                            residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
-                            plot_progress=plot_progress,
-                            results_filename=results_filename)
-
-        # Create model of Av
-        self.av_model = dgr * self.nhi_image + intercept
-        self.mask = mask
-        self.av_model[self.mask] = np.nan
-        self.iter_vars[self.iter_step]['masking_var'] = masking_results
-        self.iter_vars[self.iter_step]['mask'] = mask
-
     def _get_faint_mask(self, init_fraction=0.1):
 
         self._av_data_sorted = np.sort(self.av_data, axis=None)
@@ -843,7 +704,7 @@ class Cloud():
 
         return mask
 
-    def _iterate_residual_masking2(self,):
+    def _iterate_residual_masking__(self,):
 
         '''
 
@@ -877,7 +738,6 @@ class Cloud():
             av_image = self.av_data.copy()
             av_image[mask] = np.nan
             plt.imshow(av_image, origin="lower", aspect="auto")
-            plt.colorbar()
             plt.savefig('/usr/users/ezbc/Desktop/av_init.png')
 
         # solve for DGR using linear least squares
@@ -999,17 +859,17 @@ class Cloud():
             masking_results[iteration]['dgr'] = dgr_new
             #masking_results[iteration]['width'] = width
             masking_results[iteration]['intercept'] = intercept
-            masking_results[iteration]['mask'] = mask
             masking_results[iteration]['fit_params'] = fit_params
             masking_results[iteration]['residual_threshold'] = \
                     residual_threshold
+            masking_results[iteration]['mask'] = mask
 
             #if dgr == 1e10:
             #    mask[self.av_data > 1] = 1
 
             # Reset while loop conditions
-            #delta_dgr = np.abs(dgr - dgr_new)
-            delta_dgr = np.abs(1 - dgr / dgr_new)
+            #delta_dgr = np.abs(1 - dgr / dgr_new)
+            delta_dgr = np.abs(dgr - dgr_new)
             dgr = dgr_new
             iteration += 1
 
@@ -1033,6 +893,197 @@ class Cloud():
         self.av_model[self.mask] = np.nan
         self.iter_vars[self.iter_step]['masking_var'] = masking_results
         self.iter_vars[self.iter_step]['mask'] = mask
+
+    def _iterate_residual_masking(self,):
+
+        '''
+
+        Returns
+        -------
+        av_model : numpy array
+        mask : numpy array
+        dgr : float
+
+        '''
+
+        import numpy as np
+
+        # Mask out nans
+        mask = self._prep_mask()
+
+        # Apply initial mask to exclude throughout process
+        mask_init = self.region_mask
+        if mask_init is not None:
+            mask += mask_init
+
+        mask_faint = self._get_faint_mask()
+
+        mask = self._combine_masks(mask_init, mask_faint)
+
+        mask_residuals = np.zeros(mask.shape, dtype=bool)
+
+        if 1:
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            av_image = self.av_data.copy()
+            av_image[mask] = np.nan
+            plt.imshow(av_image, origin="lower", aspect="auto")
+            plt.savefig('/usr/users/ezbc/Desktop/av_init.png')
+
+        # solve for DGR using linear least squares
+        if self.verbose:
+            print('\n\tBeginning iterative DGR calculations + masking...')
+            print('\n\tUsing faint masking method')
+
+        # Iterate masking pixels which are correlated and rederiving a linear
+        # least squares solution for the DGR
+        #----------------------------------------------------------------------
+        masking_results = {}
+        delta_dgr = 1e10
+        dgr = 1e10
+        iteration = 0
+
+        while delta_dgr > self.THRESHOLD_DELTA_DGR:
+
+
+            if 0:
+                import matplotlib.pyplot as plt
+                plt.clf(); plt.close()
+                av_image = self.av_data.copy()
+                av_image[mask] = np.nan
+                plt.imshow(av_image, origin="lower", aspect="auto")
+                plt.savefig('/usr/users/ezbc/Desktop/av_iter' + \
+                            str(self.iter_step) + '_' + \
+                            str(iteration) + '.png')
+                plt.show()
+
+            if self.verbose:
+                print('\t\tIteration {0:.0f} results:'.format(iteration))
+
+
+            if 0:
+                results = \
+                    _calc_likelihoods(
+                                      nhi_image=self.nhi_image[~mask],
+                                      av_image=self.av_data[~mask],
+                                      av_image_error=self.av_error_data[~mask],
+                                      #bin_weights=bin_weights[~mask],
+                                      #vel_center=vel_center_masked,
+                                      #width_grid=np.arange(0,1,1),
+                                      dgr_grid=self.dgr_grid,
+                                      intercept_grid=self.intercept_grid,
+                                      vel_center=self.vel_center,
+                                      #results_filename='',
+                                      #return_likelihoods=True,
+                                      likelihood_filename=\
+                                              self.likelihood_filename,
+                                      clobber=self.clobber_likelihoods,
+                                      verbose=self.verbose,
+                                      )
+            else:
+                results = _fit_params(
+                                      nhi_image=self.nhi_image[~mask],
+                                      av_image=self.av_data[~mask],
+                                      av_image_error=self.av_error_data[~mask],
+                                      verbose=self.verbose,
+                                      )
+
+            # add new pixels
+            mask_faint = \
+                self._add_pixels_to_mask(additional_fraction=\
+                                            self.PIXEL_MASK_INCREASE_FRACTION)
+            mask = self._combine_masks(mask, mask_faint,
+                                       child_action='subtract')
+            mask = self._combine_masks(mask_init, mask)
+
+            # Create model with the DGR
+            dgr_new = results['dgr_max']
+            intercept = results['intercept_max']
+            av_image_model = self.nhi_image * dgr_new + intercept
+            residuals = self.av_data - av_image_model
+            residuals[mask] = np.nan
+
+            # plot progress
+            if 0:
+                if plot_args is not None:
+                    plot_residual_map(residuals,
+                                      header=av_header,
+                                      dgr=dgr_new)
+
+            if 0:
+                if iteration == 0:
+                    plot_filename = self.plot_args['results_filename']
+                else:
+                    plot_filename = None
+
+            # Include only residuals which are white noise
+            self.plot_args['iter_ext'] = str(self.iter_step) + '_' + \
+                                         str(iteration)
+            self.plot_args['av_header'] = self.av_header
+            mask_residuals_new, residual_threshold = \
+                _get_residual_mask(residuals,
+                               residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
+                               plot_args=self.plot_args
+                               )
+
+            #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
+
+            # Mask non-white noise, i.e. correlated residuals.
+            mask_residuals = \
+                    self._combine_masks(mask_residuals, mask_residuals_new)
+
+            if 0:
+                import matplotlib.pyplot as plt
+                plt.clf(); plt.close()
+                av_image = self.av_data.copy()
+                av_image[mask] = np.nan
+                plt.imshow(av_image, origin="lower", aspect="auto")
+                plt.savefig('/usr/users/ezbc/Desktop/av_residmask_iter' + \
+                            str(self.iter_step) + '_' + \
+                            str(iteration) + '.png')
+                plt.show()
+
+            # Record variables
+            masking_results[iteration] = {}
+            masking_results[iteration]['residuals'] = residuals
+            masking_results[iteration]['dgr'] = dgr_new
+            #masking_results[iteration]['width'] = width
+            masking_results[iteration]['intercept'] = intercept
+            masking_results[iteration]['mask'] = mask
+            masking_results[iteration]['fit_params'] = fit_params
+            masking_results[iteration]['residual_threshold'] = \
+                    residual_threshold
+
+            #if dgr == 1e10:
+            #    mask[self.av_data > 1] = 1
+
+            # Reset while loop conditions
+            delta_dgr = np.abs(dgr - dgr_new)
+            dgr = dgr_new
+            iteration += 1
+
+            # Derive new mask
+            mask = self._combine_masks(mask_residuals, mask)
+
+            if self.verbose:
+                npix = mask.size - np.sum(mask)
+                print('\t\t\tNumber of non-masked pixels = {0:.0f}'.format(npix))
+
+        # Plot results
+        if 0:
+            mask_new = get_residual_mask(residuals,
+                                      residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
+                                      plot_progress=plot_progress,
+                                      results_filename=results_filename)
+
+        # Create model of Av
+        self.av_model = dgr * self.nhi_image + intercept
+        self.mask = mask
+        self.av_model[self.mask] = np.nan
+        self.iter_vars[self.iter_step]['masking_var'] = masking_results
+        self.iter_vars[self.iter_step]['mask'] = mask
+
+
 
     def _write_final_params(self,):
 
@@ -1858,7 +1909,6 @@ def _fit_params(nhi_image=None,
     A = np.array([nhi_image[~mask], np.ones(nhi_image[~mask].shape)]).T
     #A = np.array([nhi_image[~mask],]).T
 
-
     params = np.dot(np.linalg.pinv(A), b)
 
     if verbose:
@@ -2424,363 +2474,6 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         return likelihoods
 
 def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
-        residual_thres=None, filename=None, show=True, title=None):
-
-    # Import external modules
-    import matplotlib.pyplot as plt
-    import matplotlib
-    import numpy as np
-    from scipy.integrate import simps as integrate
-
-    # Set up plot aesthetics
-    # ----------------------
-    plt.close;plt.clf()
-    font_scale = 9
-    params = {
-              'figure.figsize': (3.6, 3.6),
-              #'figure.titlesize': font_scale,
-             }
-    plt.rcParams.update(params)
-
-    # Create figure instance
-    fig = plt.figure()
-
-    ax = fig.add_subplot(111)
-
-    xlim = (-1, 2.0)
-
-    residuals_nonans = np.ravel(residuals[~np.isnan(residuals)])
-
-    counts, bin_edges = \
-        np.histogram(residuals_nonans,
-                     bins=20,
-                     )
-
-    bin_edges_ext = np.zeros(len(counts) + 1)
-    counts_ext = np.zeros(len(counts) + 1)
-
-    bin_edges_ext[0] = bin_edges[0] - (bin_edges[1] - bin_edges[0])
-    bin_edges_ext[1:] = bin_edges[:-1]
-    counts_ext[0] = 0
-    counts_ext[1:] = counts
-    bin_edges_ext = np.hstack([xlim[0], bin_edges_ext, xlim[1]])
-    counts_ext = np.hstack([0, counts_ext, 0])
-
-    # Normalize so area = 1
-    #counts_ext /= np.nansum(counts_ext) * (bin_edges_ext[2] - bin_edges_ext[1])
-    #counts_ext = counts_ext / integrate(counts_ext, x=bin_edges_ext)
-    #counts_ext /= counts_ext.max()
-    y_fit /= np.max(y_fit)
-    y_fit *= np.max(counts_ext)
-
-    pdf_max = bin_edges_ext[counts_ext == counts_ext.max()][0]
-    print('\t\t\tResidual max = {0:.2f} [mag]'.format(pdf_max))
-
-    ax.plot(bin_edges_ext, counts_ext, drawstyle='steps-pre',
-            linewidth=1.5)
-    ax.plot(x_fit, y_fit,
-            linewidth=2,
-            alpha=0.6)
-    ax.set_xlim([np.nanmin(bin_edges_ext) - \
-                 np.abs(0.8 * np.nanmin(bin_edges_ext)),4])
-    ax.set_xlim(xlim)
-    ax.set_ylim([-0.1, None])
-    ax.axvline(residual_thres,
-               color='k',
-               linestyle='--',
-               linewidth=1.5)
-    ax.set_xlabel(r'Residual $A_V$ [mag]')
-    ax.set_ylabel('Normalized PDF')
-
-    if title is not None:
-        fig.suptitle(title, fontsize=font_scale)
-    if filename is not None:
-        plt.savefig(filename, bbox_inches='tight', dpi=600)
-    if show:
-        plt.show()
-
-def plot_residual_map(residuals, header=None, dgr=None, show=False,
-        filename=None):
-
-    # Import external modules
-    import matplotlib.pyplot as plt
-    import matplotlib
-    import numpy as np
-    from mpl_toolkits.axes_grid1 import ImageGrid
-    import pyfits as pf
-    import matplotlib.pyplot as plt
-    import pywcsgrid2 as wcs
-    import pywcs
-    from pylab import cm # colormaps
-    from matplotlib.patches import Polygon
-
-    # Set up plot aesthetics
-    plt.clf()
-    colormap = plt.cm.gist_ncar
-    #color_cycle = [colormap(i) for i in np.linspace(0, 0.9, len(flux_list))]
-    font_scale = 15
-    params = {
-              'figure.figsize': (3.6, 3.6),
-             }
-    plt.rcParams.update(params)
-
-    # Create figure instance
-    fig = plt.figure()
-
-    nrows_ncols=(1,1)
-    ngrids=1
-
-    imagegrid = ImageGrid(fig, (1,1,1),
-                 nrows_ncols=nrows_ncols,
-                 ngrids=ngrids,
-                 cbar_mode="each",
-                 cbar_location='right',
-                 cbar_pad="2%",
-                 cbar_size='3%',
-                 axes_pad=1,
-                 axes_class=(wcs.Axes,
-                             dict(header=header)),
-                 aspect=True,
-                 label_mode='L',
-                 share_all=True)
-
-    # create axes
-    ax = imagegrid[0]
-    cmap = cm.jet # colormap
-    # show the image
-    im = ax.imshow(residuals,
-            interpolation='nearest',origin='lower',
-            cmap=cmap,
-            #norm=matplotlib.colors.LogNorm()
-            vmin=-1,
-            vmax=1
-            )
-
-    # Asthetics
-    ax.set_display_coord_system("fk5")
-    ax.set_ticklabel_type("hms", "dms")
-
-    ax.set_xlabel('Right Ascension [J2000]',)
-    ax.set_ylabel('Declination [J2000]',)
-
-    # colorbar
-    cb = ax.cax.colorbar(im)
-    cmap.set_bad(color='w')
-    # plot limits
-    limits = None
-    if limits is not None:
-        ax.set_xlim(limits[0],limits[2])
-        ax.set_ylim(limits[1],limits[3])
-
-    # Write label to colorbar
-    cb.set_label_text(r'$A_V$ [Mag]',)
-
-    if filename is not None:
-        plt.savefig(filename, bbox_inches='tight')
-    if show:
-        plt.show()
-
-def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
-        filename=None):
-
-    # Import external modules
-    import matplotlib.pyplot as plt
-    import matplotlib
-    import numpy as np
-    from mpl_toolkits.axes_grid1 import ImageGrid
-    import pyfits as pf
-    import matplotlib.pyplot as plt
-    import pywcsgrid2 as wcs
-    import pywcs
-    from pylab import cm # colormaps
-    from matplotlib.patches import Polygon
-
-    # Set up plot aesthetics
-    plt.clf()
-    colormap = plt.cm.gist_ncar
-    #color_cycle = [colormap(i) for i in np.linspace(0, 0.9, len(flux_list))]
-    font_scale = 15
-    params = {
-              'figure.figsize': (3.6, 3.6),
-             }
-    plt.rcParams.update(params)
-
-    # Create figure instance
-    fig = plt.figure()
-
-    nrows_ncols=(1,1)
-    ngrids=1
-
-    # Original map
-    # ------------
-    imagegrid = ImageGrid(fig, (2,1,1),
-                 nrows_ncols=nrows_ncols,
-                 ngrids=ngrids,
-                 cbar_mode="each",
-                 cbar_location='right',
-                 cbar_pad="2%",
-                 cbar_size='3%',
-                 axes_pad=1,
-                 axes_class=(wcs.Axes,
-                             dict(header=av_header)),
-                 aspect=True,
-                 label_mode='L',
-                 share_all=True)
-
-    # create axes
-    ax = imagegrid[0]
-    cmap = cm.jet # colormap
-    # show the image
-    im = ax.imshow(av_map,
-            interpolation='nearest',origin='lower',
-            cmap=cmap,
-            #norm=matplotlib.colors.LogNorm()
-            #vmin=-1,
-            #vmax=1
-            )
-
-    # Asthetics
-    ax.set_display_coord_system("fk5")
-    ax.set_ticklabel_type("hms", "dms")
-
-    ax.set_xlabel('Right Ascension [J2000]',)
-    ax.set_ylabel('Declination [J2000]',)
-
-    # colorbar
-    cb = ax.cax.colorbar(im)
-    cmap.set_bad(color='w')
-    # plot limits
-    limits = None
-    if limits is not None:
-        ax.set_xlim(limits[0],limits[2])
-        ax.set_ylim(limits[1],limits[3])
-
-    # Write label to colorbar
-    cb.set_label_text(r'$A_V$ [Mag]',)
-
-    # Binned map
-    # ----------
-    imagegrid = ImageGrid(fig, (2,1,2),
-                 nrows_ncols=nrows_ncols,
-                 ngrids=ngrids,
-                 cbar_mode="each",
-                 cbar_location='right',
-                 cbar_pad="2%",
-                 cbar_size='3%',
-                 axes_pad=1,
-                 axes_class=(wcs.Axes,
-                             dict(header=av_header_bin)),
-                 aspect=True,
-                 label_mode='L',
-                 share_all=True)
-
-    # create axes
-    ax = imagegrid[0]
-    cmap = cm.jet # colormap
-    # show the image
-    im = ax.imshow(av_bin_map,
-            interpolation='nearest',origin='lower',
-            cmap=cmap,
-            #norm=matplotlib.colors.LogNorm()
-            #vmin=-1,
-            #vmax=1
-            )
-
-    # Asthetics
-    ax.set_display_coord_system("fk5")
-    ax.set_ticklabel_type("hms", "dms")
-
-    ax.set_xlabel('Right Ascension [J2000]',)
-    ax.set_ylabel('Declination [J2000]',)
-
-    # colorbar
-    cb = ax.cax.colorbar(im)
-    cmap.set_bad(color='w')
-    # plot limits
-    limits = None
-    if limits is not None:
-        ax.set_xlim(limits[0],limits[2])
-        ax.set_ylim(limits[1],limits[3])
-
-    # Write label to colorbar
-    cb.set_label_text(r'$A_V$ [Mag]',)
-
-    if filename is not None:
-        plt.savefig(filename, bbox_inches='tight')
-
-def plot_dgr_intercept_progression(cloud, filename=None, show=True,
-        title=None):
-
-    # Import external modules
-    import matplotlib.pyplot as plt
-    import matplotlib
-    import numpy as np
-    from scipy.integrate import simps as integrate
-
-    nrows = len(cloud.iter_vars)
-
-    # Set up plot aesthetics
-    # ----------------------
-    plt.close;plt.clf()
-    font_scale = 9
-    params = {
-              'figure.figsize': (2 * nrows, 2 * nrows),
-              #'figure.titlesize': font_scale,
-             }
-    plt.rcParams.update(params)
-
-    # Create figure instance
-    fig, axes = plt.subplots(nrows=2, ncols=nrows)
-
-    for i in xrange(0, nrows):
-
-        ax1 = axes[0, i]
-        ax2 = axes[1, i]
-
-        iter_dict = cloud.iter_vars[i]['masking_var']
-
-        n_points = len(iter_dict)
-        dgrs = np.empty(n_points)
-        intercepts = np.empty(n_points)
-        npix = np.empty(n_points)
-
-        for j, iteration in enumerate(iter_dict):
-            dgrs[j] = iter_dict[iteration]['dgr']
-            intercepts[j] = iter_dict[iteration]['intercept']
-            npix[j] = np.sum(~iter_dict[iteration]['mask'])
-
-        ax1.plot(npix, dgrs,
-                 linestyle='',
-                 marker='o',
-                 )
-        ax2.plot(npix, intercepts,
-                 linestyle='',
-                 marker='o',
-                 )
-
-        ax2.set_xlabel(r'Number of Unmasked Pixels')
-        if i == 0:
-            ax1.set_ylabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
-            ax2.set_ylabel(r'Intercept [mag]')
-
-        ax1.locator_params(nbins = 4)
-        ax2.locator_params(nbins = 4)
-
-        vel_range = cloud.iter_vars[i]['vel_range']
-        width = np.abs(vel_range[1] - vel_range[0])
-
-        ax1.set_title(r'$\Delta_V$ = {0:.0f} km/s'.format(width))
-
-
-    if title is not None:
-        fig.suptitle(title, fontsize=font_scale)
-    if filename is not None:
-        fig.tight_layout()
-        plt.savefig(filename, bbox_inches='tight', dpi=600)
-    if show:
-        plt.show()
-
-def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
         fit_params=None, residual_thres=None, filename=None, show=True,
         anno_text=None, return_fig=False, limits=None, counts=None,
         bin_edges=None):
@@ -3252,3 +2945,4 @@ def plot_residual_hist_movie(cloud, filename=None,):
         animation.write_videofile(filename, fps=2)
     elif filename.split('.',1)[1] == 'gif':
         animation.write_gif(filename, fps=2)
+
