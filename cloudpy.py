@@ -1693,7 +1693,8 @@ def _calc_likelihoods(
                     raise KeyboardInterruptError()
 
             processes = []
-            output = mp.Queue()
+            # use all but one cpu
+            output = mp.Queue(mp.cpu_count() - 1)
 
             args = {'likelihoods': likelihoods,
                     'output': output
