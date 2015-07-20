@@ -120,8 +120,9 @@ class Cloud():
             self.av_error_header = self.av_error_header_bin.copy()
             self.hi_header = self.hi_header_bin.copy()
 
+        # Background
+        self.av_background = av_background
         if av_background is not None:
-            self.av_background = av_background
             self.av_data = self.av_data - av_background
 
         # Make velocity axis for HI cube
@@ -838,7 +839,8 @@ class Cloud():
             mask_residuals_new, residual_threshold, fit_params = \
                 _get_residual_mask(residuals,
                                residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
-                               plot_args=self.plot_args
+                               plot_args=self.plot_args,
+                               use_GMM=True,
                                )
 
             #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
@@ -982,8 +984,8 @@ class Cloud():
                                       filename=filename,
                                       )
             if 1:
-                self.iter_vars[self.iter_step]['scaled_likelihood_results'] = \
-                        results
+                #self.iter_vars[self.iter_step]['scaled_likelihood_results'] = \
+                        #results
 
                 likelihood_filename_base = \
                         '/d/bip3/ezbc/perseus/figures/likelihood/' + \
@@ -1875,7 +1877,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
                 params['x0'].value)
 
     if use_GMM:
-        g = DPGMM()
+        g = GMM()
         g.fit(residuals_crop)
         fit_params = [g.covars_[0,0]**0.5, 1, g.means_[0,0]]
         #print("mean : %f, std : %f" % (g.means_[0, 0], g.covars_[0, 0]**0.5))
