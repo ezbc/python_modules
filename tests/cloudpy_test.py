@@ -284,6 +284,17 @@ if 1:
                 self.cloud._iterate_mle_calc(hi_vel_range=[-10,10],
                                           )
 
+if 0:
+    def test_plot_likelihoods_hist():
+
+        props = \
+        cloudpy.load('/d/bip3/ezbc/multicloud/data/python_output/' + \
+                     'perseus_lee12_binned_coarseres_props.pickle')
+
+        cloudpy.plot_likelihoods_hist(props=props,
+                          filename=\
+                             '/usr/users/ezbc/Desktop/likelihoods.png',
+                          )
 
 if 0:
     def test_calc_likelihoods_1():
@@ -325,7 +336,7 @@ if 0:
         assert_almost_equal(results['intercept_max'], intercept_answer)
         assert_almost_equal(results['dgr_max'], dgr_answer)
 
-if 1:
+if 0:
     def test_calc_likelihoods_2():
         from numpy.testing import assert_array_almost_equal
         from numpy.testing import assert_almost_equal

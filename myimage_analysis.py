@@ -721,3 +721,43 @@ def calculate_nh2_error(nhi_image_error=None, av_image_error=None, dgr=1.1e-1):
             nhi_image_error**2)**0.5
 
     return nh2_image_error
+
+def fit_background(av_data, background_mask=None, background_dim=1):
+
+    from scipy.interpolate import interp2d
+    from scipy.interpolate import SmoothBivariateSpline as spline
+
+    if background_mask is None:
+        background_mask = np.zeros(av_data.shape)
+
+    if background_dim == 1:
+        background = np.nanmean(av_data[~background_mask])
+
+    if background_dim == 2:
+        #av_data = np.ma.array(av_data, mask=background_mask)
+
+        loc = np.where(~background_mask)
+
+        x = loc[0]
+        y = loc[1]
+
+        z = av_data[~background_mask]
+
+        #print av_data.size, z.shape
+        assert z.shape == x.shape
+
+        bbox = [0, av_data.shape[0], 0, av_data.shape[1]]
+
+        result_interp = spline(x, y, z, bbox=bbox, kx=1, ky=1)
+
+        x_grid, y_grid = np.where(av_data)
+
+        background_flat = result_interp.ev(x_grid, y_grid)
+
+        background = np.reshape(background_flat, av_data.shape)
+
+    return background
+
+
+
+

@@ -378,29 +378,37 @@ class Cloud():
 
         # Calulate chi^2 for best fit models
         # ----------------------------------
-        nhi_image_temp = calculate_nhi(cube=self.hi_data_bin,
+        nhi_image_temp = calculate_nhi(cube=self.hi_data_masked,
                                        velocity_axis=self.hi_vel_axis,
                                        velocity_range=vel_range_max,
                                        return_nhi_error=False)
 
-        self.av_image_model_bin = nhi_image_temp * dgr_max + intercept_max
-        numerator = (self.av_data_bin - self.av_image_model_bin)**2
+        self.av_image_model_masked = nhi_image_temp * dgr_max + intercept_max
+        numerator = (self.av_data_masked - self.av_image_model_masked)**2
         denominator = np.sum(~np.isnan(self.av_data_bin)) - 3
         std = np.sqrt(np.nansum(numerator) / denominator)
 
         #std = np.nanstd(self.av_data_bin - self.av_image_model_bin)
 
         # Derive new av data error
-        self.av_error_data_bin = std * np.ones(self.av_error_data_bin.shape)
+        self.av_error_data_masked = std * np.ones(self.av_error_data_masked.shape)
 
         self.iter_vars[self.iter_step]['init_likelihood_results']['std'] = \
                 std
 
-    def _bin_data(self, write_data=False):
+    def _bin_data(self, av_data=None, av_error_data=None,
+            hi_data=None, write_data=False):
 
         from myimage_analysis import calculate_nhi, calculate_noise_cube, \
                 bin_image
         import pyfits as fits
+
+        if av_data is None:
+            av_data = self.av_data
+        if av_error_data is None:
+            av_error_data = self.av_error_data
+        if hi_data is None:
+            hi_data = self.hi_data
 
         if self.verbose:
             print('\n\tBinning data...')
@@ -412,7 +420,7 @@ class Cloud():
 
         # Av image
         self.av_data_bin, self.av_header_bin, self.bin_weights = \
-                bin_image(self.av_data,
+                bin_image(av_data,
                           binsize=(binsize, binsize),
                           header=self.av_header,
                           statistic=np.nanmean,
@@ -426,14 +434,14 @@ class Cloud():
                                      np.sum(~np.isnan(x))
 
         self.av_error_data_bin, self.av_error_header_bin = \
-                bin_image(self.av_error_data,
+                bin_image(av_error_data,
                           binsize=(binsize, binsize),
                           header=self.av_error_header,
                           statistic=noise_func,)
 
         # Hi image
         self.hi_data_bin, self.hi_header_bin = \
-                bin_image(self.hi_data,
+                bin_image(hi_data,
                           binsize=(1, binsize, binsize),
                           header=self.hi_header,
                           statistic=np.nanmean)
@@ -495,7 +503,7 @@ class Cloud():
                 self.nhi_error_image
 
         # Finally, derive the mask to be used in calculation
-        self._iterate_residual_masking2()
+        self._iterate_residual_masking()
 
         # delete next two lines
         if 0:
@@ -506,13 +514,19 @@ class Cloud():
         # Apply mask to data, then bin data to avoid correlated pixels
         # ------------------------------------------------------------
         mask = self.iter_vars[self.iter_step]['mask']
-        self.av_data[mask] = np.nan
-        self.av_error_data[mask] = np.nan
-        self.hi_data[:, mask] = np.nan
+        self.av_data_masked = np.copy(self.av_data)
+        self.av_error_data_masked = np.copy(self.av_data)
+        self.hi_data_masked = np.copy(self.hi_data)
+        self.av_data_masked[mask] = np.nan
+        self.av_error_data_masked[mask] = np.nan
+        self.hi_data_masked[:, mask] = np.nan
 
         # Bin the data
         if not self.use_only_binned_data:
-            self._bin_data()
+            self._bin_data(av_data=self.av_data_masked,
+                           av_error_data=self.av_error_data_masked,
+                           hi_data=self.hi_data_masked
+                           )
 
             # Write binned filenames
             self.av_bin_filename = \
@@ -533,10 +547,6 @@ class Cloud():
                         clobber=True)
             _check_file(self.hi_error_bin_filename,
                         clobber=True)
-        else:
-            self.av_data_bin = self.av_data
-            self.av_error_data_bin = self.av_error_data
-            self.hi_data_bin = self.hi_data
 
         self.nhi_image_bin = \
                 calculate_nhi(cube=self.hi_data_bin,
@@ -569,9 +579,9 @@ class Cloud():
 
         results = \
             _calc_likelihoods(
-                              hi_cube=self.hi_data_bin,
-                              av_image=self.av_data_bin,
-                              av_image_error=self.av_error_data_bin,
+                              hi_cube=self.hi_data_masked,
+                              av_image=self.av_data_masked,
+                              av_image_error=self.av_error_data_masked,
                               hi_vel_axis=self.hi_vel_axis,
                               width_grid=self.width_grid,
                               dgr_grid=self.dgr_grid,
@@ -586,27 +596,16 @@ class Cloud():
 
         self.iter_vars[self.iter_step]['init_likelihood_results'] = results
 
-        if 1:
+        if 0:
             self.iter_vars[self.iter_step]['scaled_likelihood_results'] = results
-            likelihood_filename_base = \
+            likelihood_filename = \
                     '/d/bip3/ezbc/perseus/figures/likelihood/' + \
-                    'perseus_likelihood_lee12_init_'
+                    self.region + '_likelihood_lee12_init.png'
             self._write_final_params()
 
             plot_likelihoods_hist(cloud=self,
-                          plot_axes=('widths', 'dgrs'),
-                          show=0,
-                          returnimage=False,
-                          filename=likelihood_filename_base + 'wd.png',
-                          limits=[0, 60, 0.0, 0.2],
-                          )
-            plot_likelihoods_hist(cloud=self,
-                          plot_axes=('widths', 'intercepts'),
-                          show=0,
-                          returnimage=False,
-                          filename=likelihood_filename_base + 'wi.png',
-                          limits=[0, 60, -1.0, 2.0],
-                          )
+                                  filename=likelihood_filename,
+                                  )
 
         # Unpack output of likelihood calculation
         dgr_max = results['dgr_max']
@@ -627,9 +626,9 @@ class Cloud():
 
         results = \
             _calc_likelihoods(
-                              hi_cube=self.hi_data_bin,
-                              av_image=self.av_data_bin,
-                              av_image_error=self.av_error_data_bin,
+                              hi_cube=self.hi_data_masked,
+                              av_image=self.av_data_masked,
+                              av_image_error=self.av_error_data_masked,
                               hi_vel_axis=self.hi_vel_axis,
                               vel_center=self.vel_center,
                               bin_weights=self.bin_weights,
@@ -645,145 +644,6 @@ class Cloud():
         self.iter_vars[self.iter_step]['scaled_likelihood_results'] = results
 
         return results['vel_range_max']
-
-    def _iterate_residual_masking(self,):
-
-        '''
-
-        Returns
-        -------
-        av_model : numpy array
-        mask : numpy array
-        dgr : float
-
-        '''
-
-        import numpy as np
-
-        # Mask out nans
-        mask = self._prep_mask()
-
-        # Apply initial mask to exclude throughout process
-        mask_init = self.region_mask
-        if mask_init is not None:
-            mask += mask_init
-
-        if 1:
-            import matplotlib.pyplot as plt
-            plt.clf(); plt.close()
-            av_image = self.av_data.copy()
-            av_image[mask] = np.nan
-            plt.imshow(av_image, origin="lower", aspect="auto")
-            plt.savefig('/usr/users/ezbc/Desktop/av_init.png')
-
-        # solve for DGR using linear least squares
-        if self.verbose:
-            print('\n\tBeginning iterative DGR calculations + masking...')
-
-        # Iterate masking pixels which are correlated and rederiving a linear
-        # least squares solution for the DGR
-        #----------------------------------------------------------------------
-        masking_results = {}
-        delta_dgr = 1e10
-        dgr = 1e10
-        iteration = 0
-
-        while delta_dgr > self.THRESHOLD_DELTA_DGR:
-            results = \
-                _calc_likelihoods(
-                                  nhi_image=self.nhi_image[~mask],
-                                  av_image=self.av_data[~mask],
-                                  av_image_error=self.av_error_data[~mask],
-                                  #bin_weights=bin_weights[~mask],
-                                  #vel_center=vel_center_masked,
-                                  #width_grid=np.arange(0,1,1),
-                                  dgr_grid=self.dgr_grid,
-                                  intercept_grid=self.intercept_grid,
-                                  vel_center=self.vel_center,
-                                  #results_filename='',
-                                  #return_likelihoods=True,
-                                  likelihood_filename=self.likelihood_filename,
-                                  clobber=self.clobber_likelihoods,
-                                  verbose=self.verbose,
-                                  )
-
-            # Unpack output of likelihood calculation
-            dgr_new = results['dgr_max']
-            intercept = results['intercept_max']
-
-            # Create model with the DGR
-            if self.verbose:
-                print('\t\tIteration {0:.0f} results:'.format(iteration))
-                print('\t\t\tDGR = {0:.2} 10^20 cm^2 mag'.format(dgr_new))
-                print('\t\t\tIntercept = {0:.2f} mag'.format(intercept))
-                print('')
-
-            av_image_model = self.nhi_image * dgr_new + intercept
-            residuals = self.av_data - av_image_model
-            residuals[mask] = np.nan
-
-            # plot progress
-            if 0:
-                if plot_args is not None:
-                    plot_residual_map(residuals,
-                                      header=av_header,
-                                      dgr=dgr_new)
-
-            if 0:
-                if iteration == 0:
-                    plot_filename = self.plot_args['results_filename']
-                else:
-                    plot_filename = None
-
-            # Include only residuals which are white noise
-            self.plot_args['iter_ext'] = str(self.iter_step) + '_' + \
-                                         str(iteration)
-            self.plot_args['av_header'] = self.av_header
-            mask_new, intercept = \
-                _get_residual_mask(residuals,
-                               residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
-                               plot_args=self.plot_args
-                               )
-
-            #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
-
-            # Mask non-white noise, i.e. correlated residuals.
-            mask[mask_new] = 1
-
-            if self.verbose:
-                npix = mask.size - np.sum(mask)
-                print('\t\t\tNumber of non-masked pixels = {0:.0f}'.format(npix))
-
-            # Record variables
-            masking_results[iteration] = {}
-            masking_results[iteration]['residuals'] = residuals
-            masking_results[iteration]['dgr'] = dgr_new
-            #masking_results[iteration]['width'] = width
-            masking_results[iteration]['intercept'] = intercept
-            masking_results[iteration]['mask'] = mask
-
-            #if dgr == 1e10:
-            #    mask[self.av_data > 1] = 1
-
-            # Reset while loop conditions
-            delta_dgr = np.abs(dgr - dgr_new)
-            dgr = dgr_new
-            iteration += 1
-
-        # Plot results
-        if 0:
-            mask_new = \
-                get_residual_mask(residuals,
-                            residual_width_scale=self.RESIDUAL_WIDTH_SCALE,
-                            plot_progress=plot_progress,
-                            results_filename=results_filename)
-
-        # Create model of Av
-        self.av_model = dgr * self.nhi_image + intercept
-        self.mask = mask
-        self.av_model[self.mask] = np.nan
-        self.iter_vars[self.iter_step]['masking_var'] = masking_results
-        self.iter_vars[self.iter_step]['mask'] = mask
 
     def _get_faint_mask(self, init_fraction=0.1):
 
@@ -843,7 +703,7 @@ class Cloud():
 
         return mask
 
-    def _iterate_residual_masking2(self,):
+    def _iterate_residual_masking(self,):
 
         '''
 
@@ -871,7 +731,7 @@ class Cloud():
 
         mask_residuals = np.zeros(mask.shape, dtype=bool)
 
-        if 1:
+        if 0:
             import matplotlib.pyplot as plt
             plt.clf(); plt.close()
             av_image = self.av_data.copy()
@@ -895,7 +755,6 @@ class Cloud():
 
         while delta_dgr > self.THRESHOLD_DELTA_DGR:
 
-
             if 0:
                 import matplotlib.pyplot as plt
                 plt.clf(); plt.close()
@@ -909,7 +768,6 @@ class Cloud():
 
             if self.verbose:
                 print('\t\tIteration {0:.0f} results:'.format(iteration))
-
 
             if 0:
                 results = \
@@ -931,10 +789,16 @@ class Cloud():
                                       verbose=self.verbose,
                                       )
             else:
+                if self.av_background is not None:
+                    include_intercept = False
+                else:
+                    include_intercept = True
+
                 results = _fit_params(
                                       nhi_image=self.nhi_image[~mask],
                                       av_image=self.av_data[~mask],
                                       av_image_error=self.av_error_data[~mask],
+                                      include_intercept=include_intercept,
                                       verbose=self.verbose,
                                       )
 
@@ -969,6 +833,7 @@ class Cloud():
             # Include only residuals which are white noise
             self.plot_args['iter_ext'] = str(self.iter_step) + '_' + \
                                          str(iteration)
+
             self.plot_args['av_header'] = self.av_header
             mask_residuals_new, residual_threshold, fit_params = \
                 _get_residual_mask(residuals,
@@ -1028,9 +893,9 @@ class Cloud():
                                       results_filename=results_filename)
 
         # Create model of Av
-        self.av_model = dgr * self.nhi_image + intercept
+        #self.av_model = dgr * self.nhi_image + intercept
         self.mask = mask
-        self.av_model[self.mask] = np.nan
+        #self.av_model[self.mask] = np.nan
         self.iter_vars[self.iter_step]['masking_var'] = masking_results
         self.iter_vars[self.iter_step]['mask'] = mask
 
@@ -1102,24 +967,43 @@ class Cloud():
         # Plot the likelihoods
         if 'likelihood_filename_base' in self.plot_args:
 
-            import os
+            if 0:
+                import os
 
-            filename_wd = self.plot_args['likelihood_filename_base'] + \
-                          self.plot_args['iter_ext'] + '_wd.png'
-            filename_wi = self.plot_args['likelihood_filename_base'] + \
-                          self.plot_args['iter_ext'] + '_wi.png'
+                filename = self.plot_args['likelihood_filename_base'] + \
+                              self.plot_args['iter_ext'] + '.png'
 
 
-            if self.iter_step == 0:
-                os.system('rm -rf ' + \
-                        self.plot_args['likelihood_filename_base'] + '*')
+                if self.iter_step == 0:
+                    os.system('rm -rf ' + \
+                            self.plot_args['likelihood_filename_base'] + '*')
 
-            plot_likelihoods_hist(cloud=self,
-                                  filename=filename_wd,
-                                  plot_axes=('widths', 'dgrs'))
-            plot_likelihoods_hist(cloud=self,
-                                  filename=filename_wi,
-                                  plot_axes=('widths', 'intercepts'))
+                plot_likelihoods_hist(cloud=self,
+                                      filename=filename,
+                                      )
+            if 1:
+                self.iter_vars[self.iter_step]['scaled_likelihood_results'] = \
+                        results
+
+                likelihood_filename_base = \
+                        '/d/bip3/ezbc/perseus/figures/likelihood/' + \
+                        'perseus_likelihood_lee12_init_'
+                self._write_final_params()
+
+                plot_likelihoods_hist(cloud=self,
+                              plot_axes=('widths', 'dgrs'),
+                              show=0,
+                              returnimage=False,
+                              filename=likelihood_filename_base + 'wd.png',
+                              limits=[0, 60, 0.0, 0.2],
+                              )
+                plot_likelihoods_hist(cloud=self,
+                              plot_axes=('widths', 'intercepts'),
+                              show=0,
+                              returnimage=False,
+                              filename=likelihood_filename_base + 'wi.png',
+                              limits=[0, 60, -1.0, 2.0],
+                              )
 
     def load_cloud_properties(self, prop_filename):
 
@@ -1201,6 +1085,10 @@ class Cloud():
 
             vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
                                            np.array(vel_range_new)))
+
+            # likelihoods data is large, omit if not the last one
+            self.iter_vars[self.iter_step]\
+                    ['scaled_likelihood_results']['likelihoods'] = None
 
             if self.verbose:
                 print('\t\tVel range old = ' + \
@@ -1848,6 +1736,7 @@ def _calc_likelihoods(
 def _fit_params(nhi_image=None,
                 av_image=None,
                 av_image_error=None,
+                include_intercept=True,
                 verbose=False):
 
     mask = (np.isnan(nhi_image) | \
@@ -1855,11 +1744,13 @@ def _fit_params(nhi_image=None,
             np.isnan(av_image_error))
 
     b = av_image[~mask]
-    A = np.array([nhi_image[~mask], np.ones(nhi_image[~mask].shape)]).T
-    #A = np.array([nhi_image[~mask],]).T
+    if include_intercept:
+        A = np.array([nhi_image[~mask], np.ones(nhi_image[~mask].shape)]).T
 
-
-    params = np.dot(np.linalg.pinv(A), b)
+        params = np.dot(np.linalg.pinv(A), b)
+    else:
+        A = np.array([nhi_image[~mask],]).T
+        params = [np.dot(np.linalg.pinv(A), b)[0], 0]
 
     if verbose:
         print('\t\t\tDGR = {0:.2f} [10^-20 cm^2 mag]'.format(params[0]))
@@ -2102,6 +1993,458 @@ def load(filename):
         cloud = pickle.load(input)
 
     return cloud
+
+def _build_likelihoods_hist_axis(ax, cloud=None, props=None, xlim=None,
+        ylim=None, plot_axes=('widths','dgr_grid'), contour_confs=(0.95,),
+        show_pdfs='xy'):
+
+    ''' Plots a heat map of likelihoodelation values as a function of velocity
+    width and velocity center.
+
+    Parameters
+    ----------
+    cloud : cloudpy.Cloud
+        If provided, properties taken from cloud.props.
+
+
+    '''
+
+    # Import external modules
+    import numpy as np
+    import math
+    from mpl_toolkits.axes_grid1 import ImageGrid
+    import pyfits as pf
+    import matplotlib.pyplot as plt
+    import matplotlib
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    if cloud is not None:
+        props = cloud.props
+
+    # Set up plot aesthetics
+    # ----------------------
+
+    font_scale = 9
+    params = {
+              'figure.figsize': (3.6, 3.6),
+              #'figure.titlesize': font_scale,
+             }
+    plt.rcParams.update(params)
+
+    # Define parameters from cloud
+    if cloud is not None:
+        props = cloud.props
+
+    if plot_axes[0] == 'widths':
+        x_grid = props['width_grid']
+        x_confint = (props['hi_velocity_width']['value'],
+                     props['hi_velocity_width_error']['value'][0],
+                     props['hi_velocity_width_error']['value'][1],
+                     )
+        x_extent = x_grid[0], x_grid[-1]
+        ax.set_xlabel(r'Velocity Width [km/s]')
+        x_sum_axes = (1, 2)
+        y_pdf_label = 'Width PDF'
+        #if xlim is None:
+        #    xlim = (x_grid[0], x_grid[-1])
+    if plot_axes[1] == 'widths':
+        y_grid = props['width_grid']
+        y_confint = (props['hi_velocity_width']['value'],
+                     props['hi_velocity_width_error']['value'][0],
+                     props['hi_velocity_width_error']['value'][1],
+                     )
+        y_extent = y_grid[0], y_grid[-1]
+        ax.set_ylabel(r'Velocity Width [km/s]')
+        y_sum_axes = (1, 2)
+        x_pdf_label = 'Width PDF'
+        #if ylim is None:
+        #    ylim = (y_grid[0], y_grid[-1])
+    if plot_axes[0] == 'dgrs':
+        x_grid = props['dgr_grid']
+        x_confint = (props['dust2gas_ratio']['value'],
+                     props['dust2gas_ratio_error']['value'][0],
+                     props['dust2gas_ratio_error']['value'][1],
+                     )
+        x_extent = x_grid[0], x_grid[-1]
+        ax.set_xlabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
+        x_sum_axes = (0, 2)
+        y_pdf_label = 'DGR PDF'
+        #if xlim is None:
+        #    xlim = (x_grid[0], x_grid[-1])
+    if plot_axes[1] == 'dgrs':
+        y_grid = props['dgr_grid']
+        y_confint = (props['dust2gas_ratio']['value'],
+                     props['dust2gas_ratio_error']['value'][0],
+                     props['dust2gas_ratio_error']['value'][1],
+                     )
+        y_extent = y_grid[0], y_grid[-1]
+        ax.set_ylabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
+        y_sum_axes = (0, 2)
+        x_pdf_label = 'DGR PDF'
+        #if ylim is None:
+        #    ylim = (y_grid[0], y_grid[-1])
+    if plot_axes[0] == 'intercepts':
+        x_grid = props['intercept_grid']
+        x_confint = (props['intercept']['value'],
+                     props['intercept_error']['value'][0],
+                     props['intercept_error']['value'][1],
+                     )
+        x_extent = x_grid[0], x_grid[-1]
+        ax.set_xlabel(r'Intercept [mag]')
+        x_sum_axes = (0, 1)
+        y_pdf_label = 'Intercept PDF'
+        #if xlim is None:
+        #    xlim = (x_grid[0], x_grid[-1])
+    if plot_axes[1] == 'intercepts':
+        y_grid = props['intercept_grid']
+        y_confint = (props['intercept']['value'],
+                     props['intercept_error']['value'][0],
+                     props['intercept_error']['value'][1],
+                     )
+        y_extent = y_grid[0], y_grid[-1]
+        ax.set_ylabel(r'Intercept [mag]')
+        y_sum_axes = (0, 1)
+        x_pdf_label = 'Intercept PDF'
+        #if ylim is None:
+        #    ylim = (y_grid[0], y_grid[-1])
+
+    # Create axes
+    sum_axes = np.array((x_sum_axes, y_sum_axes))
+    sum_axis = np.argmax(np.bincount(np.ravel(sum_axes)))
+
+    # Mask NaNs
+    likelihoods = np.array(props['likelihoods'])
+    image = np.ma.array(likelihoods, mask=np.isnan(likelihoods))
+
+    # Create likelihood image
+    image = np.sum(likelihoods, axis=sum_axis) / np.sum(likelihoods)
+
+    # Derive marginal distributions of both centers and widths
+    x_sum = np.sum(likelihoods, axis=x_sum_axes)
+    x_pdf = x_sum / np.sum(x_sum)
+    y_sum = np.sum(likelihoods, axis=y_sum_axes)
+    y_pdf = y_sum / np.sum(y_sum)
+
+    extent = np.ravel(np.array((x_extent, y_extent)))
+
+    #plt.rc('text', usetex=False)
+    im = ax.imshow(image.T, interpolation='nearest', origin='lower',
+            extent=extent,
+            #cmap=plt.cm.gist_stern,
+            #cmap=plt.cm.gray,
+            cmap=plt.cm.binary,
+            #norm=matplotlib.colors.LogNorm(),
+            aspect='auto',
+            )
+
+    # Limit the number of tick marks
+    ax.locator_params(nbins = 4)
+
+
+    if 'x' in show_pdfs:
+        # ---------
+        # Plot PDFs
+        # ---------
+        divider = make_axes_locatable(ax)
+        ax_pdf_x = divider.append_axes("top", 0.6, pad=0.1, sharex=ax)
+
+        # make some labels invisible
+        plt.setp(ax_pdf_x.get_xticklabels(), visible=False)
+
+        ax_pdf_x.plot(x_grid,
+                      x_pdf,
+                      color='k',
+                      drawstyle='steps-mid',
+                      linewidth=2,
+                      )
+
+
+        #axHistx.axis["bottom"].major_ticklabels.set_visible(False)
+
+        for tl in ax_pdf_x.get_xticklabels():
+            tl.set_visible(False)
+
+        # Tick marks on the pdf?
+        pdf_ticks = False
+        if pdf_ticks:
+            wmax = x_pdf.max()
+            ticks = [0, 0.5*wmax, 1.0*wmax]
+            tick_labels = ['{0:.1f}'.format(ticks[0]),
+                           '{0:.1f}'.format(ticks[1]),
+                           '{0:.1f}'.format(ticks[2]),
+                            ]
+            ax_pdf_x.set_yticks(ticks)
+            ax_pdf_x.set_yticklabels(tick_labels)
+        else:
+            for tl in ax_pdf_x.get_yticklabels():
+                tl.set_visible(False)
+
+        ax_pdf_x.set_ylabel(y_pdf_label)
+        if x_confint is not None:
+            ax_pdf_x.axvspan(x_confint[0] - x_confint[1],
+                                 x_confint[0] + x_confint[2],
+                                  color='k',
+                                 linewidth=1,
+                                  alpha=0.2)
+            ax_pdf_x.axvline(x_confint[0],
+                                 color='k',
+                                 linestyle='--',
+                                 linewidth=3,
+                                 alpha=1)
+
+    if 'y' in show_pdfs:
+        divider = make_axes_locatable(ax)
+        ax_pdf_y  = divider.append_axes("right", 0.6, pad=0.1,
+                sharey=ax)
+        plt.setp(ax_pdf_y.get_yticklabels(), visible=False)
+        ax_pdf_y.plot(y_pdf,
+                      y_grid,
+                      color='k',
+                      drawstyle='steps-mid',
+                      linewidth=2,
+                      )
+
+        for tl in ax_pdf_y.get_yticklabels():
+            tl.set_visible(False)
+        if 0:
+            cmax = y_pdf.max()
+            ticks = [0, 0.5*cmax, 1.0*cmax]
+            tick_labels = ['{0:.1f}'.format(ticks[0]),
+                           '{0:.1f}'.format(ticks[1]),
+                           '{0:.1f}'.format(ticks[2]),
+                            ]
+            ax_pdf_y.set_xticks(ticks)
+            ax_pdf_y.set_xticklabels(tick_labels)
+        else:
+            for tl in ax_pdf_y.get_xticklabels():
+                tl.set_visible(False)
+
+        ax_pdf_y.set_xlabel(x_pdf_label)
+
+        # ----------------------
+        # Show confidence limits
+        # ----------------------
+        if y_confint is not None:
+            ax_pdf_y.axhspan(y_confint[0] - y_confint[1],
+                             y_confint[0] + y_confint[2],
+                             color='k',
+                             linewidth=1,
+                             alpha=0.2)
+            ax_pdf_y.axhline(y_confint[0],
+                             color='k',
+                             linestyle='--',
+                             linewidth=3,
+                             alpha=1)
+
+
+    #cb.set_clim(vmin=0.)
+    # Write label to colorbar
+    #cb.set_label_text(r'log L')
+
+    # -------------
+    # Plot contours
+    # -------------
+    if contour_confs is not None:
+
+        fractions = (1.0 - np.asarray(contour_confs))
+        levels = (fractions * image.max())
+
+        cs = ax.contour(image.T, levels=levels,
+                extent=extent,
+                colors='k'
+                )
+
+        # Define a class that forces representation of float to look a certain
+        # way This remove trailing zero so '1.0' becomes '1'
+        class nf(float):
+             def __repr__(self):
+                 str = '%.1f' % (self.__float__(),)
+                 if str[-1]=='0':
+                     return '%.0f' % self.__float__()
+                 else:
+                     return '%.1f' % self.__float__()
+
+        # Recast levels to new class
+        cs.levels = [nf(val) for val in np.asarray(contour_confs)*100.0]
+
+        #fmt = {}
+        #for level, fraction in zip(cs.levels, fractions):
+        #    fmt[level] = fraction
+        fmt = '%r %%'
+
+        ax.clabel(cs, cs.levels, fmt=fmt, fontsize=9, inline=1)
+
+        if xlim is None:
+            try:
+                vert_max = -np.Inf
+                vert_min = np.Inf
+                for path in cs.collections[0].get_paths():
+                    if np.max(path.vertices[:,0]) > vert_max:
+                        vert_max = np.max(path.vertices[:, 0])
+                    if np.min(path.vertices[:,0]) > vert_min:
+                        vert_min = np.min(path.vertices[:, 0])
+
+                x_offset = np.max(vert_max)*0.25
+
+                x_min, x_max = vert_min - x_offset,\
+                               vert_max + x_offset
+
+                try:
+                    ax.set_xlim((x_min, x_max))
+                except UnboundLocalError:
+                    pass
+            except IndexError:
+                pass
+        if ylim is None:
+            try:
+                vert_max = -np.Inf
+                vert_min = np.Inf
+                for path in cs.collections[0].get_paths():
+                    if np.max(path.vertices[:,1]) > vert_max:
+                        vert_max = np.max(path.vertices[:, 1])
+                    if np.min(path.vertices[:,1]) > vert_min:
+                        vert_min = np.min(path.vertices[:, 1])
+
+                y_offset = np.max(vert_max)*0.25
+
+                y_min, y_max = vert_min - y_offset,\
+                               vert_max + y_offset
+
+                try:
+                    ax.set_ylim((y_min, y_max))
+                except UnboundLocalError:
+                    pass
+            except IndexError:
+                pass
+
+    # Set limits
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+
+    if 0:
+    #if npix is not None or av_threshold is not None:
+        text = ''
+        if npix is not None:
+            text += r'N$_{\rm pix}$ = ' + \
+                     '{0:.0f}'.format(npix)
+            if av_threshold is not None:
+                text += '\n'
+        if av_threshold is not None:
+            text += r'$A_V$ threshold = {0:.1f} mag'.format(av_threshold)
+            text += '\n'
+        text += r'DGR = {0:.2f} '.format(y_confint[0]) + \
+                r'$\times$ 10$^{-20}$ (cm$^2$ mag$^1$)'
+        text += '\n'
+        text += r'Velocity width = {0:.2f} '.format(x_confint[0]) + \
+                r'km/s'
+        ax.annotate(text,
+                xytext=(0.95, 0.95),
+                xy=(0.95, 0.95),
+                textcoords='axes fraction',
+                xycoords='axes fraction',
+                color='k',
+                fontsize=font_scale*0.75,
+                bbox=dict(boxstyle='round',
+                          facecolor='w',
+                          alpha=0.3),
+                horizontalalignment='right',
+                verticalalignment='top',
+                )
+
+    return ax
+
+def __plot_likelihoods_hist(cloud=None, props=None, width_limits=None,
+        dgr_limits=None, intercept_limits=None,
+        returnimage=False, show=0,
+        filename='', contour_confs=(0.95,)):
+
+    ''' Plots a heat map of likelihoodelation values as a function of velocity
+    width and velocity center.
+
+    Parameters
+    ----------
+    cloud : cloudpy.Cloud
+        If provided, properties taken from cloud.props.
+
+
+    '''
+
+    # Import external modules
+    import numpy as np
+    import math
+    from mpl_toolkits.axes_grid1 import ImageGrid
+    import pyfits as pf
+    import matplotlib.pyplot as plt
+    import matplotlib
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    if cloud is not None:
+        props = cloud.props
+
+    # Set up plot aesthetics
+    # ----------------------
+    plt.close;plt.clf()
+
+    font_scale = 9
+    params = {
+              'figure.figsize': (6, 6),
+              #'figure.titlesize': font_scale,
+             }
+    plt.rcParams.update(params)
+
+    fig = plt.figure()
+    axes = plt.subplots((3,3))
+
+    axes[0] = _build_likelihoods_hist_axis(axes[0],
+                                           cloud=cloud,
+                                           props=props,
+                                           plot_axes=('dgrs', 'widths'),
+                                           contour_confs=contour_confs,
+                                           #xlim=dgr_limits,
+                                           #ylim=width_limits,
+                                           xlim=[0,.3],
+                                           ylim=[0,50],
+                                           pdf='dgr',
+                                           )
+    axes[1] = _build_likelihoods_hist_axis(axes[1],
+                                            cloud=cloud,
+                                            props=props,
+                                            plot_axes=('intercepts', 'widths'),
+                                            contour_confs=contour_confs,
+                                            #xlim=intercept_limits,
+                                            #ylim=width_limits,
+                                            xlim=[-0.9,1],
+                                            ylim=[0,50],
+                                            show_pdfs='xy',
+                                            )
+    axes[2] = _build_likelihoods_hist_axis(axes[2],
+                                            cloud=cloud,
+                                            props=props,
+                                            plot_axes=('intercepts', 'widths'),
+                                            contour_confs=contour_confs,
+                                            #xlim=intercept_limits,
+                                            #ylim=width_limits,
+                                            xlim=[-0.9,1],
+                                            ylim=[0,50],
+                                            show_pdfs='y',
+                                            )
+
+    axes[1].set_ylabel('')
+    #axes[1].set_yticklabels(visible=False)
+    for tl in axes[1].get_yticklabels():
+        tl.set_visible(False)
+
+    # Get same y axis limits
+    #axes[1].set_ylim(axes[0].get_ylim())
+
+    if filename is not None:
+        #plt.draw()
+        plt.savefig(filename, bbox_inches='tight')
+    if show:
+        plt.draw()
+        plt.show()
+    if returnimage:
+        return likelihoods
 
 def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         returnimage=False, plot_axes=('widths','dgr_grid'), show=0,
