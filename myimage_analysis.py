@@ -8,7 +8,7 @@ import numpy as np
 import mymath
 import mycoords
 import matplotlib.pyplot as plt
-import pyfits as pf
+from astropy.io import fits
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -601,14 +601,14 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
         header.remove('NAXIS3')
         header['NAXIS'] = 2
 
-        pf.writeto(fits_filename, image*1.823e-2, header = header, clobber =
+        fits.writeto(fits_filename, image*1.823e-2, header = header, clobber =
                 True, output_verify = 'fix')
 
     if fits_error_filename is not None and header is not None:
         if verbose:
             print('Writing N(HI) error image to FITS file %s' % fits_filename)
 
-        pf.writeto(fits_error_filename, image_error * 1.823e-2, header =
+        fits.writeto(fits_error_filename, image_error * 1.823e-2, header =
                 header, clobber = True, output_verify = 'fix')
 
     if return_nhi_error:
@@ -625,7 +625,7 @@ def calculate_noise_cube(cube=None, velocity_axis=None,
     """
 
     import numpy as np
-    import pyfits as pf
+    from astropy.io import fits
 
     noise_cube = np.zeros(cube.shape)
     for i in range(cube.shape[1]):
@@ -638,7 +638,7 @@ def calculate_noise_cube(cube=None, velocity_axis=None,
                     profile, noise=noise)
 
     if filename is not None:
-        pf.writeto(filename, noise_cube, header=header)
+        fits.writeto(filename, noise_cube, header=header)
 
     return noise_cube
 

@@ -17,7 +17,7 @@ if 0:
 
         assert_almost_equal(-1, intercept, decimal=0)
 
-if 1:
+if 0:
     class TestCloudpy():
 
         def setup(self):
@@ -336,7 +336,7 @@ if 0:
         assert_almost_equal(results['intercept_max'], intercept_answer)
         assert_almost_equal(results['dgr_max'], dgr_answer)
 
-if 0:
+if 1:
     def test_calc_likelihoods_2():
         from numpy.testing import assert_array_almost_equal
         from numpy.testing import assert_almost_equal
@@ -348,7 +348,7 @@ if 0:
         av_image = np.array([[0, 0, 0, 0, 0],
                              [0, 1, 1, 1, 0],
                              [0, 1, 2, 1, 0],
-                             [0, 1, 1, 1, 0],
+                             [np.nan, 1, 1, 1, 0],
                              [0, 0, 0, 0, 0]])
 
         #av_image_error = np.random.normal(0.1, size=av_image.shape)
@@ -361,7 +361,7 @@ if 0:
         hi_cube[:, :, :] = np.array(
             [
              [[  1., 0., 0., 0., 0.],
-              [  0., 0., 0., 0., 0.],
+              [  np.nan, 0., 0., 0., 0.],
               [  0., 0., 0., 0., 0.],
               [  0., 0., 0., 0., 0.],
               [  1., 0., 0., 0., 10.],],
@@ -375,7 +375,7 @@ if 0:
              [[  0., 0., 0., 0., 0.],
               [  0., 0., 0., 2., 0.],
               [  0., 0., 0., 2., 0.],
-              [  0., 0., 0., 2., 0.],
+              [  0., 0., 0., 2., np.nan],
               [  0., 0., 0., 0., 0.],],
 
              [[  0., 0., 0., 0., 0.],
@@ -385,7 +385,7 @@ if 0:
               [  0., 0., 0., 0., 0.],],
 
              [[  0., 0., 0., 0., 0.],
-              [  0., 0., 0., 0., 0.],
+              [  0., 0., 0., 0., np.nan],
               [  0., 0., 0., 0., 0.],
               [  0., 0., 0., 0., 0.],
               [  1., 0., 0., 0., 0.2],],
@@ -462,7 +462,7 @@ if 0:
 
         width_grid = np.arange(0, 5, 1)
         dgr_grid = np.arange(0, 1, 0.1)
-        intercept_grid = np.arange(-1, 2, 0.1)
+        intercept_grid = np.arange(-1, 1, 0.1)
         vel_center = 2
 
         results = \
@@ -556,3 +556,4 @@ if 0:
         assert_almost_equal(results['width_max'], width_answer)
 
 
+    #test_calc_likelihoods_2()
