@@ -46,7 +46,7 @@ class rv2d_discrete(object):
         self.param_name1 = param_name1
         self.param_name2 = param_name2
         if L_scalar is None:
-        	self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 1e-8]))
+            self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 1e-8]))
         else:
             self.L_scalar = L_scalar
 
@@ -125,7 +125,7 @@ class rv3d_discrete(object):
         self.param_name2 = param_name2
         self.param_name3 = param_name3
         if L_scalar is None:
-        	self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 1e-8]))
+            self.L_scalar = int(1.0 / np.min(likelihoods[likelihoods > 1e-8]))
         else:
             self.L_scalar = L_scalar
 
@@ -179,14 +179,18 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
 
     from scipy.integrate import simps as integrate
 
+
     if len(x) < 4:
-    	#raise ValueError('x and y must have lengths > 3')
+        #raise ValueError('x and y must have lengths > 3')
         return x[0], 0, 0
 
     # Create histogram with bin widths normalized by the density of values
     if y is None:
         x = np.sort(x)
         y = np.ones(x.shape)
+
+    if np.any(y < 0):
+        raise ValueError('y values mush be greater than 0')
 
     confidence = (1.0 - alpha)
 
@@ -197,6 +201,8 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
 
     # Get weighted average of PDF
     mid_pos = np.argmin(np.abs(x - np.average(x, weights=y)))
+    #mid_pos = np.argmin(np.abs(x - np.median(x, weights=y)))
+    #mid_pos = np.interp
 
     # If the cum sum had duplicates, then multiple median pos will be derived,
     # take the one in the middle.
@@ -208,38 +214,51 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
 
     # Lower error
     pos = mid_pos - 1
-    while pos >= 0 and pos < mid_pos:
-        y_clip = y[pos:mid_pos + 1]
-        x_clip = x[pos:mid_pos + 1]
+    low_area = -np.Inf
+
+    #area = integrate(y[0:mid_pos], x[0:mid_pos])
+
+    while low_area <= area * confidence / 2.0 and pos > 0:
+        y_clip = y[pos:mid_pos]# + 1]
+        x_clip = x[pos:mid_pos]# + 1]
 
         low_area = integrate(y_clip, x_clip)
 
-        if low_area >= area * confidence / 2.0:
-        	low_pos = pos
-        	break
+        # Catch the error if going to far
+        if pos < 0:
+            pos = 0
+            break
 
         pos -= 1
 
-    if pos == -1:
-    	low_pos = np.min(np.where(y != 0))
+    # set result to lower position
+    low_pos = pos
+
+    if pos == 0:
+        low_pos = np.min(np.where(y != 0))
 
     # higher error
     pos = mid_pos + 1
     max_pos = len(x)
-    while pos <= max_pos and pos > mid_pos:
+    high_area = -np.Inf
+
+    #area = integrate(y[mid_pos:-1], x[mid_pos:-1])
+    while high_area <= area * confidence / 2.0 and pos < max_pos:
         y_clip = y[mid_pos:pos]
         x_clip = x[mid_pos:pos]
 
         high_area = integrate(y_clip, x_clip)
 
-        if high_area >= area * confidence / 2.0:
-        	high_pos = pos - 1
-        	break
+        if pos > max_pos:
+            pos = max_pos
+            break
 
         pos += 1
 
+    high_pos = pos
+
     if pos == max_pos + 1:
-    	high_pos = np.max(np.where(y != 0))
+        high_pos = np.max(np.where(y != 0))
 
     median = x[mid_pos]
     low_error = x[mid_pos] - x[low_pos]
@@ -254,9 +273,9 @@ def calc_cdf_error(x, alpha=0.05):
     from scipy.integrate import simps as integrate
 
     if len(x) != len(y):
-    	raise ValueError('x and y must be the same shape')
+        raise ValueError('x and y must be the same shape')
     if len(x) < 4:
-    	raise ValueError('x and y must have lengths > 3')
+        raise ValueError('x and y must have lengths > 3')
 
     cdf = np.cumsum(y) / np.sum(y)
 
@@ -316,7 +335,7 @@ def bootstrap(data, num_samples):
     samples = np.empty((num_samples, data.size))
 
     for i in range(num_samples):
-    	indices = np.random.randint(0, data.size, data.size)
+        indices = np.random.randint(0, data.size, data.size)
         samples[i,:] = data[indices]
 
 
@@ -434,7 +453,7 @@ def bootstrap(data, num_samples):
     samples = np.empty((num_samples, data.size))
 
     for i in range(num_samples):
-    	indices = np.random.randint(0, data.size, data.size)
+        indices = np.random.randint(0, data.size, data.size)
         samples[i,:] = data[indices]
 
     return samples
@@ -749,5 +768,5 @@ def gauss(x, width, amp, x0):
     return amp * np.exp(-(x - x0)**2 / (2 * width**2))
 
 if __name__ == '__main__':
-	main()
+    main()
 

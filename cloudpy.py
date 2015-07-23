@@ -2869,21 +2869,52 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
 
         ax_image.clabel(cs, cs.levels, fmt=fmt, fontsize=9, inline=1)
 
+        # --------------
+        # Set boundaries
+        # --------------
         if limits is None:
+            # X limits
+            # --------
             try:
-                x_path = cs.collections[0].get_paths()[0].vertices[:,0]
-                y_path = cs.collections[0].get_paths()[0].vertices[:,1]
+                vert_max = -np.Inf
+                vert_min = np.Inf
+                for collection in cs.collections:
+                    for path in collection.get_paths():
+                        if np.max(path.vertices[:,0]) > vert_max:
+                            vert_max = np.max(path.vertices[:, 0])
+                        if np.min(path.vertices[:,0]) < vert_min:
+                            vert_min = np.min(path.vertices[:, 0])
 
-                x_offset = np.max(x_path)*0.25
-                y_offset = np.max(y_path)*0.25
+                x_offset = np.max(vert_max)*0.25
 
-                x_min, x_max = np.min(x_path) - x_offset,\
-                               np.max(x_path) + x_offset
-                y_min, y_max = np.min(y_path) - y_offset,\
-                               np.max(y_path) + y_offset
+                x_min, x_max = vert_min - x_offset,\
+                               vert_max + x_offset
 
                 try:
                     ax_image.set_xlim((x_min, x_max))
+                except UnboundLocalError:
+                    pass
+            except IndexError:
+                pass
+
+            # Y limits
+            # --------
+            try:
+                vert_max = -np.Inf
+                vert_min = np.Inf
+                for collection in cs.collections:
+                    for path in collection.get_paths():
+                        if np.max(path.vertices[:,1]) > vert_max:
+                            vert_max = np.max(path.vertices[:, 1])
+                        if np.min(path.vertices[:,1]) < vert_min:
+                            vert_min = np.min(path.vertices[:, 1])
+
+                y_offset = np.max(vert_max)*0.25
+
+                y_min, y_max = vert_min - y_offset,\
+                               vert_max + y_offset
+
+                try:
                     ax_image.set_ylim((y_min, y_max))
                 except UnboundLocalError:
                     pass
@@ -3998,26 +4029,20 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                  )
 
     # Drop the NaNs from the images
-    if type(av_error) is float:
+    if type(av_error) is float or av_error is None:
         indices = np.where((av == av) &\
                            (nhi == nhi)
                            )
-
-    if type(av_error) is np.ndarray or \
+    elif type(av_error) is np.ndarray or \
             type(av_error) is np.ma.core.MaskedArray:
         indices = np.where((av == av) &\
                            (nhi == nhi) &\
                            (av_error == av_error)
                            )
+        av_error_nonans = av_error[indices]
 
     av_nonans = av[indices]
     nhi_nonans = nhi[indices]
-
-    # Fix error data types
-    if type(av_error) is np.ndarray:
-        av_error_nonans = av_error[indices]
-    else:
-        av_error_nonans = np.array(av_error[indices])
 
     # Create plot
     ax = axesgrid[0]
@@ -4027,12 +4052,15 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                          (limits[2], limits[3]))
     else:
         contour_range = None
-        x_scalar = 0.1 * np.max(av_nonans)
-        y_scalar = 0.1 * np.max(nhi_nonans)
-        limits = (np.min(nhi_nonans) - x_scalar,
-                          np.max(nhi_nonans) + x_scalar,
-                         np.min(av_nonans) - y_scalar,
-                          np.max(av_nonans) + y_scalar)
+        xmin = np.min(nhi_nonans)
+        ymin = np.min(av_nonans)
+        xmax = np.max(nhi_nonans)
+        ymax = np.max(av_nonans)
+        xscalar = 0.25 * xmax
+        yscalar = 0.25 * ymax
+        limits = [xmin - xscalar, xmax + xscalar,
+                  ymin - yscalar, ymax + yscalar]
+
         contour_range = ((limits[0], limits[1]),
                          (limits[2], limits[3]))
     if contour_plot:
@@ -4042,16 +4070,16 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
 
         l1 = scatter_contour(nhi_nonans.ravel(),
                              av_nonans.ravel(),
-                             threshold=2,
-                             log_counts=0,
-                             levels=5,
+                             threshold=3,
+                             log_counts=1,
+                             levels=7,
                              ax=ax,
                              histogram2d_args=dict(bins=30,
                                     range=contour_range),
                              plot_args=dict(marker='o',
                                             linestyle='none',
                                             color='black',
-                                            alpha=0.0,
+                                            alpha=0.5,
                                             markersize=2),
                              contour_args=dict(
                                                #cmap=plt.cm.binary,
@@ -4063,7 +4091,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         image = ax.errorbar(nhi_nonans.ravel(),
                 av_nonans.ravel(),
                 yerr=(av_error_nonans.ravel()),
-                alpha=0.1,
+                alpha=0.5,
                 color='k',
                 marker='^',
                 ecolor='k',
@@ -4118,12 +4146,11 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     ax.set_xscale(scale[0], nonposx = 'clip')
     ax.set_yscale(scale[1], nonposy = 'clip')
 
-    if limits is not None:
-        ax.set_xlim(limits[0],limits[1])
-        ax.set_ylim(limits[2],limits[3])
+    ax.set_xlim(limits[0],limits[1])
+    ax.set_ylim(limits[2],limits[3])
 
     # Adjust asthetics
-    ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-3}$')
+    ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
     ax.set_ylabel(r'$A_V$ [mag]')
     #ax.set_title(core_names[i])
     ax.legend(loc='best')
@@ -4208,7 +4235,7 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
         l1 = scatter_contour(nhi_nonans.ravel(),
                              nh2_nonans.ravel(),
                              threshold=3,
-                             log_counts=0,
+                             log_counts=1,
                              levels=6,
                              ax=ax,
                              histogram2d_args=dict(bins=50,
@@ -4228,7 +4255,7 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
         image = ax.errorbar(nhi_nonans.ravel(),
                 nh2_nonans.ravel(),
                 #yerr=(av_error_nonans.ravel()),
-                alpha=0.1,
+                alpha=0.5,
                 color='k',
                 marker='^',
                 ecolor='k',
