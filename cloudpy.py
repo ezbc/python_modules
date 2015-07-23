@@ -878,7 +878,7 @@ class Cloud():
                                       )
             else:
                 if self.av_background is not None:
-                    include_intercept = False
+                    include_intercept = True
                 else:
                     include_intercept = True
 
@@ -929,8 +929,6 @@ class Cloud():
                                plot_args=self.plot_args,
                                use_GMM=True,
                                )
-
-            #intercept_grid = np.linspace(intercept, intercept + 1.0, 1.0)
 
             # Mask non-white noise, i.e. correlated residuals.
             if 0:
@@ -1196,9 +1194,9 @@ class Cloud():
                     ['init_likelihood_results']['likelihoods'] = None
 
             if self.verbose:
-                print('\t\tVel range old = ' + \
+                print('\nVel range old = ' + \
                       '{0:.1f} to {1:.1f}'.format(*vel_range))
-                print('\t\tVel range new = ' + \
+                print('Vel range new = ' + \
                       '{0:.1f} to {1:.1f}'.format(*vel_range_new))
 
             vel_range = vel_range_new
@@ -2109,6 +2107,7 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
         #print('\nSaving residual mask PDF figure to\n' + results_filename)
         plot_residual_map(residuals=residuals,
                           header=plot_args['av_header'],
+                          mask=mask,
                           filename=filename,
                           show=0)
 
@@ -2171,7 +2170,7 @@ def _build_likelihoods_hist_axis(ax, cloud=None, props=None, xlim=None,
     # Import external modules
     import numpy as np
     import math
-    from mpl_toolkits.axes_grid1 import ImageGrid
+
     from astropy.io import fits
     import matplotlib.pyplot as plt
     import matplotlib
@@ -2531,7 +2530,7 @@ def __plot_likelihoods_hist(cloud=None, props=None, width_limits=None,
     # Import external modules
     import numpy as np
     import math
-    from mpl_toolkits.axes_grid1 import ImageGrid
+
     from astropy.io import fits
     import matplotlib.pyplot as plt
     import matplotlib
@@ -2623,7 +2622,6 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
     # Import external modules
     import numpy as np
     import math
-    from mpl_toolkits.axes_grid1 import ImageGrid
     from astropy.io import fits
     import matplotlib.pyplot as plt
     import matplotlib
@@ -2942,7 +2940,6 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
     import matplotlib.pyplot as plt
     import matplotlib
     import numpy as np
-    from mpl_toolkits.axes_grid1 import ImageGrid
     from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
     from astropy.io import fits
     import matplotlib.pyplot as plt
@@ -2970,7 +2967,7 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
     # grid helper
     grid_helper = wcs.GridHelper(wcs=av_header)
 
-    imagegrid = ImageGrid(fig, (1,1,1),
+    axesgrid = AxesGrid(fig, (1,1,1),
                  nrows_ncols=nrows_ncols,
                  ngrids=ngrids,
                  cbar_mode="each",
@@ -2987,7 +2984,7 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
                  share_all=True)
 
     # create axes
-    ax = imagegrid[0]
+    ax = axesgrid[0]
     cmap = cm.gnuplot
     # show the image
     im = ax.imshow(residuals,
@@ -3029,7 +3026,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
     import matplotlib.pyplot as plt
     import matplotlib
     import numpy as np
-    from mpl_toolkits.axes_grid1 import ImageGrid
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
     from astropy.io import fits
     import matplotlib.pyplot as plt
     import pywcsgrid2 as wcs
@@ -3055,7 +3052,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
 
     # Original map
     # ------------
-    imagegrid = ImageGrid(fig, (2,1,1),
+    axesgrid = AxesGrid(fig, (2,1,1),
                  nrows_ncols=nrows_ncols,
                  ngrids=ngrids,
                  cbar_mode="each",
@@ -3070,7 +3067,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
                  share_all=True)
 
     # create axes
-    ax = imagegrid[0]
+    ax = axesgrid[0]
     cmap = cm.jet # colormap
     # show the image
     im = ax.imshow(av_map,
@@ -3102,7 +3099,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
 
     # Binned map
     # ----------
-    imagegrid = ImageGrid(fig, (2,1,2),
+    axesgrid = AxesGrid(fig, (2,1,2),
                  nrows_ncols=nrows_ncols,
                  ngrids=ngrids,
                  cbar_mode="each",
@@ -3117,7 +3114,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
                  share_all=True)
 
     # create axes
-    ax = imagegrid[0]
+    ax = axesgrid[0]
     cmap = cm.jet # colormap
     # show the image
     im = ax.imshow(av_bin_map,
@@ -3336,7 +3333,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
     import matplotlib.pyplot as plt
     import matplotlib
     import numpy as np
-    from mpl_toolkits.axes_grid1 import ImageGrid
+
     from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
     from astropy.io import fits
     import matplotlib.pyplot as plt
@@ -3386,7 +3383,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
     # grid helper
     grid_helper = wcs.GridHelper(wcs=av_header)
 
-    imagegrid = AxesGrid(fig, (1,1,1),
+    axesgrid = AxesGrid(fig, (1,1,1),
                  nrows_ncols=nrows_ncols,
                  ngrids=ngrids,
                  cbar_mode="each",
@@ -3403,7 +3400,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
                  share_all=True)
 
     # create axes
-    ax = imagegrid[0]
+    ax = axesgrid[0]
     # show the image
     im = ax.imshow(av_image,
             interpolation='nearest',origin='lower',
@@ -3423,7 +3420,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
 
     # colorbar
     #cb = ax.cax.colorbar(im)
-    cb = imagegrid.cbar_axes[0].colorbar(im)
+    cb = axesgrid.cbar_axes[0].colorbar(im)
     cmap.set_bad(color='w')
     # plot limits
     limits = None
@@ -3452,7 +3449,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
     # Binned map
     # ----------
     if 0:
-        imagegrid = AxesGrid(fig, (2,1,2),
+        axesgrid = AxesGrid(fig, (2,1,2),
                      nrows_ncols=nrows_ncols,
                      ngrids=ngrids,
                      cbar_mode="each",
@@ -3469,7 +3466,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
                      share_all=True)
 
     # create axes
-    ax = imagegrid[1][av_header_bin]
+    ax = axesgrid[1][av_header_bin]
     #cmap = cm.jet # colormap
     # show the image
     av_image_bin_mask = np.copy(av_image_bin)
@@ -3499,7 +3496,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
 
     # colorbar
     #cb = ax.cax.colorbar(im)
-    cb = imagegrid.cbar_axes[1].colorbar(im)
+    cb = axesgrid.cbar_axes[1].colorbar(im)
     cmap.set_bad(color='w')
     # plot limits
     limits = None
@@ -3513,14 +3510,14 @@ def plot_mask_map(cloud=None, props=None, filename=None,
     if filename is not None:
         plt.savefig(filename, bbox_inches='tight')
 
-def plot_residual_map(residuals, header=None, dgr=None, show=False,
+def plot_residual_map(residuals, header=None, dgr=None, show=False, mask=None,
         filename=None, anno_text=None, return_fig=False, vlimits=[None,None]):
 
     # Import external modules
     import matplotlib.pyplot as plt
     import matplotlib
     import numpy as np
-    from mpl_toolkits.axes_grid1 import ImageGrid
+
     from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
     from astropy.io import fits
     import matplotlib.pyplot as plt
@@ -3530,24 +3527,28 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
 
     # Set up plot aesthetics
     plt.clf()
-    colormap = plt.cm.gist_ncar
-    #color_cycle = [colormap(i) for i in np.linspace(0, 0.9, len(flux_list))]
-    font_scale = 15
-    params = {
-              'figure.figsize': (3.6, 3.6),
-             }
-    plt.rcParams.update(params)
 
     # Create figure instance
     fig = plt.figure()
 
-    nrows_ncols=(1,1)
-    ngrids=1
+    if mask is None:
+        nrows_ncols=(1,1)
+        ngrids=1
+    else:
+        nrows_ncols=(1,2)
+        ngrids=2
+
+    colormap = plt.cm.gist_ncar
+    #color_cycle = [colormap(i) for i in np.linspace(0, 0.9, len(flux_list))]
+    params = {
+              'figure.figsize': (ngrids * 3.6, 3.6),
+             }
+    plt.rcParams.update(params)
 
     # grid helper
     grid_helper = wcs.GridHelper(wcs=header)
 
-    imagegrid = AxesGrid(fig, (1,1,1),
+    axesgrid = AxesGrid(fig, (1,1,1),
                  nrows_ncols=nrows_ncols,
                  ngrids=ngrids,
                  cbar_mode="each",
@@ -3562,8 +3563,10 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
                  label_mode='L',
                  share_all=True)
 
+    # Initial map
+    # -----------
     # create axes
-    ax = imagegrid[0]
+    ax = axesgrid[0]
     cmap = cm.jet # colormap
     # show the image
     im = ax.imshow(residuals,
@@ -3583,7 +3586,7 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
     ax.set_ylabel('Declination [J2000]',)
 
     if anno_text is not None:
-        ax.set_title(anno_text)
+        ax.set_title('Fractional Mask\n' + anno_text)
 
     # colorbar
     cb = ax.cax.colorbar(im)
@@ -3597,8 +3600,47 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False,
     # Write label to colorbar
     cb.set_label_text(r'$A_V$ [Mag]',)
 
+    # Post-residual masking map
+    # -----------
+    # create axes
+    if mask is not None:
+        ax = axesgrid[1]
+        cmap = cm.jet # colormap
+        # show the image
+        residuals[mask] = np.nan
+        im = ax.imshow(residuals,
+                interpolation='nearest',
+                origin='lower',
+                cmap=cmap,
+                #norm=matplotlib.colors.LogNorm()
+                vmin=vlimits[0],
+                vmax=vlimits[1],
+                )
+
+        # Asthetics
+        ax.set_display_coord_system("fk5")
+        ax.set_ticklabel_type("hms", "dms")
+
+        ax.set_xlabel('Right Ascension [J2000]',)
+        ax.set_ylabel('Declination [J2000]',)
+
+        if anno_text is not None:
+            ax.set_title('Residual Mask\n' + anno_text)
+
+        # colorbar
+        cb = ax.cax.colorbar(im)
+        cmap.set_bad(color='w')
+        # plot limits
+        limits = None
+        if limits is not None:
+            ax.set_xlim(limits[0],limits[2])
+            ax.set_ylim(limits[1],limits[3])
+
+        # Write label to colorbar
+        cb.set_label_text(r'$A_V$ [Mag]',)
+
     if filename is not None:
-        plt.savefig(filename, bbox_inches='tight', dpi=60)
+        plt.savefig(filename, bbox_inches='tight', dpi=120)
     if show:
         plt.show()
     if return_fig:
@@ -3611,7 +3653,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
     import matplotlib.pyplot as plt
     import matplotlib
     import numpy as np
-    from mpl_toolkits.axes_grid1 import ImageGrid
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
     from astropy.io import fits
     import matplotlib.pyplot as plt
     import pywcsgrid2 as wcs
@@ -3637,7 +3679,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
 
     # Original map
     # ------------
-    imagegrid = ImageGrid(fig, (2,1,1),
+    axesgrid = AxesGrid(fig, (2,1,1),
                  nrows_ncols=nrows_ncols,
                  ngrids=ngrids,
                  cbar_mode="each",
@@ -3652,7 +3694,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
                  share_all=True)
 
     # create axes
-    ax = imagegrid[0]
+    ax = axesgrid[0]
     cmap = cm.jet # colormap
     # show the image
     im = ax.imshow(av_map,
@@ -3684,7 +3726,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
 
     # Binned map
     # ----------
-    imagegrid = ImageGrid(fig, (2,1,2),
+    axesgrid = AxesGrid(fig, (2,1,2),
                  nrows_ncols=nrows_ncols,
                  ngrids=ngrids,
                  cbar_mode="each",
@@ -3699,7 +3741,7 @@ def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
                  share_all=True)
 
     # create axes
-    ax = imagegrid[0]
+    ax = axesgrid[0]
     cmap = cm.jet # colormap
     # show the image
     im = ax.imshow(av_bin_map,
@@ -3815,6 +3857,7 @@ def plot_map_movie(cloud, filename=None,):
 
     residuals_list = []
     anno_text_list = []
+    mask_list = []
 
     resid_min_abs = np.Inf
     resid_max_abs = -np.Inf
@@ -3825,6 +3868,7 @@ def plot_map_movie(cloud, filename=None,):
             anno_text_list.append('Parent iter = ' + \
                                   '{0:02d}'.format(parent_iter) + \
                                   ', mask iter = {0:02d}'.format(mask_iter))
+            mask_list.append(mask_dict[mask_iter]['mask_residuals'])
             # grab residuals, record global limits
             residuals = mask_dict[mask_iter]['residuals']
             residuals_list.append(residuals)
@@ -3838,6 +3882,7 @@ def plot_map_movie(cloud, filename=None,):
         fig = plot_residual_map(residuals_list[int(t)],
                                 anno_text=anno_text_list[int(t)],
                                 return_fig=True,
+                                mask=mask_list[int(t)],
                                 header=cloud.av_header,
                                 vlimits=[resid_min_abs, resid_max_abs])
 
@@ -3918,9 +3963,10 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     import math
     import matplotlib.pyplot as plt
     import matplotlib
-    from mpl_toolkits.axes_grid1 import ImageGrid
     from matplotlib import cm
     from astroML.plotting import scatter_contour
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
+    from myplotting import truncate_colormap
 
     # set up plot aesthetics
     # ----------------------
@@ -3939,7 +3985,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     # Create figure instance
     fig = plt.figure(figsize=(3.6, 3.6))
 
-    imagegrid = ImageGrid(fig, (1,1,1),
+    axesgrid = AxesGrid(fig, (1,1,1),
                  nrows_ncols=(1, 1),
                  ngrids=1,
                  axes_pad=0.25,
@@ -3974,7 +4020,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         av_error_nonans = np.array(av_error[indices])
 
     # Create plot
-    ax = imagegrid[0]
+    ax = axesgrid[0]
 
     if limits is not None:
         contour_range = ((limits[0], limits[1]),
@@ -3987,8 +4033,13 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                           np.max(nhi_nonans) + x_scalar,
                          np.min(av_nonans) - y_scalar,
                           np.max(av_nonans) + y_scalar)
-
+        contour_range = ((limits[0], limits[1]),
+                         (limits[2], limits[3]))
     if contour_plot:
+
+
+        cmap = truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
+
         l1 = scatter_contour(nhi_nonans.ravel(),
                              av_nonans.ravel(),
                              threshold=2,
@@ -4003,7 +4054,8 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                                             alpha=0.0,
                                             markersize=2),
                              contour_args=dict(
-                                               cmap=plt.cm.gray_r,
+                                               #cmap=plt.cm.binary,
+                                               cmap=cmap,
                                                #cmap=cmap,
                                                ),
                              )
@@ -4011,7 +4063,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         image = ax.errorbar(nhi_nonans.ravel(),
                 av_nonans.ravel(),
                 yerr=(av_error_nonans.ravel()),
-                alpha=0.2,
+                alpha=0.1,
                 color='k',
                 marker='^',
                 ecolor='k',
@@ -4050,7 +4102,6 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                     'DGR = {0:.3f}'.format(p[0]) + \
                     '\nIntercept = {0:.3f}'.format(p[1]),
                 alpha=1)
-        print('fitted intercept = {0:.1f} mag'.format(p[1]))
         std = None
         if std is not None:
             ax.fill_between((-std, 10),
@@ -4082,4 +4133,127 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     if show:
         fig.show()
 
+def plot_nh2_vs_nhi(nhi, nh2, limits=None,
+        fit=True, savedir='', filename=None, show=True, fit_params=None,
+        contour_plot=True,
+        scale=('linear','linear'), title = '', gridsize=(100,100), std=None):
+
+    # import external modules
+    import numpy as np
+    import math
+    import matplotlib.pyplot as plt
+    import matplotlib
+    from matplotlib import cm
+    from astroML.plotting import scatter_contour
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
+    from myplotting import truncate_colormap
+
+    # set up plot aesthetics
+    # ----------------------
+    plt.close;plt.clf()
+    #plt.rcdefaults()
+
+    # color map
+    cmap = plt.cm.gnuplot
+
+    # color cycle, grabs colors from cmap
+    color_cycle = [cmap(i) for i in np.linspace(0, 0.8, 2)]
+    params = {'axes.color_cycle': color_cycle, # colors of different plots
+             }
+    #plt.rcparams.update(params)
+
+    # Create figure instance
+    fig = plt.figure(figsize=(3.6, 3.6))
+
+    axesgrid = AxesGrid(fig, (1,1,1),
+                 nrows_ncols=(1, 1),
+                 ngrids=1,
+                 axes_pad=0.25,
+                 aspect=False,
+                 label_mode='L',
+                 share_all=True,
+                 #cbar_mode='single',
+                 cbar_pad=0.1,
+                 cbar_size=0.2,
+                 )
+
+    indices = np.where((nh2 == nh2) &\
+                       (nhi == nhi)
+                       )
+
+    nh2_nonans = nh2[indices]
+    nhi_nonans = nhi[indices]
+
+    # Create plot
+    ax = axesgrid[0]
+
+    if limits is not None:
+        contour_range = ((limits[0], limits[1]),
+                         (limits[2], limits[3]))
+    else:
+        contour_range = None
+        x_scalar = 0.1 * np.max(nhi_nonans)
+        y_scalar = 0.1 * np.max(nh2_nonans)
+        limits = (np.min(nhi_nonans) - x_scalar,
+                  np.max(nhi_nonans) + x_scalar,
+                  np.min(nh2_nonans) - y_scalar,
+                  np.max(nh2_nonans) + y_scalar)
+        contour_range = ((limits[0], limits[1]),
+                         (limits[2], limits[3]))
+
+    if contour_plot:
+
+        cmap = truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
+
+        l1 = scatter_contour(nhi_nonans.ravel(),
+                             nh2_nonans.ravel(),
+                             threshold=3,
+                             log_counts=0,
+                             levels=6,
+                             ax=ax,
+                             histogram2d_args=dict(bins=50,
+                                    range=contour_range),
+                             plot_args=dict(marker='o',
+                                            linestyle='none',
+                                            color='black',
+                                            alpha=0.5,
+                                            markersize=2),
+                             contour_args=dict(
+                                               #cmap=plt.cm.gray,
+                                #cmap=plt.cm.binary(np.linspace(0.2, 1,1000)),
+                                               cmap=cmap,
+                                               ),
+                             )
+    else:
+        image = ax.errorbar(nhi_nonans.ravel(),
+                nh2_nonans.ravel(),
+                #yerr=(av_error_nonans.ravel()),
+                alpha=0.1,
+                color='k',
+                marker='^',
+                ecolor='k',
+                linestyle='None',
+                markersize=3
+                )
+
+    # Annotations
+    anno_xpos = 0.95
+
+    ax.set_xscale(scale[0], nonposx = 'clip')
+    ax.set_yscale(scale[1], nonposy = 'clip')
+
+    if limits is not None:
+        ax.set_xlim(limits[0],limits[1])
+        ax.set_ylim(limits[2],limits[3])
+
+    # Adjust asthetics
+    ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
+    ax.set_ylabel(r'$N($H$_2) \times\,10^{20}$ cm$^{-2}$')
+    #ax.set_title(core_names[i])
+    ax.legend(loc='best')
+
+    if filename is not None:
+        plt.savefig(savedir + filename)
+    if show:
+        fig.show()
 

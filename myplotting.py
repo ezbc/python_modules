@@ -219,3 +219,35 @@ def check_overlaps(bbox1, bbox2):
                 (bx1 > ax2) or
                 (by1 > ay2))
 
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+
+    ''' Truncates a matplolib.colors colormap to a smaller range.
+
+    Parameters
+    ----------
+    cmap : matplotlib.pyplot.cm
+        Colormap
+    minval : float
+        Lower value to truncate.
+    maxval : float
+        Upper value to truncate
+    n : int
+        Number of discrete samples of colormap between minval and maxval.
+
+    Returns
+    -------
+    new_cmap : matplotlib.pyplot.cm
+        Truncated colormap
+
+    '''
+
+    import matplotlib.colors as colors
+
+    new_cmap = colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+
+    return new_cmap
+
+
+
