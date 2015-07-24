@@ -257,7 +257,7 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
 
     high_pos = pos
 
-    if pos == max_pos + 1:
+    if pos >= max_pos:
         high_pos = np.max(np.where(y != 0))
 
     median = x[mid_pos]

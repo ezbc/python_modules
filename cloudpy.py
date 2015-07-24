@@ -857,38 +857,18 @@ class Cloud():
             if self.verbose:
                 print('\t\tIteration {0:.0f} results:'.format(iteration))
 
-            if 0:
-                results = \
-                    _calc_likelihoods(
-                                      nhi_image=self.nhi_image[~mask],
-                                      av_image=self.av_data[~mask],
-                                      av_image_error=self.av_error_data[~mask],
-                                      #bin_weights=bin_weights[~mask],
-                                      #vel_center=vel_center_masked,
-                                      #width_grid=np.arange(0,1,1),
-                                      dgr_grid=self.dgr_grid,
-                                      intercept_grid=self.intercept_grid,
-                                      vel_center=self.vel_center,
-                                      #results_filename='',
-                                      #return_likelihoods=True,
-                                      likelihood_filename=\
-                                              self.likelihood_filename,
-                                      clobber=self.clobber_likelihoods,
-                                      verbose=self.verbose,
-                                      )
+            if self.av_background is not None:
+                include_intercept = True
             else:
-                if self.av_background is not None:
-                    include_intercept = True
-                else:
-                    include_intercept = True
+                include_intercept = True
 
-                results = _fit_params(
-                                      nhi_image=self.nhi_image[~mask],
-                                      av_image=self.av_data[~mask],
-                                      av_image_error=self.av_error_data[~mask],
-                                      include_intercept=include_intercept,
-                                      verbose=self.verbose,
-                                      )
+            results = _fit_params(
+                                  nhi_image=self.nhi_image[~mask],
+                                  av_image=self.av_data[~mask],
+                                  av_image_error=self.av_error_data[~mask],
+                                  include_intercept=include_intercept,
+                                  verbose=self.verbose,
+                                  )
 
             # add new pixels
             mask_faint = \
