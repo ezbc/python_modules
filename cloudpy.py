@@ -16,6 +16,7 @@ class Cloud():
             hi_filename,
             av_error_filename=None,
             hi_error_filename=None,
+            mask_filename=None,
             cloud_prop_filename=None,
             dgr_grid=None,
             intercept_grid=None,
@@ -30,7 +31,7 @@ class Cloud():
             hi_noise_vel_range=[0,1],
             binsize=1,
             vel_range_diff_thres=2.0,
-            init_vel_range=[0,1],
+            init_vel_width=50,
             pixel_mask_increase_fraction=0.01,
             diagnostic_filename=None,
             use_bin_weights=False,
@@ -38,7 +39,9 @@ class Cloud():
             binned_data_filename_ext=None,
             weights_filename=None,
             av_mask_threshold=None,
-            plot_args={}):
+            plot_args={},
+            perform_parent_iterations=False,
+            ):
 
         # Import external modules
         from astropy.io import fits
@@ -51,6 +54,7 @@ class Cloud():
         self.hi_filename = hi_filename
         self.av_error_filename = av_error_filename
         self.hi_error_filename = hi_error_filename
+        self.mask_filename = mask_filename
         self.av_error = av_error
         self.dgr_grid = dgr_grid
         self.width_grid = width_grid
@@ -66,7 +70,7 @@ class Cloud():
         self.use_only_binned_data=use_only_binned_data
         self.Tsys = 30.0 # K
         self.VEL_RANGE_DIFF_THRES = vel_range_diff_thres
-        self.init_vel_range = init_vel_range
+        self.init_vel_width = init_vel_width
         self.plot_args = plot_args
         self.diagnostic_filename = diagnostic_filename
         self.PIXEL_MASK_INCREASE_FRACTION = pixel_mask_increase_fraction
@@ -74,6 +78,7 @@ class Cloud():
         self.binned_data_filename_ext = binned_data_filename_ext
         self.weights_filename = weights_filename
         self.av_mask_threshold = av_mask_threshold
+        self.perform_parent_iterations = perform_parent_iterations
 
         # Initialize empty variables
         self.av_data_bin = None
@@ -133,9 +138,6 @@ class Cloud():
 
         # Make velocity axis for HI cube
         self.hi_vel_axis = make_velocity_axis(self.hi_header)
-
-        # Derive velocity center
-        self._calc_vel_center(self.hi_data)
 
         if self.diagnostic_filename is not None:
             import sys
@@ -205,7 +207,7 @@ class Cloud():
         import numpy as np
 
         if single_vel_center:
-            self.hi_spectrum = np.nansum(hi_data, axis=(1,2))
+            self.hi_spectrum = np.nansum(hi_data[:,self.region_mask], axis=1)
             vel_center = np.array((np.average(self.hi_vel_axis,
                                    weights=self.hi_spectrum**2),))[0]
         else:
@@ -412,8 +414,6 @@ class Cloud():
         self.av_error_data_masked = std * np.ones(self.av_error_data_masked.shape)
         self.av_error_data_masked[mask] = np.nan
 
-        print('std = ', std)
-
         self.iter_vars[self.iter_step]['init_likelihood_results']['std'] = \
                 std
 
@@ -479,6 +479,15 @@ class Cloud():
                 fits.writeto(self.weights_filename, self.bin_weights,
                              self.av_header_bin, clobber=True)
 
+    def _write_mask(self,):
+
+        from astropy.io import fits
+
+        fits.writeto(self.mask_filename,
+                     np.array(self.mask, dtype=float),
+                     self.av_header,
+                     clobber=True)
+
     def _get_common_mask(self, data_list):
 
         mask = np.zeros(data_list[0].shape, dtype=bool)
@@ -498,9 +507,6 @@ class Cloud():
         # ---------
         self.iter_vars[self.iter_step] = {}
         self.iter_vars[self.iter_step]['vel_range'] = vel_range
-
-        # derive the region mask
-        self._derive_region_mask()
 
         # check if HI error cube present
         if self.hi_error_data is None:
@@ -839,21 +845,6 @@ class Cloud():
 
         #while delta_dgr > self.THRESHOLD_DELTA_DGR:
         while not done:
-            if 1:
-                import matplotlib.pyplot as plt
-                plt.clf(); plt.close()
-                av_image = self.av_data.copy()
-                av_image[mask] = np.nan
-                plt.imshow(av_image, origin="lower", aspect=None,
-                           interpolation="nearest")
-                plt.savefig('/usr/users/ezbc/Desktop/masks/' + \
-                            self.region + \
-                            '_av_mask_iter' + \
-                            str(self.iter_step) + '_' + \
-                            str(iteration) + '.png')
-                plt.show()
-
-
             if self.verbose:
                 print('\t\tIteration {0:.0f} results:'.format(iteration))
 
@@ -885,18 +876,12 @@ class Cloud():
             residuals = self.av_data - av_image_model
             residuals[mask] = np.nan
 
-            # plot progress
-            if 0:
-                if plot_args is not None:
-                    plot_residual_map(residuals,
-                                      header=av_header,
-                                      dgr=dgr_new)
-
-            if 0:
-                if iteration == 0:
-                    plot_filename = self.plot_args['results_filename']
-                else:
-                    plot_filename = None
+            # Record variables
+            masking_results[iteration] = {}
+            masking_results[iteration]['residuals'] = np.copy(residuals)
+            masking_results[iteration]['dgr'] = dgr_new
+            masking_results[iteration]['intercept'] = intercept
+            masking_results[iteration]['mask'] = mask
 
             # Include only residuals which are white noise
             self.plot_args['iter_ext'] = str(self.iter_step) + '_' + \
@@ -909,46 +894,15 @@ class Cloud():
                                plot_args=self.plot_args,
                                use_GMM=True,
                                )
-
-            # Mask non-white noise, i.e. correlated residuals.
-            if 0:
-                mask_residuals = \
-                        self._combine_masks(mask_residuals, mask_residuals_new)
-            else:
-                mask_residuals = mask_residuals_new
-
-            if 1:
-                import matplotlib.pyplot as plt
-                plt.clf(); plt.close()
-                av_image = self.av_data.copy()
-                av_image[mask_residuals] = np.nan
-                plt.imshow(av_image, origin="lower", aspect=None,
-                           interpolation="nearest")
-                plt.savefig('/usr/users/ezbc/Desktop/masks/' + \
-                            self.region + \
-                            '_av_residmask_iter' + \
-                            str(self.iter_step) + '_' + \
-                            str(iteration) + '.png')
-                plt.show()
+            mask_residuals = mask_residuals_new
 
             # Record variables
-            masking_results[iteration] = {}
-            masking_results[iteration]['residuals'] = residuals
-            masking_results[iteration]['dgr'] = dgr_new
-            #masking_results[iteration]['width'] = width
-            masking_results[iteration]['intercept'] = intercept
-            masking_results[iteration]['mask'] = mask
-            masking_results[iteration]['mask_residuals'] = mask_residuals
             masking_results[iteration]['fit_params'] = fit_params
+            masking_results[iteration]['mask_residuals'] = mask_residuals
             masking_results[iteration]['residual_threshold'] = \
                     residual_threshold
 
-            #if dgr == 1e10:
-            #    mask[self.av_data > 1] = 1
-
             # Reset while loop conditions
-            #delta_dgr = np.abs(dgr - dgr_new)
-
             delta_dgr = np.abs(1 - dgr / dgr_new)
             dgr = dgr_new
             iteration += 1
@@ -1141,8 +1095,15 @@ class Cloud():
         # Load cloud division regions from ds9
         self.load_region(region_filename)
 
+        # derive the region mask
+        self._derive_region_mask()
+
+        # Derive velocity center
+        self._calc_vel_center(self.hi_data)
+
         # Initialize
-        vel_range = self.init_vel_range
+        vel_range = (self.vel_center - self.init_vel_width / 2.0,
+                     self.vel_center + self.init_vel_width / 2.0)
         vel_range_new = (-1.0, 1.0)
         vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
                                        np.array(vel_range_new)))
@@ -1164,14 +1125,14 @@ class Cloud():
             # Check to see if likelihoods should be plotted
             self._plot_likelihoods()
 
-            vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
-                                           np.array(vel_range_new)))
-
-            # likelihoods data is large, omit if not the last one
+            # likelihoods data is large, omit
             self.iter_vars[self.iter_step]\
                     ['scaled_likelihood_results']['likelihoods'] = None
             self.iter_vars[self.iter_step]\
                     ['init_likelihood_results']['likelihoods'] = None
+
+            vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
+                                           np.array(vel_range_new)))
 
             if self.verbose:
                 print('\nVel range old = ' + \
@@ -1181,12 +1142,14 @@ class Cloud():
 
             vel_range = vel_range_new
 
-            if 0:
+            if self.perform_parent_iterations:
                 if vel_range_diff < self.VEL_RANGE_DIFF_THRES: done = True
             else:
                 done = True
 
             self.iter_step += 1
+
+        self._write_mask()
 
         # Write prints to file?
         if self._diagnostics is not None:
@@ -1709,7 +1672,7 @@ def _calc_likelihoods(
 
             processes = []
             # use all but one cpu
-            output = mp.Queue(mp.cpu_count() - 1)
+            output = mp.Queue(10)
 
             args = {'likelihoods': likelihoods,
                     'output': output
@@ -1944,9 +1907,15 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
     from mystats import gauss
     from scipy.optimize import curve_fit, minimize
     from sklearn.mixture import GMM, DPGMM
+    from scipy.stats import gaussian_kde
 
-    # Fit the rising portion of the residuals
-    residuals_crop = residuals[(residuals < 0) & \
+    # Fit the rising portion of the residuals, find KD peak
+    density = gaussian_kde(residuals[~np.isnan(residuals)])
+    x = np.arange(-5,5,0.001)
+    counts = density(x)
+    peak_threshold = np.interp(np.max(counts), x, counts)# + 0.05
+    #print('peak threshold = ', peak_threshold)
+    residuals_crop = residuals[(residuals < peak_threshold) & \
                                #(residuals > -1.5) & \
                                 ~np.isnan(residuals)]
 
@@ -2020,25 +1989,6 @@ def _get_residual_mask(residuals, residual_width_scale=3.0, plot_args={},
 
         #fit_params[0] = y_fit[y_fit == 2.35 * max(y_fit)]/2.0
 
-        if 0:
-            import matplotlib.pyplot as plt
-            plt.clf(); plt.close()
-            counts, bin_edges = np.histogram(residuals[~np.isnan(residuals)],
-                                             bins=50,
-                                             normed=True
-                                             )
-            residual_thres = residual_width_scale * np.abs(fit_params[0]) + \
-                             fit_params[2]
-            plt.plot(x_fit, y_fit / y_fit.max() * counts.max())
-            plt.plot(bin_edges[:-1], counts)
-            plt.title("mean : %f, var : %f" % \
-                      (fit_params[2], fit_params[0]))
-            plt.axvline(residual_thres, color='k', linewidth=2)
-            plt.xlim(-0.3, 0.3)
-            plt.savefig('/usr/users/ezbc/Desktop/residual_hist.png')
-            #plt.show()
-
-
     # Include only residuals within 3 sigma
     #fit_parms[2] = 0
     intercept = fit_params[2]
@@ -2111,19 +2061,35 @@ def _check_file(filename, clobber=False, verbose=False):
 
     return exists
 
-def save(cloud, filename):
+def save(cloud, filename, binary_likelihood_filename=None):
 
     import pickle
+    import numpy as np
+
+    # Writ the likelihoods as a numpy binary array, much more efficient
+    if binary_likelihood_filename is not None:
+        likelihoods = cloud.props['likelihoods']
+        cloud.props['likelihoods'] = None
+        np.save(binary_likelihood_filename, likelihoods)
 
     with open(filename, 'wb') as output:
         pickle.dump(cloud, output)
 
-def load(filename):
+    # Add the likelihoods back to the cloud
+    if binary_likelihood_filename is not None:
+        cloud.props['likelihoods'] = likelihoods
+
+def load(filename, binary_likelihood_filename=None):
 
     import pickle
 
     with open(filename, 'rb') as input:
         cloud = pickle.load(input)
+
+    if binary_likelihood_filename is not None:
+         likelihoods = np.load(binary_likelihood_filename)
+
+    cloud.props['likelihoods'] = likelihoods
 
     return cloud
 
@@ -2677,28 +2643,15 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
 
     # Mask NaNs
     likelihoods = np.array(props['likelihoods'])
-    image = np.ma.array(likelihoods, mask=np.isnan(likelihoods))
+    #image = np.ma.array(likelihoods, mask=np.isnan(likelihoods))
 
     # Create likelihood image
-    image = np.sum(likelihoods, axis=sum_axis) / np.sum(likelihoods)
-
-    if 0:
-        from mystats import rv3d_discrete
-        import triangle
-        samples = rv3d_discrete(likelihoods,
-                                param_grid1=props['width_grid'],
-                                param_grid2=props['dgr_grid'],
-                                param_grid3=props['intercept_grid'],
-                                L_scalar=100000,
-                                ).pdf
-        print samples.shape
-        fig = triangle.corner(samples, labels=["width", "dgr", "int"],)
-        fig.savefig("/usr/users/ezbc/Desktop/triangle.png")
+    image = np.nansum(likelihoods, axis=sum_axis) / np.nansum(likelihoods)
 
     # Derive marginal distributions of both centers and widths
-    x_sum = np.sum(likelihoods, axis=x_sum_axes)
+    x_sum = np.nansum(likelihoods, axis=x_sum_axes)
     x_pdf = x_sum / np.sum(x_sum)
-    y_sum = np.sum(likelihoods, axis=y_sum_axes)
+    y_sum = np.nansum(likelihoods, axis=y_sum_axes)
     y_pdf = y_sum / np.sum(y_sum)
 
     extent = np.ravel(np.array((x_extent, y_extent)))
@@ -2718,7 +2671,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
             #cmap=plt.cm.gray,
             cmap=cmap,
             norm=norm,
-            vmin=np.max(image)/3.0,
+            #vmin=np.max(image)/3.0,
             #vmax=,
             aspect='auto',
             )
@@ -2865,7 +2818,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
                         if np.min(path.vertices[:,0]) < vert_min:
                             vert_min = np.min(path.vertices[:, 0])
 
-                x_offset = np.max(vert_max)*0.25
+                x_offset = np.max(np.abs(vert_max))*0.25
 
                 x_min, x_max = vert_min - x_offset,\
                                vert_max + x_offset
@@ -2889,7 +2842,8 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
                         if np.min(path.vertices[:,1]) < vert_min:
                             vert_min = np.min(path.vertices[:, 1])
 
-                y_offset = np.max(vert_max)*0.25
+
+                y_offset = np.max(np.abs(vert_max))*0.25
 
                 y_min, y_max = vert_min - y_offset,\
                                vert_max + y_offset
@@ -2943,92 +2897,6 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         plt.show()
     if returnimage:
         return likelihoods
-
-def plot_residual_map(residuals, header=None, dgr=None, show=False,
-        filename=None):
-
-    # Import external modules
-    import matplotlib.pyplot as plt
-    import matplotlib
-    import numpy as np
-    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
-    from astropy.io import fits
-    import matplotlib.pyplot as plt
-    import pywcsgrid2 as wcs
-    import pywcs
-    from pylab import cm # colormaps
-    from matplotlib.patches import Polygon
-
-    # Set up plot aesthetics
-    plt.clf()
-    colormap = plt.cm.gist_ncar
-    #color_cycle = [colormap(i) for i in np.linspace(0, 0.9, len(flux_list))]
-    font_scale = 15
-    params = {
-              'figure.figsize': (3.6, 3.6),
-             }
-    plt.rcParams.update(params)
-
-    # Create figure instance
-    fig = plt.figure()
-
-    nrows_ncols=(1,1)
-    ngrids=1
-
-    # grid helper
-    grid_helper = wcs.GridHelper(wcs=av_header)
-
-    axesgrid = AxesGrid(fig, (1,1,1),
-                 nrows_ncols=nrows_ncols,
-                 ngrids=ngrids,
-                 cbar_mode="each",
-                 cbar_location='right',
-                 cbar_pad="2%",
-                 cbar_size='3%',
-                 axes_pad=1,
-                 axes_class=(wcs.Axes,
-                             #dict(header=header)),
-                             dict(grid_helper=grid_helper),
-                             ),
-                 aspect=True,
-                 label_mode='L',
-                 share_all=True)
-
-    # create axes
-    ax = axesgrid[0]
-    cmap = cm.gnuplot
-    # show the image
-    im = ax.imshow(residuals,
-            interpolation='nearest',origin='lower',
-            cmap=cmap,
-            #norm=matplotlib.colors.LogNorm()
-            vmin=-1,
-            vmax=1
-            )
-
-    # Asthetics
-    ax.set_display_coord_system("fk5")
-    ax.set_ticklabel_type("hms", "dms")
-
-    ax.set_xlabel('Right Ascension [J2000]',)
-    ax.set_ylabel('Declination [J2000]',)
-
-    # colorbar
-    cb = ax.cax.colorbar(im)
-    cmap.set_bad(color='w')
-    # plot limits
-    limits = None
-    if limits is not None:
-        ax.set_xlim(limits[0],limits[2])
-        ax.set_ylim(limits[1],limits[3])
-
-    # Write label to colorbar
-    cb.set_label_text(r'$A_V$ [Mag]',)
-
-    if filename is not None:
-        plt.savefig(filename, bbox_inches='tight')
-    if show:
-        plt.show()
 
 def plot_av_bin_map(av_map, av_bin_map, av_header=None, av_header_bin=None,
         filename=None):
@@ -3285,9 +3153,10 @@ def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
     #counts_ext = counts_ext / integrate(counts_ext, x=bin_edges_ext)
     #counts_ext /= counts_ext.max()
     if fit_params is not None:
-        x_fit = np.linspace(-2,
-                            2,
+        x_fit = np.linspace(-5,
+                            5,
                             10000)
+        x_fit = np.arange(-5,5,0.01)
 
         y_fit = gauss(x_fit, *fit_params)
         #y_fit / np.nanmax(residuals)
@@ -3303,6 +3172,9 @@ def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
     if 1:
         density = gaussian_kde(residuals_nonans, bw_method='silverman')
         counts_ext = density(x_fit)
+        #counts_ext /= counts_ext.max()
+        counts_ext = counts_ext / integrate(counts_ext)
+        #print integrate(counts_ext, x_fit)
         y_fit /= np.max(y_fit)
         #y_fit_scalar = np.interp(x_fit[np.argmax(y_fit)],
                                  #bin_edges_ext,
@@ -3317,8 +3189,7 @@ def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
             linewidth=2,
             alpha=0.6)
 
-
-    ax.set_xlim([-0.5,0.5])
+    ax.set_xlim([-1,2])
     #ax.set_xlim(xlim)
     ax.set_ylim(limits)
     ax.axvline(residual_thres,
@@ -3326,7 +3197,7 @@ def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
                linestyle='--',
                linewidth=1.5)
     ax.set_xlabel(r'Residual $A_V$ [mag]')
-    ax.set_ylabel('Counts')
+    ax.set_ylabel('Probability')
 
     if anno_text is not None:
         ax.set_title(anno_text)
@@ -3549,7 +3420,7 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False, mask=None,
         nrows_ncols=(1,2)
         ngrids=2
 
-    colormap = plt.cm.gist_ncar
+    cmap = cm.gnuplot # colormap
     #color_cycle = [colormap(i) for i in np.linspace(0, 0.9, len(flux_list))]
     params = {
               'figure.figsize': (ngrids * 3.6, 3.6),
@@ -3578,7 +3449,6 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False, mask=None,
     # -----------
     # create axes
     ax = axesgrid[0]
-    cmap = cm.jet # colormap
     # show the image
     im = ax.imshow(residuals,
             interpolation='nearest',
@@ -3616,10 +3486,10 @@ def plot_residual_map(residuals, header=None, dgr=None, show=False, mask=None,
     # create axes
     if mask is not None:
         ax = axesgrid[1]
-        cmap = cm.jet # colormap
         # show the image
-        residuals[mask] = np.nan
-        im = ax.imshow(residuals,
+        residuals_masked = np.copy(residuals)
+        residuals_masked[mask] = np.nan
+        im = ax.imshow(residuals_masked,
                 interpolation='nearest',
                 origin='lower',
                 cmap=cmap,
@@ -3911,6 +3781,7 @@ def plot_residual_hist_movie(cloud, filename=None,):
     import moviepy.editor as mpy
     from moviepy.video.io.bindings import mplfig_to_npimage
     from scipy.stats import gaussian_kde
+    from scipy.integrate import simps
 
     residuals_list = []
     residual_thres_list = []
@@ -3922,7 +3793,10 @@ def plot_residual_hist_movie(cloud, filename=None,):
     for parent_iter in cloud.iter_vars:
         mask_dict = cloud.iter_vars[parent_iter]['masking_var']
         for mask_iter in mask_dict:
-            anno_text_list.append('Parent iter = ' + \
+            npix = np.sum(~mask_dict[mask_iter]['mask'])
+            anno_text_list.append(r'N$_{\rm pix}$ = ' + \
+                                  '{0:.0f}'.format(npix) + \
+                                  '\nParent iter = ' + \
                                   '{0:02d}'.format(parent_iter) + \
                                   ', mask iter = {0:02d}'.format(mask_iter))
 
@@ -3935,7 +3809,9 @@ def plot_residual_hist_movie(cloud, filename=None,):
             residuals = residuals[residuals == residuals]
 
             density = gaussian_kde(residuals)
-            counts = density(np.arange(-5,5,0.01))
+            x = np.arange(-5,5,0.01)
+            counts = density(x)
+            counts = counts / simps(counts)
 
             residuals_list.append(residuals)
 
@@ -3952,7 +3828,7 @@ def plot_residual_hist_movie(cloud, filename=None,):
                                   fit_params=fit_params_list[int(t)],
                                   residual_thres=residual_thres_list[int(t)],
                                   return_fig=True,
-                                  limits=[-0.1,
+                                  limits=[0,
                                           resid_max_abs * 1.1])
 
         return mplfig_to_npimage(fig)
@@ -4263,4 +4139,124 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
         plt.savefig(savedir + filename)
     if show:
         fig.show()
+
+def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
+        plot_co=False):
+
+    ''' Plots a heat map of likelihoodelation values as a function of velocity
+    width and velocity center.
+
+    Parameters
+    ----------
+    cloud : cloudpy.Cloud
+        If provided, properties taken from cloud.props.
+
+
+    '''
+
+    # Import external modules
+    import numpy as np
+    import math
+    from astropy.io import fits
+    import matplotlib.pyplot as plt
+    import matplotlib
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
+
+    if cloud is not None:
+        props = cloud.props
+
+    # Set up plot aesthetics
+    # ----------------------
+    plt.close;plt.clf()
+
+    font_scale = 9
+    params = {
+              'figure.figsize': (3.6, 3.6 / 1.618),
+              #'figure.titlesize': font_scale,
+             }
+    plt.rcParams.update(params)
+
+    # Create figure instance
+    fig = plt.figure()
+
+    axes = AxesGrid(fig, (1,1,1),
+                    nrows_ncols=(1, 1),
+                    ngrids=1,
+                    axes_pad=0,
+                    aspect=False,
+                    label_mode='L',
+                    share_all=True)
+
+    statistic = np.nanmean
+
+    hi_data = np.copy(cloud.hi_data)
+
+    #hi_data[:, cloud.region_mask] = np.nan
+
+    # Integrate HI cube for masked and unmasked
+    hi_spectrum_masked = statistic(hi_data[:, cloud.mask], axis=1)
+    hi_spectrum_unmasked = \
+            statistic(hi_data[:, np.ones(hi_data[0,].shape,
+                                               dtype=bool)], axis=1)
+
+    ax = axes[0]
+
+    ax.plot(cloud.hi_vel_axis,
+            hi_spectrum_masked,
+            #color='k',
+            linestyle='--',
+            label=r'Masked Median H$\textsc{i}$',
+            drawstyle = 'steps-mid'
+            )
+
+    ax.plot(cloud.hi_vel_axis,
+            hi_spectrum_unmasked,
+            #color='k',
+            linestyle='-.',
+            label=r'Unmasked Median H$\textsc{i}$',
+            drawstyle = 'steps-mid',
+            )
+
+    if plot_co:
+        try:
+        #try cloud.co_vel_axis():
+            co_data = np.copy(cloud.co_data)
+            co_data[:, cloud.region_mask] = np.nan
+            co_spectrum = \
+                    statistic(co_data[:, np.ones(co_data[0,].shape,
+                                                   dtype=bool)], axis=1)
+            ax.plot(cloud.co_vel_axis,
+                    co_spectrum * 100.,
+                    #color='k',
+                    label=r'Median $^{12}$CO $\times$ 100',
+                    drawstyle = 'steps-mid'
+                    )
+
+        except AttributeError:
+            raise ValueError('No CO data present')
+
+    ax.axvspan(cloud.props['hi_velocity_range_max']['value'][0],
+               cloud.props['hi_velocity_range_max']['value'][1],
+               alpha=0.3,
+               color='k',
+               )
+    ax.axvline(cloud.vel_center,
+               alpha=0.3,
+               color='k',
+               linestyle='--',
+               )
+
+    # plot limits
+    if limits is not None:
+        ax.set_xlim(limits[0],limits[1])
+        ax.set_ylim(limits[2],limits[3])
+
+    ax.legend(loc='upper left')
+    ax.set_xlabel('Velocity [km/s]')
+    ax.set_ylabel(r'T$_b$ [K]')
+
+    if filename is not None:
+        plt.draw()
+        plt.savefig(filename, bbox_inches='tight', dpi=100)
 
