@@ -136,6 +136,8 @@ def get_pix_coords(ra=None, dec=None, header=None):
 
     import pywcsgrid2 as wcs
     import pywcs
+    from astropy.wcs import WCS
+    import numpy as np
 
     # convert to degrees if ra and dec are array-like
     try:
@@ -147,10 +149,12 @@ def get_pix_coords(ra=None, dec=None, header=None):
     except TypeError:
         ra_deg, dec_deg = ra, dec
 
-    wcs_header = pywcs.WCS(header)
-    pix_coords = wcs_header.wcs_sky2pix([[ra_deg, dec_deg, 0]], 0)[0]
+    #wcs_header = pywcs.WCS(header)
+    wcs_header = WCS(header)
+    #pix_coords = wcs_header.wcs_sky2pix([[ra_deg, dec_deg, 0]], 0)[0]
+    pix_coords = wcs_header.wcs_world2pix([[ra_deg, dec_deg],], 0)[0]
 
-    return pix_coords
+    return np.hstack((pix_coords, -1))
 
 def hrs2degs(ra=None, dec=None):
     ''' Ra and dec tuples in hrs min sec and deg arcmin arcsec.
