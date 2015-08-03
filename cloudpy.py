@@ -36,6 +36,7 @@ class Cloud():
             diagnostic_filename=None,
             use_bin_weights=False,
             use_only_binned_data=False,
+            bin_procedure='all',
             binned_data_filename_ext=None,
             weights_filename=None,
             av_mask_threshold=None,
@@ -68,6 +69,7 @@ class Cloud():
         self.binsize = binsize
         self.use_bin_weights=use_bin_weights
         self.use_only_binned_data=use_only_binned_data
+        self.bin_procedure=bin_procedure
         self.Tsys = 30.0 # K
         self.VEL_RANGE_DIFF_THRES = vel_range_diff_thres
         self.init_vel_width = init_vel_width
@@ -95,6 +97,7 @@ class Cloud():
         elif av_error is not None:
             self.av_error_data, self.av_error_header = \
                     np.ones(self.av_data.shape) * av_error, self.av_header
+            self.av_error_filename = None
         else:
             self.av_error_data = None
         if hi_error_filename is not None and path.isfile(hi_error_filename):
@@ -107,7 +110,8 @@ class Cloud():
 
         # Use only binned data throughout the analysis?
         # Either load the binned images or create new images
-        if self.use_only_binned_data:
+        #if self.use_only_binned_data:
+        if self.bin_procedure == 'all':
             filenames = self._prepare_bin_filenames()
             if binned_data_filename_ext is not None:
                 load_data = self._check_files(filenames)
@@ -130,6 +134,13 @@ class Cloud():
             self.av_header = self.av_header_bin.copy()
             self.av_error_header = self.av_error_header_bin.copy()
             self.hi_header = self.hi_header_bin.copy()
+        else:
+            self.bin_weights = None
+            self.av_filename_bin = self.av_filename
+            self.av_error_filename_bin = self.av_filename
+            self.av_header_bin = self.av_header.copy()
+            self.hi_header_bin = self.hi_header.copy()
+            self.hi_filename_bin = self.hi_filename
 
         # Background
         self.av_background = av_background
@@ -530,15 +541,23 @@ class Cloud():
         # Derive mask by excluding correlated residuals
         # ---------------------------------------------
         # Derive initial N(HI) image
-        self.nhi_image, self.nhi_error_image = \
-                calculate_nhi(cube=self.hi_data,
-                              velocity_axis=self.hi_vel_axis,
-                              velocity_range=vel_range,
-                              noise_cube=self.hi_error_data,
-                              velocity_noise_range=self.hi_noise_vel_range,
-                              Tsys=self.Tsys,
-                              return_nhi_error=True,
-                              )
+        if 0:
+            self.nhi_image, self.nhi_error_image = \
+                    calculate_nhi(cube=self.hi_data,
+                                  velocity_axis=self.hi_vel_axis,
+                                  velocity_range=vel_range,
+                                  noise_cube=self.hi_error_data,
+                                  velocity_noise_range=self.hi_noise_vel_range,
+                                  Tsys=self.Tsys,
+                                  return_nhi_error=True,
+                                  )
+        else:
+            self.nhi_image = \
+                    calculate_nhi(cube=self.hi_data,
+                                  velocity_axis=self.hi_vel_axis,
+                                  velocity_range=vel_range,
+                                  )
+            self.nhi_error_image = 0.05 * np.ones(self.nhi_image.shape)
 
         # Write iteration step variables
         self.iter_vars[self.iter_step]['nhi_image'] = self.nhi_image
@@ -565,7 +584,8 @@ class Cloud():
         self.hi_data_masked[:, mask] = np.nan
 
         # Bin the data
-        if not self.use_only_binned_data:
+        #if not self.use_only_binned_data:
+        if self.bin_procedure not in ('all', 'none'):
             self._bin_data(av_data=self.av_data_masked,
                            av_error_data=self.av_error_data_masked,
                            hi_data=self.hi_data_masked
@@ -606,7 +626,7 @@ class Cloud():
         self.nhi_image_bin[mask] = np.nan
         self.mask = mask
 
-        if 1:
+        if 0:
             from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
             import matplotlib.pyplot as plt
             import pywcsgrid2 as wcs
@@ -649,7 +669,8 @@ class Cloud():
             plt.savefig('/usr/users/ezbc/Desktop/' + self.region + \
                         '_prelike_map.png')
 
-        if 'av_bin_map_filename_base' in self.plot_args:
+        if 'av_bin_map_filename_base' in self.plot_args and \
+                self.bin_procedure in ('all', 'mle'):
             filename = self.plot_args['av_bin_map_filename_base'] + \
                        str(self.iter_step) + '.png'
             plot_av_bin_map(self.av_data,
@@ -3300,8 +3321,12 @@ def plot_mask_map(cloud=None, props=None, filename=None,
         av_image = cloud.av_data
         av_header = cloud.av_header
 
-    av_image_bin = cloud.av_data_bin
-    av_header_bin = cloud.av_header_bin
+    if cloud.av_data_bin is not None:
+        av_image_bin = cloud.av_data_bin
+        av_header_bin = cloud.av_header_bin
+    else:
+        av_image_bin = np.copy(av_image)
+        av_header_bin = av_header
 
     mask = cloud.mask
 
@@ -3414,7 +3439,7 @@ def plot_mask_map(cloud=None, props=None, filename=None,
     ax = axes[1][av_header_bin]
     #cmap = cm.jet # colormap
     # show the image
-    av_image_bin_mask = np.copy(av_image_bin)
+    av_image_bin_mask = np.copy(av_image)
     av_image_bin[mask] = np.nan
     av_image_bin_mask[~mask] = np.nan
     im = ax.imshow(av_image_bin,
@@ -4305,7 +4330,7 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
             co_scalar = np.max(hi_spectrum_masked)
             co_spectrum = co_spectrum / np.max(co_spectrum) * co_scalar
             ax.plot(cloud.co_vel_axis,
-                    co_spectrum,
+                    co_spectrum * co_scalar,
                     #color='k',
                     label=r'Median $^{12}$CO $\times$' + \
                            '{0:.0f}'.format(co_scalar),
@@ -4363,7 +4388,10 @@ def plot_nhi_map(cloud=None, nhi_image=None, props=None, filename=None,
         props = cloud.props
 
     av_header = fits.getheader(cloud.av_filename)
-    av_header_bin = fits.getheader(cloud.av_filename_bin)
+    try:
+        av_header_bin = fits.getheader(cloud.av_filename_bin)
+    except AttributeError:
+        av_header_bin = av_header
 
     # Set up plot aesthetics
     # ----------------------
