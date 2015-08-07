@@ -4051,7 +4051,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     from matplotlib import cm
     from astroML.plotting import scatter_contour
     from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
-    from myplotting import truncate_colormap, scatter_contour
+    import myplotting as myplt
 
     # set up plot aesthetics
     # ----------------------
@@ -4101,16 +4101,17 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     # Create plot
     ax = axes[0]
 
+    if limits is None:
+        xmin = np.min(nhi_nonans)
+        ymin = np.min(av_nonans)
+        xmax = np.max(nhi_nonans)
+        ymax = np.max(av_nonans)
+        xscalar = 0.25 * xmax
+        yscalar = 0.25 * ymax
+        limits = [xmin - xscalar, xmax + xscalar,
+                  ymin - yscalar, ymax + yscalar]
+
     if contour_plot:
-        if limits is None:
-            xmin = np.min(nhi_nonans)
-            ymin = np.min(av_nonans)
-            xmax = np.max(nhi_nonans)
-            ymax = np.max(av_nonans)
-            xscalar = 0.25 * xmax
-            yscalar = 0.25 * ymax
-            limits = [xmin - xscalar, xmax + xscalar,
-                      ymin - yscalar, ymax + yscalar]
 
         contour_range = ((limits[0], limits[1]),
                          (limits[2], limits[3]))
@@ -4120,7 +4121,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         l1 = myplt.scatter_contour(nhi_nonans.ravel(),
                              av_nonans.ravel(),
                              threshold=3,
-                             log_counts=log_counts,
+                             log_counts=1,
                              levels=levels,
                              ax=ax,
                              histogram2d_args=dict(bins=30,
@@ -4203,7 +4204,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     # Adjust asthetics
     ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
     ax.set_ylabel(r'$A_V$ [mag]')
-    #ax.set_title(core_names[i])
+    ax.set_title(title)
     ax.legend(loc='lower right')
 
     if filename is not None:
@@ -4211,10 +4212,10 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     if show:
         fig.show()
 
-def plot_nh2_vs_nhi(nhi, nh2, limits=None,
-        fit=True, savedir='', filename=None, show=True, fit_params=None,
-        contour_plot=True,
-        scale=('linear','linear'), title = '', gridsize=(100,100), std=None):
+def plot_nh2_vs_nhi(nhi, nh2, limits=None, fit=True, savedir='',
+        filename=None, show=True, fit_params=None, contour_plot=True,
+        levels=10, scale=('linear','linear'), title = '', gridsize=(100,100),
+        std=None):
 
     # import external modules
     import numpy as np
@@ -4224,7 +4225,7 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
     from matplotlib import cm
     from astroML.plotting import scatter_contour
     from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
-    from myplotting import truncate_colormap
+    import myplotting as myplt
 
     # set up plot aesthetics
     # ----------------------
@@ -4265,10 +4266,7 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
     # Create plot
     ax = axes[0]
 
-    if limits is not None:
-        contour_range = ((limits[0], limits[1]),
-                         (limits[2], limits[3]))
-    else:
+    if limits is None:
         contour_range = None
         x_scalar = 0.1 * np.max(nhi_nonans)
         y_scalar = 0.1 * np.max(nh2_nonans)
@@ -4276,35 +4274,32 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
                   np.max(nhi_nonans) + x_scalar,
                   np.min(nh2_nonans) - y_scalar,
                   np.max(nh2_nonans) + y_scalar)
-        contour_range = ((limits[0], limits[1]),
-                         (limits[2], limits[3]))
-        print 'ymax', np.max(nh2_nonans)
 
     if contour_plot:
+        contour_range = ((limits[0], limits[1]),
+                         (limits[2], limits[3]))
 
-        cmap = truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
+        cmap = myplt.truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
 
-        l1 = scatter_contour(nhi_nonans.ravel(),
+        l1 = myplt.scatter_contour(nhi_nonans.ravel(),
                              nh2_nonans.ravel(),
                              threshold=3,
                              log_counts=1,
-                             levels=6,
+                             levels=levels,
                              ax=ax,
-                             histogram2d_args=dict(bins=50,
-                                    range=contour_range),
+                             histogram2d_args=dict(bins=30,
+                                                   range=contour_range),
                              plot_args=dict(marker='o',
                                             linestyle='none',
                                             color='black',
-                                            alpha=0.,
+                                            alpha=0.3,
                                             markersize=2),
                              contour_args=dict(
-                                               #cmap=plt.cm.gray,
-                                #cmap=plt.cm.binary(np.linspace(0.2, 1,1000)),
+                                               #cmap=plt.cm.binary,
                                                cmap=cmap,
+                                               #cmap=cmap,
                                                ),
                              )
-        print('Contour levels = ', l1)
-        print('npix = ', nhi_nonans.size)
     else:
         image = ax.errorbar(nhi_nonans.ravel(),
                 nh2_nonans.ravel(),
@@ -4330,8 +4325,8 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
     # Adjust asthetics
     ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
     ax.set_ylabel(r'$N($H$_2) \times\,10^{20}$ cm$^{-2}$')
-    #ax.set_title(core_names[i])
     ax.legend(loc='best')
+    ax.set_title(title)
 
     if filename is not None:
         plt.savefig(savedir + filename)

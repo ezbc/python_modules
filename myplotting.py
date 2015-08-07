@@ -330,7 +330,7 @@ def scatter_contour(x, y,
     outline = ax.contour(H.T, levels=(np.min(levels),),
                          linewidths=0, extent=extent,
                          colors=outline_colors, alpha=1)
-    outer_poly = outline.allsegs[0][0]
+    outer_polys = outline.allsegs[0]
 
     # Create filled contour
     C = ax.contourf(H.T, levels, extent=extent, **contour_args)
@@ -338,10 +338,12 @@ def scatter_contour(x, y,
     # Make list of point coordinates, N x 2 in shape
     X = np.hstack([x[:, None], y[:, None]])
 
+    points_inside = np.zeros(x.shape, dtype=bool)
     try:
         # this works in newer matplotlib versions
         from matplotlib.path import Path
-        points_inside = Path(outer_poly).contains_points(X)
+        for outer_poly in outer_polys:
+            points_inside[Path(outer_poly).contains_points(X)] = True
     except ImportError:
         # this works in older matplotlib versions
         import matplotlib.nxutils as nx
