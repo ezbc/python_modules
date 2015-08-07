@@ -249,5 +249,106 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
 
     return new_cmap
 
+def scatter_contour(x, y,
+                    levels=10,
+                    fractional_levels=True,
+                    threshold=100,
+                    log_counts=False,
+                    histogram2d_args={},
+                    plot_args={},
+                    contour_args={},
+                    ax=None):
+    """Scatter plot with contour over dense regions
 
+    Parameters
+    ----------
+    x, y : arrays
+        x and y data for the contour plot
+    levels : integer or array (optional, default=10)
+        number of contour levels, or array of contour levels
+    fractional_levels : bool (optional, default=True)
+        If True, then levels argument (if array-like) is interpreted as levels
+        within which contain the fraction of data points specified. The
+        threshold and log_counts arguments will not have an effect if True.
+    threshold : float (default=100)
+        number of points per 2D bin at which to begin drawing contours
+    log_counts :boolean (optional)
+        if True, contour levels are the base-10 logarithm of bin counts.
+    histogram2d_args : dict
+        keyword arguments passed to numpy.histogram2d
+        see doc string of numpy.histogram2d for more information
+    plot_args : dict
+        keyword arguments passed to pylab.scatter
+        see doc string of pylab.scatter for more information
+    contourf_args : dict
+        keyword arguments passed to pylab.contourf
+        see doc string of pylab.contourf for more information
+    ax : pylab.Axes instance
+        the axes on which to plot.  If not specified, the current
+        axes will be used
+    """
 
+    import matplotlib.pyplot as plt
+
+    if ax is None:
+        ax = plt.gca()
+
+    H, xbins, ybins = np.histogram2d(x, y, **histogram2d_args)
+
+    Nx = len(xbins)
+    Ny = len(ybins)
+
+    # Get level fractions
+    if isinstance(levels, int):
+        if not log_counts:
+            level_fractions = 1 - np.linspace(threshold, H.max(), levels) /\
+                    (H.max() + threshold)
+        else:
+            H = np.log10(1 + H)
+            threshold = np.log10(1 + threshold)
+            level_fractions = 1 - np.logspace(np.log10(threshold + 1),
+                                              np.log10(H.max() + 1),
+                                              levels) / \
+                              (H.max() + threshold + 2)
+
+        levels = np.linspace(threshold, H.max(), levels)
+    else:
+        levels = np.asarray(levels)
+        level_fractions = levels
+        if fractional_levels:
+            levels = np.sort((1.0 - levels) * np.max(H))
+            levels = np.hstack((levels, np.max(H)))
+
+    extent = [xbins[0], xbins[-1], ybins[0], ybins[-1]]
+
+    # draw a zero-width line: this gives us the outer polygon to
+    # reduce the number of points we draw
+    # somewhat hackish... we could probably get the same info from
+    # the filled contour below.
+    # make outline color same as edge of filled contour
+    outline_colors = (plt.get_cmap()(0),)
+    outline = ax.contour(H.T, levels=(np.min(levels),),
+                         linewidths=0, extent=extent,
+                         colors=outline_colors, alpha=1)
+    outer_poly = outline.allsegs[0][0]
+
+    # Create filled contour
+    C = ax.contourf(H.T, levels, extent=extent, **contour_args)
+
+    # Make list of point coordinates, N x 2 in shape
+    X = np.hstack([x[:, None], y[:, None]])
+
+    try:
+        # this works in newer matplotlib versions
+        from matplotlib.path import Path
+        points_inside = Path(outer_poly).contains_points(X)
+    except ImportError:
+        # this works in older matplotlib versions
+        import matplotlib.nxutils as nx
+        points_inside = nx.points_inside_poly(X, outer_poly)
+
+    Xplot = X[~points_inside]
+
+    ax.plot(Xplot[:, 0], Xplot[:, 1], zorder=1, **plot_args)
+
+    return level_fractions[:-1]

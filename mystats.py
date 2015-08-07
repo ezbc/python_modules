@@ -617,6 +617,70 @@ def bootstrap_model(data,model,num_samples=100,alpha=0.05,data_error=None,
 
     return (confid_int,gofArray)
 
+def bootstrap_residuals(data, model, num_samples=100, statistic=np.mean):
+
+    ''' Bootstraps data with models a given number of times and calculates the
+    Goodness of fit for each run. The standard deviation of the Goodness-of-fit
+    values is then used to estimate the confidence interval.
+
+    Parameters
+    ----------
+    data : array_like
+        The observed data, must be the same size as the model
+    model : array_like
+        The model data, must be the same size as the observed data.
+    num_samples : int, optional
+        Number of runs in the bootstrapping.
+    alpha : float, optional
+        Significance of confidence interval.
+    data_error : float, array_like, optional
+        If unset, the error will be the standard deviation of the data. If an
+        array, it must have the same dimensions as the observed data.
+    sigma : float, optional
+        If set, the confidence interval will be calculated using the number of
+        standard deviations from the mean.
+    verbose : bool, optional
+        Print out progress?
+
+    Returns
+    -------
+    out : list
+        A list, [confidence interval, goodness of fit array]
+
+    '''
+
+    import numpy as np
+    from scipy.stats import norm
+
+    data_list = data.ravel()
+    model_list = model.ravel()
+    residuals = data - model
+    length = len(data_list)
+
+    num_samples = int(num_samples)
+    gofArray = np.zeros(num_samples)
+
+    if verbose:
+        print('Beginning bootstrapping')
+
+    for i in range(num_samples):
+        # randomly sample all values of data and model
+        indices_sample = np.random.choice(length,size=length,replace=True)
+        data_sample = data_list[indices_sample]
+        model_sample = model_list[indices_sample]
+        gofArray[i] = ((data_sample - model_sample)**2 / \
+                data_error_list**2).sum()
+        if verbose:
+            if i%10 == 0:
+                print(str(i) + 'th run complete.')
+
+    mean, std = gofArray.mean(), gofArray.std()
+    if sigma is not None:
+        alpha = 1 - norm.cdf(sigma)
+    confid_int = norm.interval(1 - alpha, loc=mean, sigma=std)
+
+    return (confid_int,gofArray)
+
 def get_rms(x, axis=None):
     ''' Calculates the rms of an array.
     '''

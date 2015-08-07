@@ -32,6 +32,7 @@ class Cloud():
             binsize=1,
             vel_range_diff_thres=2.0,
             init_vel_width=50,
+            recalculate_likelihoods=True,
             pixel_mask_increase_fraction=0.01,
             diagnostic_filename=None,
             use_bin_weights=False,
@@ -64,6 +65,7 @@ class Cloud():
         self.RESIDUAL_WIDTH_SCALE = residual_width_scale
         self.verbose = verbose
         self.clobber_likelihoods = clobber_likelihoods
+        self.recalculate_likelihoods = recalculate_likelihoods
         self.likelihood_filename = likelihood_filename
         self.hi_noise_vel_range = hi_noise_vel_range
         self.binsize = binsize
@@ -471,8 +473,9 @@ class Cloud():
         # Errors add in square
         # mean = sum(a_i) / n
         # error on mean = sqrt(sum(a_i**2 / n**2))
-        noise_func = lambda x: np.nansum(x**2)**0.5 / \
-                                     np.sum(~np.isnan(x))
+        noise_func = lambda x: (np.nansum(x**2) / np.sum(~np.isnan(x)))**0.5
+        noise_func = lambda x: (1 / np.nansum(x**-2))**0.5
+        #noise_func = lambda x: np.nansum(x**2)**0.5
 
         self.av_error_data_bin, self.av_error_header_bin = \
                 bin_image(av_error_data,
@@ -480,12 +483,25 @@ class Cloud():
                           header=self.av_error_header,
                           statistic=noise_func,)
 
+        av_std, av_std_header = \
+                bin_image(av_error_data,
+                          binsize=(binsize, binsize),
+                          header=self.av_header,
+                          statistic=np.nanstd,)
+
+        self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2)
+
         # Hi image
-        self.hi_data_bin, self.hi_header_bin = \
-                bin_image(hi_data,
-                          binsize=(1, binsize, binsize),
-                          header=self.hi_header,
-                          statistic=np.nanmean)
+        if 0:
+            self.hi_data_bin, self.hi_header_bin = \
+                    bin_image(hi_data,
+                              binsize=(1, binsize, binsize),
+                              header=self.hi_header,
+                              statistic=np.nanmean)
+        else:
+            from astropy.io import fits
+            self.hi_data_bin, self.hi_header_bin = \
+                fits.getdata(self.hi_filename_bin, header=True)
 
 
         if write_data:
@@ -568,9 +584,14 @@ class Cloud():
         if self.av_mask_threshold is None:
             self._iterate_residual_masking()
         else:
-            mask = (self.av_data < self.av_mask_threshold)
+            # Apply initial mask to exclude throughout process
+            mask_init = self.region_mask
+            mask_threshold = (self.av_data > self.av_mask_threshold)
+            if mask_init is not None:
+                mask = mask_init + mask_threshold
             self.iter_vars[self.iter_step]['mask'] = mask
             self.plot_args['iter_ext'] = '0_0'
+            self.mask = mask
 
         # Apply mask to data, then bin data to avoid correlated pixels
         # ------------------------------------------------------------
@@ -621,6 +642,7 @@ class Cloud():
         mask = self._get_common_mask([self.av_data_masked,
                                       self.av_error_data_masked,
                                       self.nhi_image_bin])
+
         self.av_data_masked[mask] = np.nan
         self.av_error_data_masked[mask] = np.nan
         self.nhi_image_bin[mask] = np.nan
@@ -703,8 +725,8 @@ class Cloud():
                               clobber=self.clobber_likelihoods,
                               verbose=self.verbose,
                               )
-
         self.iter_vars[self.iter_step]['init_likelihood_results'] = results
+
 
         if 0:
             self.iter_vars[self.iter_step]['scaled_likelihood_results'] = results
@@ -731,7 +753,8 @@ class Cloud():
         # number of degrees of freedom see equation 15.1.6 in Numerical Recipes
         self._calc_model_error(vel_range_max, dgr_max, intercept_max)
 
-        if 1:
+        if self.recalculate_likelihoods:
+
             if self.verbose:
                 print('\n\n\tCalculating MLE parameters with revised ' + \
                       'errors...')
@@ -876,6 +899,7 @@ class Cloud():
         delta_dgr = 1e10
         dgr = 1e10
         iteration = 0
+        npix = 0
         done = False
 
         #while delta_dgr > self.THRESHOLD_DELTA_DGR:
@@ -942,23 +966,29 @@ class Cloud():
             masking_results[iteration]['residual_threshold'] = \
                     residual_threshold
 
+
+            # Derive new mask
+            mask = self._combine_masks(mask_residuals, mask)
+
+            if self.verbose:
+                npix_new = mask.size - np.sum(mask)
+                print('\t\t\tNumber of non-masked pixels = ' + \
+                      '{0:.0f}'.format(npix))
+
+
             # Reset while loop conditions
             delta_dgr = np.abs(1 - dgr / dgr_new)
             dgr = dgr_new
             iteration += 1
 
             if 1:
-                if delta_dgr < self.THRESHOLD_DELTA_DGR: done = True
+                if (delta_dgr < self.THRESHOLD_DELTA_DGR) | \
+                   (np.abs(npix - npix_new) <= 1):
+                    done = True
             else:
                 if self._mask_pixel_fraction >= 0.99: done = True
 
-            # Derive new mask
-            mask = self._combine_masks(mask_residuals, mask)
-
-            if self.verbose:
-                npix = mask.size - np.sum(mask)
-                print('\t\t\tNumber of non-masked pixels = ' + \
-                      '{0:.0f}'.format(npix))
+            npix = npix_new
 
 
         # Create model of Av
@@ -2140,7 +2170,7 @@ def _check_file(filename, clobber=False, verbose=False):
 
     return exists
 
-def save(cloud, filename, binary_likelihood_filename=None):
+def save(cloud, filename, binary_likelihood_filename=None, write_fits=True):
 
     import pickle
     import numpy as np
@@ -2151,19 +2181,44 @@ def save(cloud, filename, binary_likelihood_filename=None):
         cloud.props['likelihoods'] = None
         np.save(binary_likelihood_filename, likelihoods)
 
+    if not write_fits:
+        av_data = cloud.av_data
+        av_error_data = cloud.av_error_data
+        hi_data = cloud.hi_data
+        hi_error_data = cloud.hi_error_data
+        cloud.av_data = None
+        cloud.av_error_data = None
+        cloud.hi_data = None
+        cloud.hi_error_data = None
+
     with open(filename, 'wb') as output:
         pickle.dump(cloud, output)
+
+    if not write_fits:
+        cloud.av_data = av_data
+        cloud.av_error_data = av_error_data
+        cloud.hi_data = hi_data
+        cloud.hi_error_data = hi_error_data
 
     # Add the likelihoods back to the cloud
     if binary_likelihood_filename is not None:
         cloud.props['likelihoods'] = likelihoods
 
-def load(filename, binary_likelihood_filename=None):
+def load(filename, binary_likelihood_filename=None, load_fits=False):
 
     import pickle
+    from astropy.io import fits
 
     with open(filename, 'rb') as input:
         cloud = pickle.load(input)
+
+    if load_fits:
+        cloud.av_data = fits.getdata(cloud.av_filename)
+        if cloud.av_error_filename is not None:
+            cloud.av_error_data = fits.getdata(cloud.av_error_filename)
+        else:
+            cloud.av_error_data = cloud.av_error * np.ones(cloud.av_data.shape)
+        cloud.hi_data = fits.getdata(cloud.hi_filename)
 
     if binary_likelihood_filename is not None:
          likelihoods = np.load(binary_likelihood_filename)
@@ -2666,7 +2721,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
              }
     plt.rcParams.update(params)
 
-    fig, ax_image = plt.subplots()
+    fig, ax = plt.subplots()
 
     # Define parameters from cloud
     if cloud is not None:
@@ -2679,13 +2734,35 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
                      props['hi_velocity_width_error']['value'][1],
                      )
         x_extent = x_grid[0], x_grid[-1]
-        ax_image.set_xlabel(r'Velocity Width [km/s]')
+        ax.set_xlabel(r'Velocity Width [km/s]')
         x_sum_axes = (1, 2)
         y_pdf_label = 'Width PDF'
-        if limits is None:
-            x_limits = (x_grid[0], x_grid[-1])
-        else:
-            x_limits = limits[:2]
+        #if xlim is None:
+        #    xlim = (x_grid[0], x_grid[-1])
+    if plot_axes[1] == 'widths':
+        y_grid = props['width_grid']
+        y_confint = (props['hi_velocity_width']['value'],
+                     props['hi_velocity_width_error']['value'][0],
+                     props['hi_velocity_width_error']['value'][1],
+                     )
+        y_extent = y_grid[0], y_grid[-1]
+        ax.set_ylabel(r'Velocity Width [km/s]')
+        y_sum_axes = (1, 2)
+        x_pdf_label = 'Width PDF'
+        #if ylim is None:
+        #    ylim = (y_grid[0], y_grid[-1])
+    if plot_axes[0] == 'dgrs':
+        x_grid = props['dgr_grid']
+        x_confint = (props['dust2gas_ratio']['value'],
+                     props['dust2gas_ratio_error']['value'][0],
+                     props['dust2gas_ratio_error']['value'][1],
+                     )
+        x_extent = x_grid[0], x_grid[-1]
+        ax.set_xlabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
+        x_sum_axes = (0, 2)
+        y_pdf_label = 'DGR PDF'
+        #if xlim is None:
+        #    xlim = (x_grid[0], x_grid[-1])
     if plot_axes[1] == 'dgrs':
         y_grid = props['dgr_grid']
         y_confint = (props['dust2gas_ratio']['value'],
@@ -2693,13 +2770,23 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
                      props['dust2gas_ratio_error']['value'][1],
                      )
         y_extent = y_grid[0], y_grid[-1]
-        ax_image.set_ylabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
+        ax.set_ylabel(r'DGR [10$^{-20}$ cm$^2$ mag]')
         y_sum_axes = (0, 2)
         x_pdf_label = 'DGR PDF'
-        if limits is None:
-            y_limits = (y_grid[0], y_grid[-1])
-        else:
-            y_limits = limits[2:]
+        #if ylim is None:
+        #    ylim = (y_grid[0], y_grid[-1])
+    if plot_axes[0] == 'intercepts':
+        x_grid = props['intercept_grid']
+        x_confint = (props['intercept']['value'],
+                     props['intercept_error']['value'][0],
+                     props['intercept_error']['value'][1],
+                     )
+        x_extent = x_grid[0], x_grid[-1]
+        ax.set_xlabel(r'Intercept [mag]')
+        x_sum_axes = (0, 1)
+        y_pdf_label = 'Intercept PDF'
+        #if xlim is None:
+        #    xlim = (x_grid[0], x_grid[-1])
     if plot_axes[1] == 'intercepts':
         y_grid = props['intercept_grid']
         y_confint = (props['intercept']['value'],
@@ -2707,14 +2794,18 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
                      props['intercept_error']['value'][1],
                      )
         y_extent = y_grid[0], y_grid[-1]
-        ax_image.set_ylabel(r'Intercept [mag]')
+        ax.set_ylabel(r'Intercept [mag]')
         y_sum_axes = (0, 1)
         x_pdf_label = 'Intercept PDF'
-        if limits is None:
-            y_limits = (y_grid[0], y_grid[-1])
-        else:
-            y_limits = limits[2:]
+        #if ylim is None:
+        #    ylim = (y_grid[0], y_grid[-1])
 
+    if limits is None:
+        x_limits = (x_grid[0], x_grid[-1])
+        y_limits = (y_grid[0], y_grid[-1])
+    else:
+        x_limits = limits[0:2]
+        y_limits = limits[2:]
 
     # Create axes
     sum_axes = np.array((x_sum_axes, y_sum_axes))
@@ -2744,7 +2835,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         norm = None
         cmap=plt.cm.binary
 
-    im = ax_image.imshow(image.T, interpolation='nearest', origin='lower',
+    im = ax.imshow(image.T, interpolation='nearest', origin='lower',
             extent=extent,
             #cmap=plt.cm.gist_stern,
             #cmap=plt.cm.gray,
@@ -2758,10 +2849,10 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
     show_pdfs = 1
 
     if show_pdfs:
-        divider = make_axes_locatable(ax_image)
-        ax_pdf_x = divider.append_axes("top", 0.6, pad=0.1, sharex=ax_image)
+        divider = make_axes_locatable(ax)
+        ax_pdf_x = divider.append_axes("top", 0.6, pad=0.1, sharex=ax)
         ax_pdf_y  = divider.append_axes("right", 0.6, pad=0.1,
-                sharey=ax_image)
+                sharey=ax)
 
         # make some labels invisible
         plt.setp(ax_pdf_x.get_xticklabels() + \
@@ -2856,7 +2947,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         fractions = (1.0 - np.asarray(contour_confs))
         levels = (fractions * image.max())
 
-        cs = ax_image.contour(image.T, levels=levels,
+        cs = ax.contour(image.T, levels=levels,
                 extent=extent,
                 colors='k'
                 )
@@ -2879,7 +2970,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         #    fmt[level] = fraction
         fmt = '%r %%'
 
-        ax_image.clabel(cs, cs.levels, fmt=fmt, fontsize=9, inline=1)
+        ax.clabel(cs, cs.levels, fmt=fmt, fontsize=9, inline=1)
 
         # --------------
         # Set boundaries
@@ -2903,7 +2994,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
                                vert_max + x_offset
 
                 try:
-                    ax_image.set_xlim((x_min, x_max))
+                    ax.set_xlim((x_min, x_max))
                 except UnboundLocalError:
                     pass
             except IndexError:
@@ -2928,15 +3019,15 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
                                vert_max + y_offset
 
                 try:
-                    ax_image.set_ylim((y_min, y_max))
+                    ax.set_ylim((y_min, y_max))
                 except UnboundLocalError:
                     pass
             except IndexError:
                 pass
 
     if limits is not None:
-        ax_image.set_xlim(limits[0],limits[1])
-        ax_image.set_ylim(limits[2],limits[3])
+        ax.set_xlim(limits[0],limits[1])
+        ax.set_ylim(limits[2],limits[3])
 
     if 0:
     #if npix is not None or av_threshold is not None:
@@ -2954,7 +3045,7 @@ def plot_likelihoods_hist(cloud=None, props=None, limits=None,
         text += '\n'
         text += r'Velocity width = {0:.2f} '.format(x_confint[0]) + \
                 r'km/s'
-        ax_image.annotate(text,
+        ax.annotate(text,
                 xytext=(0.95, 0.95),
                 xy=(0.95, 0.95),
                 textcoords='axes fraction',
@@ -3251,20 +3342,30 @@ def plot_mask_residuals(residuals=None, x_fit=None, y_fit=None,
         pdf_max = bin_edges_ext[counts_ext == counts_ext.max()][0]
         #print('\t\t\tResidual max = {0:.2f} [mag]'.format(pdf_max))
 
-    if 1:
-
+    if counts is None:
         density = gaussian_kde(residuals_nonans, bw_method=factor)
         counts_ext = density(x_fit)
         #counts_ext /= counts_ext.max()
         counts_ext = counts_ext / integrate(counts_ext) * \
                 np.sum(~np.isnan(residuals))
+    else:
+        counts_ext = counts
         #print integrate(counts_ext, x_fit)
-        y_fit /= np.max(y_fit)
-        #y_fit_scalar = np.interp(x_fit[np.argmax(y_fit)],
-                                 #bin_edges_ext,
-                                 #counts_ext)
-        y_fit_scalar = counts_ext[np.argmax(y_fit)]
-        y_fit *= y_fit_scalar
+
+    if fit_params is not None:
+        x_fit = np.linspace(-5,
+                            5,
+                            10000)
+        x_fit = np.arange(-5,5,0.01)
+
+        y_fit = gauss(x_fit, *fit_params)
+        #y_fit / np.nanmax(residuals)
+
+    y_fit /= np.max(y_fit)
+    y_fit_scalar = np.interp(x_fit[np.argmax(y_fit)],
+                             x_fit,
+                             counts_ext)
+    y_fit *= y_fit_scalar
 
     ax.plot(x_fit, counts_ext, drawstyle='steps-pre',
             linewidth=1.5)
@@ -3872,6 +3973,7 @@ def plot_residual_hist_movie(cloud, filename=None,):
     from scipy.integrate import simps
 
     residuals_list = []
+    counts_list = []
     residual_thres_list = []
     fit_params_list = []
     anno_text_list = []
@@ -3907,6 +4009,7 @@ def plot_residual_hist_movie(cloud, filename=None,):
 
 
             residuals_list.append(residuals)
+            counts_list.append(counts)
 
             resid_max = np.nanmax(counts)
             if resid_max > resid_max_abs:
@@ -3915,10 +4018,11 @@ def plot_residual_hist_movie(cloud, filename=None,):
     def make_frame(t):
         fig = plot_mask_residuals(
                                   residuals=residuals_list[int(t)],
-                                  #counts=residuals_list[int(t)][0],
+                                  counts=counts_list[int(t)],
                                   #bin_edges=residuals_list[int(t)][1],
                                   factor=factor,
                                   anno_text=anno_text_list[int(t)],
+                                  x_fit=x,
                                   fit_params=fit_params_list[int(t)],
                                   residual_thres=residual_thres_list[int(t)],
                                   return_fig=True,
@@ -3936,7 +4040,7 @@ def plot_residual_hist_movie(cloud, filename=None,):
 
 def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         fit=True, savedir='', filename=None, show=True, fit_params=None,
-        contour_plot=True,
+        contour_plot=True, levels=10,
         scale=('linear','linear'), title = '', gridsize=(100,100), std=None):
 
     # import external modules
@@ -3947,7 +4051,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     from matplotlib import cm
     from astroML.plotting import scatter_contour
     from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
-    from myplotting import truncate_colormap
+    from myplotting import truncate_colormap, scatter_contour
 
     # set up plot aesthetics
     # ----------------------
@@ -3997,39 +4101,34 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     # Create plot
     ax = axes[0]
 
-    if limits is not None:
-        contour_range = ((limits[0], limits[1]),
-                         (limits[2], limits[3]))
-    else:
-        contour_range = None
-        xmin = np.min(nhi_nonans)
-        ymin = np.min(av_nonans)
-        xmax = np.max(nhi_nonans)
-        ymax = np.max(av_nonans)
-        xscalar = 0.25 * xmax
-        yscalar = 0.25 * ymax
-        limits = [xmin - xscalar, xmax + xscalar,
-                  ymin - yscalar, ymax + yscalar]
-
-        contour_range = ((limits[0], limits[1]),
-                         (limits[2], limits[3]))
     if contour_plot:
+        if limits is None:
+            xmin = np.min(nhi_nonans)
+            ymin = np.min(av_nonans)
+            xmax = np.max(nhi_nonans)
+            ymax = np.max(av_nonans)
+            xscalar = 0.25 * xmax
+            yscalar = 0.25 * ymax
+            limits = [xmin - xscalar, xmax + xscalar,
+                      ymin - yscalar, ymax + yscalar]
 
+        contour_range = ((limits[0], limits[1]),
+                         (limits[2], limits[3]))
 
-        cmap = truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
+        cmap = myplt.truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
 
-        l1 = scatter_contour(nhi_nonans.ravel(),
+        l1 = myplt.scatter_contour(nhi_nonans.ravel(),
                              av_nonans.ravel(),
                              threshold=3,
-                             log_counts=1,
-                             levels=7,
+                             log_counts=log_counts,
+                             levels=levels,
                              ax=ax,
                              histogram2d_args=dict(bins=30,
-                                    range=contour_range),
+                                                   range=contour_range),
                              plot_args=dict(marker='o',
                                             linestyle='none',
                                             color='black',
-                                            alpha=0.5,
+                                            alpha=0.3,
                                             markersize=2),
                              contour_args=dict(
                                                #cmap=plt.cm.binary,
@@ -4037,6 +4136,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                                                #cmap=cmap,
                                                ),
                              )
+
     else:
         image = ax.errorbar(nhi_nonans.ravel(),
                 av_nonans.ravel(),
@@ -4070,6 +4170,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                     'DGR = {0:.3f}'.format(fit_params['dgr']) + \
                     '\nIntercept = {0:.3f}'.format(fit_params['intercept']),
                 )
+    if 0:
         ax.plot(x_fit,
                 y_poly_fit,
                 color='r',
@@ -4103,7 +4204,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
     ax.set_ylabel(r'$A_V$ [mag]')
     #ax.set_title(core_names[i])
-    ax.legend(loc='best')
+    ax.legend(loc='lower right')
 
     if filename is not None:
         plt.savefig(savedir + filename)
@@ -4177,6 +4278,7 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
                   np.max(nh2_nonans) + y_scalar)
         contour_range = ((limits[0], limits[1]),
                          (limits[2], limits[3]))
+        print 'ymax', np.max(nh2_nonans)
 
     if contour_plot:
 
@@ -4193,7 +4295,7 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
                              plot_args=dict(marker='o',
                                             linestyle='none',
                                             color='black',
-                                            alpha=0.5,
+                                            alpha=0.,
                                             markersize=2),
                              contour_args=dict(
                                                #cmap=plt.cm.gray,
@@ -4201,6 +4303,8 @@ def plot_nh2_vs_nhi(nhi, nh2, limits=None,
                                                cmap=cmap,
                                                ),
                              )
+        print('Contour levels = ', l1)
+        print('npix = ', nhi_nonans.size)
     else:
         image = ax.errorbar(nhi_nonans.ravel(),
                 nh2_nonans.ravel(),
