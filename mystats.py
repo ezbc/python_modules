@@ -7,6 +7,8 @@ import random
 import warnings
 warnings.filterwarnings('ignore')
 
+# Sampling
+
 class rv2d_discrete(object):
 
     ''' A generic discrete 2D random variable class meant for subclassing.
@@ -830,6 +832,20 @@ def gauss(x, width, amp, x0):
     import numpy as np
 
     return amp * np.exp(-(x - x0)**2 / (2 * width**2))
+
+# Perumations
+
+def unique_permutations(elements):
+    if len(elements) == 1:
+        yield (elements[0],)
+    else:
+        unique_elements = set(elements)
+        for first_element in unique_elements:
+            remaining_elements = list(elements)
+            remaining_elements.remove(first_element)
+            for sub_permutation in unique_permutations(remaining_elements):
+                yield (first_element,) + sub_permutation
+
 
 if __name__ == '__main__':
     main()

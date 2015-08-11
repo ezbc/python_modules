@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def delete_overlapping_xlabels(fig, ax):
@@ -354,3 +355,16 @@ def scatter_contour(x, y,
     ax.plot(Xplot[:, 0], Xplot[:, 1], zorder=1, **plot_args)
 
     return level_fractions[:-1]
+
+def set_color_cycle(num_colors=4, cmap=plt.cm.gnuplot, cmap_limits=[0, 0.8]):
+
+    # color cycle, grabs colors from cmap
+    color_cycle = [cmap(i) for i in np.linspace(cmap_limits[0],
+                                                cmap_limits[1],
+                                                num_colors)]
+
+    params = {'axes.color_cycle': color_cycle, # colors of different plots
+             }
+
+    plt.rcParams.update(params)
+

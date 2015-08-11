@@ -32,6 +32,7 @@ class Cloud():
             binsize=1,
             vel_range_diff_thres=2.0,
             init_vel_width=50,
+            vel_center_gauss_fit_kwargs=None,
             recalculate_likelihoods=True,
             pixel_mask_increase_fraction=0.01,
             diagnostic_filename=None,
@@ -152,6 +153,8 @@ class Cloud():
         # Make velocity axis for HI cube
         self.hi_vel_axis = make_velocity_axis(self.hi_header)
 
+        self.vel_center_gauss_fit_kwargs = vel_center_gauss_fit_kwargs
+
         if self.diagnostic_filename is not None:
             import sys
             import os
@@ -215,7 +218,7 @@ class Cloud():
         return [self.av_filename_bin, self.av_error_filename_bin, \
                 self.hi_filename_bin,]
 
-    def _calc_vel_center(self, hi_data, single_vel_center=1):
+    def _calc_vel_center(self, hi_data, single_vel_center=1,):
 
         import numpy as np
         from scipy.stats import nanmedian
@@ -236,14 +239,35 @@ class Cloud():
                     if np.nansum(self.hi_spectrum) > 0:
                         vel_center[i,j] = \
                                 np.array((np.average(self.hi_vel_axis,
-                                            weights=self.hi_spectrum**2),))[0]
+                                    weights=self.hi_spectrum**2),))[0]
                     else:
                         vel_center[i,j] = np.nan
 
-            #if self.mask is not None:
-            #    vel_center = vel_center[~self.mask]
+        self.vel_center = vel_center
+
+    def _calc_vel_range(self, gauss_fit_kwargs=None):
+
+        from scipy.stats import nanmedian
+        from myfitting import fit_gaussians
+
+        self.hi_spectrum = \
+                nanmedian(self.hi_data[:,self.region_mask], axis=1)
+
+        self.vel_center_fits = fit_gaussians(self.hi_vel_axis,
+                self.hi_spectrum, **gauss_fit_kwargs)
+
+        amp_max = -np.Inf
+        for i, param in enumerate(self.vel_center_fits[2]):
+            if param[0] > amp_max:
+                amp_max = param[0]
+                vel_center = param[1]
+                width = param[2] * 4
+                cloud_comp_num = i
+
 
         self.vel_center = vel_center
+        self.width_grid = np.array([width,])
+        self.init_vel_width = width
 
     def _derive_region_mask(self, binned=False, av_data=None):
 
@@ -1181,7 +1205,10 @@ class Cloud():
         self._derive_region_mask()
 
         # Derive velocity center
-        self._calc_vel_center(self.hi_data)
+        if self.vel_center_gauss_fit_kwargs is None:
+            self._calc_vel_center(self.hi_data,)
+        else:
+            self._calc_vel_range(self.vel_center_gauss_fit_kwargs)
 
         # Initialize
         if type(self.vel_center) == np.ndarray:
@@ -4402,20 +4429,25 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
     ax = axes[0]
 
     ax.plot(cloud.hi_vel_axis,
-            hi_spectrum_masked,
-            #color='k',
-            linestyle='--',
-            label=r'Masked Median H$\textsc{i}$',
+            hi_spectrum_unmasked,
+            linewidth=1.5,
+            label=r'Median H$\textsc{i}$',
             drawstyle = 'steps-mid'
             )
 
-    ax.plot(cloud.hi_vel_axis,
-            hi_spectrum_unmasked,
-            #color='k',
-            linestyle='-.',
-            label=r'Unmasked Median H$\textsc{i}$',
-            drawstyle = 'steps-mid',
-            )
+    if hasattr(cloud, 'vel_center_fits'):
+        ax.plot(cloud.hi_vel_axis, cloud.vel_center_fits[0],
+                alpha=0.4,
+                linewidth=3,
+                label='Fit',
+                )
+
+        for comp in cloud.vel_center_fits[1]:
+            ax.plot(cloud.hi_vel_axis, comp,
+                    linewidth=1,
+                    linestyle='--',
+                    color='k'
+                    )
 
     if plot_co:
         try:
@@ -4426,10 +4458,10 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
             co_spectrum = \
                     statistic(co_data[:, co_mask], axis=1)
 
-            co_scalar = np.max(hi_spectrum_masked)
+            co_scalar = np.max(hi_spectrum_masked) / 2
             co_spectrum = co_spectrum / np.max(co_spectrum) * co_scalar
             ax.plot(cloud.co_vel_axis,
-                    co_spectrum * co_scalar,
+                    co_spectrum,
                     #color='k',
                     label=r'Median $^{12}$CO $\times$' + \
                            '{0:.0f}'.format(co_scalar),
@@ -4444,6 +4476,7 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
                alpha=0.3,
                color='k',
                )
+
     ax.axvline(cloud.vel_center,
                alpha=0.3,
                color='k',
@@ -4678,4 +4711,85 @@ def make_nhi_movie(cloud=None, widths=(1,), filename=None, mask=None):
         animation.write_videofile(filename, fps=2)
     elif filename.split('.',1)[1] == 'gif':
         animation.write_gif(filename, fps=2)
+
+def plot_hi_width_correlation(widths, correlations,
+        correlations_masked_2mass=None,
+        correlations_masked_planck=None,correlation_error=None, filename=None,
+        title='', limits=None,):
+
+    # import external modules
+    import numpy as np
+    import math
+    import matplotlib.pyplot as plt
+    import matplotlib
+    from matplotlib import cm
+    import myplotting as myplt
+
+    # set up plot aesthetics
+    # ----------------------
+    plt.close;plt.clf()
+
+    myplt.set_color_cycle(num_colors=3)
+
+    # Create figure instance
+    fig = plt.figure(figsize=(3.6, 3.6))
+
+    ax = fig.add_subplot(111)
+
+    if correlation_error is None:
+        yerr = None
+    else:
+        yerr = (correlation_error)
+
+    ax.errorbar(widths,
+                correlations,
+                yerr=yerr,
+                alpha=1,
+                #color='k',
+                marker='s',
+                ecolor='k',
+                label='Lee+12 Mask, Lee+12 2MASS $A_V$',
+                linestyle='None',
+                markersize=3
+                )
+    if correlations_masked_2mass is not None:
+        ax.errorbar(widths,
+                    correlations_masked_planck,
+                    yerr=yerr,
+                    alpha=1,
+                    #color='k',
+                    marker='o',
+                    ecolor='k',
+                    label=r'Diffuse Mask, Planck $A_V$',
+                    linestyle='None',
+                    markersize=3
+                    )
+        ax.errorbar(widths,
+                    correlations_masked_2mass,
+                    yerr=yerr,
+                    alpha=1,
+                    #color='k',
+                    marker='^',
+                    ecolor='k',
+                    label=r'Diffuse Mask, Lee+12 2MASS $A_V$',
+                    linestyle='None',
+                    markersize=3
+                    )
+        ax.legend(loc='best')
+
+    #ax.set_xscale(scale[0], nonposx = 'clip')
+    #ax.set_yscale(scale[1], nonposy = 'clip')
+
+    if limits is not None:
+        ax.set_xlim(limits[0],limits[1])
+        ax.set_ylim(limits[2],limits[3])
+
+    # Adjust asthetics
+    ax.set_xlabel(r'HI width [km/s]')
+    ax.set_ylabel(r'Correlation Coeff.')
+    ax.set_title(title)
+
+    if filename is not None:
+        plt.savefig(filename, dpi=100)
+
 
