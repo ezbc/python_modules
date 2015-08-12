@@ -129,10 +129,13 @@ class Cloud():
                 self._load_bin_data()
 
             self.av_data = self.av_data_bin
-            if av_error is not None:
-                self.av_error_data = np.ones(self.av_data_bin.shape) * av_error
-            else:
-                self.av_error_data = self.av_error_data_bin
+            if 0:
+                if av_error is not None:
+                    self.av_error_data = \
+                            np.sqrt((self.av_data_bin.size * av_error)**2)
+                else:
+                    self.av_error_data = self.av_error_data_bin
+            self.av_error_data = self.av_error_data_bin
             self.hi_data = self.hi_data_bin
             self.av_header = self.av_header_bin.copy()
             self.av_error_header = self.av_error_header_bin.copy()
@@ -508,7 +511,7 @@ class Cloud():
                           statistic=noise_func,)
 
         av_std, av_std_header = \
-                bin_image(av_error_data,
+                bin_image(av_data,
                           binsize=(binsize, binsize),
                           header=self.av_header,
                           statistic=np.nanstd,)
@@ -4379,6 +4382,7 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
     import math
     from astropy.io import fits
     import matplotlib.pyplot as plt
+    from scipy.stats import nanmedian
     import matplotlib
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
@@ -4408,7 +4412,7 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
                     label_mode='L',
                     share_all=True)
 
-    statistic = np.nanmean
+    statistic = nanmedian
 
     hi_data = np.copy(cloud.hi_data)
 
@@ -4425,6 +4429,7 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
     hi_spectrum_masked = statistic(hi_data[:, mask], axis=1)
     hi_spectrum_unmasked = \
             statistic(hi_data[:, hi_mask], axis=1)
+
 
     ax = axes[0]
 
@@ -4482,6 +4487,83 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
                color='k',
                linestyle='--',
                )
+
+    # plot limits
+    if limits is not None:
+        ax.set_xlim(limits[0],limits[1])
+        ax.set_ylim(limits[2],limits[3])
+
+    ax.legend(loc='upper left')
+    ax.set_xlabel('Velocity [km/s]')
+    ax.set_ylabel(r'T$_b$ [K]')
+
+    if filename is not None:
+        plt.draw()
+        plt.savefig(filename, bbox_inches='tight', dpi=100)
+
+def plot_co_spectra(clouds=None, props=None, limits=None, filename='',
+        mask=None, ):
+
+    ''' Plots a heat map of likelihoodelation values as a function of velocity
+    width and velocity center.
+
+    Parameters
+    ----------
+    cloud : cloudpy.Cloud
+        If provided, properties taken from cloud.props.
+
+
+    '''
+
+    # Import external modules
+    import numpy as np
+    import math
+    from astropy.io import fits
+    import matplotlib.pyplot as plt
+    from scipy.stats import nanmedian
+    import matplotlib
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
+
+    if cloud is not None:
+        props = cloud.props
+
+    # Set up plot aesthetics
+    # ----------------------
+    plt.close;plt.clf()
+
+    font_scale = 9
+    params = {
+              'figure.figsize': (3.6, 3.6 / 1.618),
+              #'figure.titlesize': font_scale,
+             }
+    plt.rcParams.update(params)
+
+    # Create figure instance
+    fig = plt.figure()
+
+    axes = AxesGrid(fig, (1,1,1),
+                    nrows_ncols=(1, 1),
+                    ngrids=1,
+                    axes_pad=0,
+                    aspect=False,
+                    label_mode='L',
+                    share_all=True)
+
+    statistic = nanmedian
+
+    ax = axes[0]
+
+    # Integrate CO cube for masked and unmasked
+    for cloud in clouds:
+        co_spectrum_masked = statistic(cloud.co_data[:, mask], axis=1)
+
+        ax.plot(cloud.co_vel_axis,
+                co_spectrum_unmasked,
+                linewidth=1.5,
+                label=cloud.region_name.capitalize(),
+                drawstyle = 'steps-mid'
+                )
 
     # plot limits
     if limits is not None:
