@@ -140,7 +140,7 @@ def hrs2degs(ra=None, dec=None):
     return (ra_deg, dec_deg)
 
 def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
-        statistic=np.nansum, return_weights=False):
+        statistic=np.nansum, return_weights=False, weights=None):
 
     ''' Bins an image.
 
@@ -156,6 +156,9 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         Location to begin binning.
     statistic : function
         Function with which to operate on the pixels being binned.
+    weights : array-like, optional
+        Weights to be used in the statistic. The statistic must have an
+        argument 'weights' if this argument is used.
     return_weights : bool, optional
         Return weights for image corresponding to the number of valid pixels
         used to create a binned pixel?
@@ -219,16 +222,43 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
             axis = -1*(i+1)
 
             ndarray = func(ndarray, axis)
+    elif 1:
+        if weights is not None:
+            def new_statistic(slice):
+                return statistic(ndarray[slice], weights=weights[slice])
+        else:
+            def new_statistic(slice):
+                return statistic(ndarray[slice])
+
+        if binsize.size == 1:
+            binsize = np.array(binsize, binsize)
+
+        ndarray_bin = np.empty(new_shape)
+        for j in xrange(new_shape[0]):
+            for k in xrange(new_shape[1]):
+                indices = (range(j*binsize[0], (j+1)*binsize[0]),
+                           range(k*binsize[1], (k+1)*binsize[1]))
+                ndarray_bin[j,k] = new_statistic(indices)
     else:
         if len(binsize) == 2:
             xx, yy = np.meshgrid(np.arange(0, ndarray.shape[0], 1),
                                  np.arange(0, ndarray.shape[1], 1))
 
+            if weights is not None:
+                def new_statistic(data):
+                    data, weights = data[0], data[1]
+                    return statistic(data, weights=weights)
+            else:
+                def new_statistic(data):
+                    return statistic(data)
+
+            print weights.shape, ndarray.shape
+
             ndarray_bin = binned_statistic_2d(xx.T.ravel(),
                                               yy.T.ravel(),
-                                              values=ndarray.ravel(),
+                                              values=(ndarray.ravel(), weights),
                                               bins=new_shape,
-                                              statistic=statistic)[0]
+                                              statistic=new_statistic)[0]
 
             if return_weights:
                 count = lambda x: np.size(x[~np.isnan(x)])

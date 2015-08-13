@@ -488,13 +488,23 @@ class Cloud():
         # -------------------------------------------------------------------
         binsize = self.binsize
 
+        def weighted_mean(data, weights=None):
+            if weights is None:
+                weights = np.ones(data.shape)
+            mask = (np.isnan(data) & np.isnan(weights))
+            wmean = np.sum(data[~mask] / weights[~mask]**2) / \
+                        np.sum(1/weights[~mask]**2)
+            return wmean
+
         # Av image
         self.av_data_bin, self.av_header_bin, self.bin_weights = \
                 bin_image(av_data,
                           binsize=(binsize, binsize),
                           header=self.av_header,
-                          statistic=np.nanmean,
-                          return_weights=True)
+                          statistic=weighted_mean,
+                          return_weights=True,
+                          weights=av_error_data,
+                          )
 
         # Av image error
         # Errors add in square
@@ -518,7 +528,8 @@ class Cloud():
                           statistic=np.nanstd,)
 
         #self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2
-        self.av_error_data_bin = np.sqrt(av_std**2 - self.av_error_data_bin**2)
+        self.av_error_data_bin = np.sqrt(av_std**2 - \
+                                         np.nanstd(self.av_error_data_bin)**2)
 
         # Hi image
         if 0:
@@ -4449,12 +4460,16 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
                 label='Fit',
                 )
 
+
+        label = 'Component'
         for comp in cloud.vel_center_fits[1]:
             ax.plot(cloud.hi_vel_axis, comp,
                     linewidth=1,
                     linestyle='--',
-                    color='k'
+                    color='k',
+                    label=label,
                     )
+            label = None
 
     if plot_co:
         try:
@@ -4465,7 +4480,7 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
             co_spectrum = \
                     statistic(co_data[:, co_mask], axis=1)
 
-            co_scalar = np.max(hi_spectrum_masked) / 2
+            co_scalar = np.max(hi_spectrum_unmasked) / 2
             co_spectrum = co_spectrum / np.max(co_spectrum) * co_scalar
             ax.plot(cloud.co_vel_axis,
                     co_spectrum,
