@@ -501,7 +501,8 @@ class Cloud():
         # mean = sum(a_i) / n
         # error on mean = sqrt(sum(a_i**2 / n**2))
         noise_func = lambda x: (np.nansum(x**2) / np.sum(~np.isnan(x)))**0.5
-        noise_func = lambda x: (1 / np.nansum(x**-2))**0.5
+        noise_func = lambda x: np.nanstd(x)
+        #noise_func = lambda x: (1 / np.nansum(x**-2))**0.5
         #noise_func = lambda x: np.nansum(x**2)**0.5
 
         self.av_error_data_bin, self.av_error_header_bin = \
@@ -516,7 +517,8 @@ class Cloud():
                           header=self.av_header,
                           statistic=np.nanstd,)
 
-        self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2)
+        #self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2
+        self.av_error_data_bin = np.sqrt(av_std**2 - self.av_error_data_bin**2)
 
         # Hi image
         if 0:
@@ -4098,7 +4100,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     #plt.rcparams.update(params)
 
     # Create figure instance
-    fig = plt.figure(figsize=(3.6, 3.6))
+    fig = plt.figure(figsize=(7, 7))
 
     axes = AxesGrid(fig, (1,1,1),
                  nrows_ncols=(1, 1),
@@ -4172,7 +4174,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         image = ax.errorbar(nhi_nonans.ravel(),
                 av_nonans.ravel(),
                 yerr=(av_error_nonans.ravel()),
-                alpha=0.5,
+                alpha=0.2,
                 color='k',
                 marker='^',
                 ecolor='k',
@@ -4421,12 +4423,12 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
     # Integrate HI cube for masked and unmasked
     hi_mask = cloud.region_mask
     co_mask = cloud.region_mask
-    if hi_mask is None:
-        mask = cloud.mask
-    else:
-        mask = (hi_mask) | (cloud.mask)
+    #if hi_mask is None:
+    #    mask = cloud.mask
+    #else:
+    #    mask = (hi_mask) | (cloud.mask)
 
-    hi_spectrum_masked = statistic(hi_data[:, mask], axis=1)
+    #hi_spectrum_masked = statistic(hi_data[:, mask], axis=1)
     hi_spectrum_unmasked = \
             statistic(hi_data[:, hi_mask], axis=1)
 
