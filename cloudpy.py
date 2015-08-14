@@ -491,7 +491,7 @@ class Cloud():
         def weighted_mean(data, weights=None):
             if weights is None:
                 weights = np.ones(data.shape)
-            mask = (np.isnan(data) & np.isnan(weights))
+            mask = (np.isnan(data) | np.isnan(weights))
             wmean = np.sum(data[~mask] / weights[~mask]**2) / \
                         np.sum(1/weights[~mask]**2)
             return wmean
@@ -510,9 +510,9 @@ class Cloud():
         # Errors add in square
         # mean = sum(a_i) / n
         # error on mean = sqrt(sum(a_i**2 / n**2))
-        noise_func = lambda x: (np.nansum(x**2) / np.sum(~np.isnan(x)))**0.5
-        noise_func = lambda x: np.nanstd(x)
-        #noise_func = lambda x: (1 / np.nansum(x**-2))**0.5
+        #noise_func = lambda x: (np.nansum(x**2) / np.sum(~np.isnan(x)))**0.5
+        #noise_func = lambda x: np.nanstd(x)
+        noise_func = lambda x: (1 / np.nansum(x**-2))**0.5
         #noise_func = lambda x: np.nansum(x**2)**0.5
 
         self.av_error_data_bin, self.av_error_header_bin = \
@@ -528,8 +528,7 @@ class Cloud():
                           statistic=np.nanstd,)
 
         #self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2
-        self.av_error_data_bin = np.sqrt(av_std**2 - \
-                                         np.nanstd(self.av_error_data_bin)**2)
+        self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2)
 
         # Hi image
         if 0:
@@ -4083,7 +4082,7 @@ def plot_residual_hist_movie(cloud, filename=None,):
 
 def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         fit=True, savedir='', filename=None, show=True, fit_params=None,
-        contour_plot=True, levels=10,
+        contour_plot=True, levels=10, plot_median=True,
         scale=('linear','linear'), title = '', gridsize=(100,100), std=None):
 
     # import external modules
@@ -4111,7 +4110,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     #plt.rcparams.update(params)
 
     # Create figure instance
-    fig = plt.figure(figsize=(7, 7))
+    fig = plt.figure(figsize=(3.6, 3.6))
 
     axes = AxesGrid(fig, (1,1,1),
                  nrows_ncols=(1, 1),
@@ -4134,7 +4133,8 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
             type(av_error) is np.ma.core.MaskedArray:
         indices = np.where((av == av) &\
                            (nhi == nhi) &\
-                           (av_error == av_error)
+                           (av_error == av_error) &\
+                           (av_error > 0)
                            )
         av_error_nonans = av_error[indices]
 
@@ -4149,8 +4149,8 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         ymin = np.min(av_nonans)
         xmax = np.max(nhi_nonans)
         ymax = np.max(av_nonans)
-        xscalar = 0.25 * xmax
-        yscalar = 0.25 * ymax
+        xscalar = 0.15 * xmax
+        yscalar = 0.15 * ymax
         limits = [xmin - xscalar, xmax + xscalar,
                   ymin - yscalar, ymax + yscalar]
 
@@ -4193,13 +4193,33 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                 markersize=3
                 )
 
+    if plot_median:
+        from scipy.stats import nanmedian, binned_statistic
+        x_median = np.linspace(np.min(nhi_nonans), np.max(nhi_nonans)*1.2, 10)
+        y_median, x_median = binned_statistic(nhi_nonans, av_nonans,
+                                    statistic=nanmedian,
+                                    bins=10)[:2]
+        ax.plot(x_median[:-1],
+                y_median,
+                alpha=1,
+                color='r',
+                marker='s',
+                linestyle='None',
+                label='Median value',
+                markersize=3.5
+                )
+
+
     # Plot sensitivies
     #av_limit = np.median(av_errors[0])
     #ax.axvline(av_limit, color='k', linestyle='--')
 
     # Plot 1 to 1 pline
     if 1:
-        p = np.polyfit(nhi_nonans.ravel(), av_nonans.ravel(), deg=1)
+        print np.min(av_error_nonans)
+        p = np.polyfit(nhi_nonans.ravel(), av_nonans.ravel(), deg=1,
+                       w=1.0/av_error_nonans.ravel()**2,
+                       )
         x_fit = np.linspace(-10, 100, 100)
         y_fit = fit_params['dgr'] * x_fit + fit_params['intercept']
         y_poly_fit = p[0] * x_fit + p[1]
@@ -4214,7 +4234,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
                     'DGR = {0:.3f}'.format(fit_params['dgr']) + \
                     '\nIntercept = {0:.3f}'.format(fit_params['intercept']),
                 )
-    if 0:
+    if 1:
         ax.plot(x_fit,
                 y_poly_fit,
                 color='r',
@@ -4248,7 +4268,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
     ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
     ax.set_ylabel(r'$A_V$ [mag]')
     ax.set_title(title)
-    ax.legend(loc='lower right')
+    ax.legend(loc='best')
 
     if filename is not None:
         plt.savefig(savedir + filename)

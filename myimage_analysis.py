@@ -223,6 +223,7 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
 
             ndarray = func(ndarray, axis)
     elif 1:
+
         if weights is not None:
             def new_statistic(slice):
                 return statistic(ndarray[slice], weights=weights[slice])
@@ -230,15 +231,26 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
             def new_statistic(slice):
                 return statistic(ndarray[slice])
 
-        if binsize.size == 1:
-            binsize = np.array(binsize, binsize)
-
         ndarray_bin = np.empty(new_shape)
-        for j in xrange(new_shape[0]):
-            for k in xrange(new_shape[1]):
-                indices = (range(j*binsize[0], (j+1)*binsize[0]),
-                           range(k*binsize[1], (k+1)*binsize[1]))
-                ndarray_bin[j,k] = new_statistic(indices)
+
+        if len(binsize) <= 2:
+            if binsize.size == 1:
+                binsize = np.array(binsize, binsize)
+
+            for j in xrange(new_shape[0]):
+                for k in xrange(new_shape[1]):
+                    indices = (range(j*binsize[0], (j+1)*binsize[0]),
+                               range(k*binsize[1], (k+1)*binsize[1]))
+                    ndarray_bin[j,k] = new_statistic(indices)
+        if len(binsize) == 3:
+            for i in xrange(new_shape[0]):
+                for j in xrange(new_shape[1]):
+                    for k in xrange(new_shape[2]):
+                        indices = (
+                                   range(i*binsize[0], (i+1)*binsize[0]),
+                                   range(j*binsize[1], (j+1)*binsize[1]),
+                                   range(k*binsize[2], (k+1)*binsize[2]))
+                        ndarray_bin[i, j,k] = new_statistic(indices)
     else:
         if len(binsize) == 2:
             xx, yy = np.meshgrid(np.arange(0, ndarray.shape[0], 1),
@@ -251,8 +263,6 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
             else:
                 def new_statistic(data):
                     return statistic(data)
-
-            print weights.shape, ndarray.shape
 
             ndarray_bin = binned_statistic_2d(xx.T.ravel(),
                                               yy.T.ravel(),
