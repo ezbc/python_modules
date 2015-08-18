@@ -222,8 +222,7 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
             axis = -1*(i+1)
 
             ndarray = func(ndarray, axis)
-    elif 1:
-
+    elif 0:
         if weights is not None:
             def new_statistic(slice):
                 return statistic(ndarray[slice], weights=weights[slice])
@@ -241,6 +240,7 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
                 for k in xrange(new_shape[1]):
                     indices = (range(j*binsize[0], (j+1)*binsize[0]),
                                range(k*binsize[1], (k+1)*binsize[1]))
+                    print indices
                     ndarray_bin[j,k] = new_statistic(indices)
         if len(binsize) == 3:
             for i in xrange(new_shape[0]):
@@ -256,19 +256,11 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
             xx, yy = np.meshgrid(np.arange(0, ndarray.shape[0], 1),
                                  np.arange(0, ndarray.shape[1], 1))
 
-            if weights is not None:
-                def new_statistic(data):
-                    data, weights = data[0], data[1]
-                    return statistic(data, weights=weights)
-            else:
-                def new_statistic(data):
-                    return statistic(data)
-
             ndarray_bin = binned_statistic_2d(xx.T.ravel(),
                                               yy.T.ravel(),
-                                              values=(ndarray.ravel(), weights),
+                                              values=ndarray.ravel(),
                                               bins=new_shape,
-                                              statistic=new_statistic)[0]
+                                              statistic=statistic)[0]
 
             if return_weights:
                 count = lambda x: np.size(x[~np.isnan(x)])
@@ -312,9 +304,11 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
 
         header_bin['NAXIS1'] = new_shape[0]
         header_bin['NAXIS2'] = new_shape[1]
-        header_bin['CRVAL1'] = header['CRVAL1'] / binsize[-2] + \
+        #header_bin['CRVAL1'] = header['CRVAL1'] / binsize[-2] + \
+        header_bin['CRVAL1'] = header['CRVAL1'] + \
                                (excess / 2) * header['CDELT1']
-        header_bin['CRVAL2'] = header['CRVAL2'] / binsize[-1] + \
+        #header_bin['CRVAL2'] = header['CRVAL2'] / binsize[-1] + \
+        header_bin['CRVAL2'] = header['CRVAL2'] + \
                                (excess / 2) * header['CDELT2']
         header_bin['CDELT1'] = header['CDELT1'] * binsize[-2]
         header_bin['CDELT2'] = header['CDELT2'] * binsize[-1]
@@ -506,7 +500,7 @@ def _bin_image(image, binsize=(1,1), header=None, origin='lower left',
 
     return result
 
-def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
+def calculate_nhi(cube=None, velocity_axis=None, velocity_range=None,
         return_nhi_error=False, noise_cube=None,
         velocity_noise_range=[90,100], Tsys=30., header=None,
         fits_filename=None, fits_error_filename=None, verbose=False):
@@ -545,6 +539,9 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
 
     import numpy as np
 
+    if velocity_range is None:
+        velocity_range = np.min(velocity_axis), np.max(velocity_axis)
+
     if type(velocity_range) is not np.ndarray:
         velocity_range = np.asarray(velocity_range)
 
@@ -573,7 +570,7 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
                     for j in xrange(0, cube.shape[2]):
                         indices = (velocity_range[0, i, j] <= velocity_axis) & \
                                   (velocity_range[1, i, j] >= velocity_axis)
-                        image[i, j] = np.sum(cube[indices, i, j])
+                        image[i, j] = np.nansum(cube[indices, i, j])
                 # Calculate image error
                 if return_nhi_error:
                     image_error = np.empty((cube.shape[1],
@@ -593,7 +590,7 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
             indices = np.where((velocity_axis >= velocity_range[0]) & \
                                (velocity_axis <= velocity_range[1]))[0]
 
-            image[:,:] = cube[indices,:,:].sum(axis=0)
+            image[:,:] = np.nansum(cube[indices,:,:], axis=0)
 
             # Calculate image error
             if return_nhi_error:
@@ -611,14 +608,14 @@ def calculate_nhi(cube=None, velocity_axis=None, velocity_range=[],
             image[:] = np.NaN
             indices = np.where((velocity_axis >= velocity_range[0]) & \
                                (velocity_axis <= velocity_range[1]))[0]
-            image[:] = cube[indices,:].sum(axis=0)
+            image[:] = np.nansum(cube[indices,:], axis=0)
         # If an image of velocity ranges provided, integrate each pixel with a
         # different range
         elif velocity_range.shape[1] == cube.shape[1]:
             for i in xrange(0, cube.shape[1]):
                 indices = (velocity_range[0, i] <= velocity_axis) & \
                           (velocity_range[1, i] >= velocity_axis)
-                image[i] = np.sum(cube[indices, i])
+                image[i] = np.nansum(cube[indices, i])
 
         # Calculate image error
         if return_nhi_error:

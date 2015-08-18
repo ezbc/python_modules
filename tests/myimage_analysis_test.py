@@ -278,7 +278,7 @@ def test_bin_image():
     assert_array_almost_equal(n, answer)
 
 
-if 1:
+if 0:
     def main():
         import pyfits as fits
         from myimage_analysis import bin_image

@@ -32,7 +32,9 @@ class Cloud():
             binsize=1,
             vel_range_diff_thres=2.0,
             init_vel_width=50,
+            vel_center=None,
             vel_center_gauss_fit_kwargs=None,
+            subtract_comps=False,
             recalculate_likelihoods=True,
             pixel_mask_increase_fraction=0.01,
             diagnostic_filename=None,
@@ -76,6 +78,8 @@ class Cloud():
         self.Tsys = 30.0 # K
         self.VEL_RANGE_DIFF_THRES = vel_range_diff_thres
         self.init_vel_width = init_vel_width
+        self.vel_center = vel_center
+        self.subtract_comps = subtract_comps
         self.plot_args = plot_args
         self.diagnostic_filename = diagnostic_filename
         self.PIXEL_MASK_INCREASE_FRACTION = pixel_mask_increase_fraction
@@ -254,7 +258,7 @@ class Cloud():
         from myfitting import fit_gaussians
 
         self.hi_spectrum = \
-                nanmedian(self.hi_data[:,self.region_mask], axis=1)
+                nanmedian(self.hi_data[:,~self.region_mask], axis=1)
 
         self.vel_center_fits = fit_gaussians(self.hi_vel_axis,
                 self.hi_spectrum, **gauss_fit_kwargs)
@@ -265,12 +269,37 @@ class Cloud():
                 amp_max = param[0]
                 vel_center = param[1]
                 width = param[2] * 4
-                cloud_comp_num = i
-
+                self.cloud_comp_num = i
 
         self.vel_center = vel_center
         self.width_grid = np.array([width,])
         self.init_vel_width = width
+
+    def _subtract_comps(self, hi_data=None, vel_center_fits=None,
+            cloud_comp_num=None):
+
+        if hasattr(self, 'vel_center_fits') and self.subtract_comps:
+            if hi_data is None:
+                hi_data = self.hi_data
+            if vel_center_fits is None:
+                vel_center_fits = self.vel_center_fits
+            if cloud_comp_num is None:
+                cloud_comp_num = self.cloud_comp_num
+
+            import matplotlib.pyplot as plt
+            plt.clf(); plt.close()
+            for i, comp_fit in enumerate(vel_center_fits[1]):
+
+                if i != cloud_comp_num:
+                    for j in xrange(hi_data.shape[1]):
+                        for k in xrange(hi_data.shape[2]):
+                            hi_data[:, j, k] -= comp_fit
+
+                    plt.plot(self.hi_vel_axis, comp_fit)
+
+            plt.savefig('/usr/users/ezbc/Desktop/spectrum.png')
+
+        return hi_data
 
     def _derive_region_mask(self, binned=False, av_data=None):
 
@@ -498,13 +527,23 @@ class Cloud():
 
         # Av image
         self.av_data_bin, self.av_header_bin, self.bin_weights = \
-                bin_image(av_data,
+                bin_image(av_data,# / av_error_data**2,
                           binsize=(binsize, binsize),
                           header=self.av_header,
-                          statistic=weighted_mean,
+                          #statistic=np.nansum,
+                          statistic=np.nanmean,
                           return_weights=True,
-                          weights=av_error_data,
+                          #weights=av_error_data,
                           )
+        if 0:
+            bin_weights = \
+                    bin_image(1 / av_error_data**2,
+                              binsize=(binsize, binsize),
+                              statistic=np.nansum,
+                              )
+
+            self.av_data_bin / bin_weights
+        #self.av_data_bin / np.nansum(1. / av_error_data**2)
 
         # Av image error
         # Errors add in square
@@ -528,7 +567,7 @@ class Cloud():
                           statistic=np.nanstd,)
 
         #self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2
-        self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2)
+        #self.av_error_data_bin = np.sqrt(av_std**2 + self.av_error_data_bin**2)
 
         # Hi image
         if 0:
@@ -950,6 +989,10 @@ class Cloud():
                 include_intercept = True
             else:
                 include_intercept = True
+            if len(self.intercept_grid) == 1:
+                include_intercept = False
+            else:
+                include_intercept = True
 
             results = _fit_params(
                                   nhi_image=self.nhi_image[~mask],
@@ -1021,8 +1064,9 @@ class Cloud():
             iteration += 1
 
             if 1:
-                if (delta_dgr < self.THRESHOLD_DELTA_DGR) | \
-                   (np.abs(npix - npix_new) <= 1):
+                #if (delta_dgr < self.THRESHOLD_DELTA_DGR) | \
+                #   (np.abs(npix - npix_new) <= 1):
+                if np.abs(npix - npix_new) <= 1:
                     done = True
             else:
                 if self._mask_pixel_fraction >= 0.99: done = True
@@ -1221,9 +1265,12 @@ class Cloud():
 
         # Derive velocity center
         if self.vel_center_gauss_fit_kwargs is None:
-            self._calc_vel_center(self.hi_data,)
+            if self.vel_center is None:
+                self._calc_vel_center(self.hi_data,)
         else:
             self._calc_vel_range(self.vel_center_gauss_fit_kwargs)
+            if self.subtract_comps:
+                self.hi_data = self._subtract_comps()
 
         # Initialize
         if type(self.vel_center) == np.ndarray:
@@ -1236,7 +1283,6 @@ class Cloud():
         vel_range_new = (-np.Inf, np.Inf)
         vel_range_diff = np.sum(np.abs(np.array(vel_range) - \
                                        np.array(vel_range_new)))
-
 
         done = False
         #while vel_range_diff > self.VEL_RANGE_DIFF_THRES:
@@ -4109,6 +4155,8 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
              }
     #plt.rcparams.update(params)
 
+    myplt.set_color_cycle(num_colors=3)
+
     # Create figure instance
     fig = plt.figure(figsize=(3.6, 3.6))
 
@@ -4195,18 +4243,24 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
 
     if plot_median:
         from scipy.stats import nanmedian, binned_statistic
-        x_median = np.linspace(np.min(nhi_nonans), np.max(nhi_nonans)*1.2, 10)
+        x_median = np.arange(np.min(nhi_nonans), np.max(nhi_nonans), 0.3)
+        x_median = np.arange(np.min(nhi_nonans), np.max(nhi_nonans), 1)
+        x_median = np.arange(6.5, 9, 0.3)
         y_median, x_median = binned_statistic(nhi_nonans, av_nonans,
                                     statistic=nanmedian,
-                                    bins=10)[:2]
-        ax.plot(x_median[:-1],
+                                    bins=x_median)[:2]
+        x_median = x_median[:-1]
+        x_median = x_median[~np.isnan(y_median)]
+        y_median = y_median[~np.isnan(y_median)]
+
+        ax.plot(x_median,
                 y_median,
                 alpha=1,
                 color='r',
                 marker='s',
                 linestyle='None',
                 label='Median value',
-                markersize=3.5
+                markersize=4.5
                 )
 
 
@@ -4216,44 +4270,75 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
 
     # Plot 1 to 1 pline
     if 1:
-        print np.min(av_error_nonans)
-        p = np.polyfit(nhi_nonans.ravel(), av_nonans.ravel(), deg=1,
-                       w=1.0/av_error_nonans.ravel()**2,
-                       )
+        p, V = \
+                np.polyfit(nhi_nonans.ravel(), av_nonans.ravel(), deg=1,
+                           w=np.abs(1.0/av_error_nonans.ravel()),
+                           cov=True
+                           )
+
         x_fit = np.linspace(-10, 100, 100)
         y_fit = fit_params['dgr'] * x_fit + fit_params['intercept']
+        y_fit_error = fit_params['dgr_error'], fit_params['intercept_error']
         y_poly_fit = p[0] * x_fit + p[1]
+
         ax.plot(x_fit,
                 y_fit,
                 #color='0.5',
                 linestyle='--',
                 linewidth=2,
-                alpha=1,
+                alpha=0.7,
                 label=\
                     'MLE fit: \n' + \
-                    'DGR = {0:.3f}'.format(fit_params['dgr']) + \
-                    '\nIntercept = {0:.3f}'.format(fit_params['intercept']),
+                    'DGR = {0:.2f}'.format(fit_params['dgr']) + \
+                    r'$^{+%.2f}_{-%.2f}$ ' % fit_params['dgr_error'] + \
+                    '\nIntercept = {0:.2f}'.format(fit_params['intercept']) + \
+                    r'$^{+%.2f}_{-%.2f}$' % fit_params['intercept_error'],
                 )
     if 1:
         ax.plot(x_fit,
                 y_poly_fit,
-                color='r',
-                linestyle='--',
+                #color='r',
+                linestyle='dotted',
                 linewidth=2,
                 label=\
-                    'Poly fit: \n' + \
-                    'DGR = {0:.3f}'.format(p[0]) + \
-                    '\nIntercept = {0:.3f}'.format(p[1]),
-                alpha=1)
-        std = None
-        if std is not None:
-            ax.fill_between((-std, 10),
-                            (0, 10 + std),
-                            (-2*std, 10 - std),
-                            color='0.2',
-                            alpha=0.2,
-                            edgecolor='none'
-                            )
+                    'Poly Scatter fit: \n' + \
+                    'DGR = {0:.2f}'.format(p[0]) + \
+                    r' $\pm$ {0:.2f}'.format(V[0, 0]) + \
+                    '\nIntercept = {0:.2f}'.format(p[1]) + \
+                    r' $\pm$ {0:.2f}'.format(V[1, 1]),
+                alpha=0.7,
+                )
+
+    if plot_median:
+        p, V = np.polyfit(x_median, y_median, deg=1, cov=True)
+
+        y_poly_fit = p[0] * x_fit + p[1]
+
+        if 0:
+            from scipy.optimize import curve_fit
+
+            def f(x, A): # this is your 'straight line' y=f(x)
+                return A*x
+
+            p = curve_fit(f, x, y)[0] # your data x, y to fit
+            y_poly_fit = x_fit * p[0]
+
+            p = [p[0], 0]
+
+        ax.plot(x_fit,
+                y_poly_fit,
+                #color='r',
+                linestyle='-.',
+                linewidth=2,
+                label=\
+                    'Poly Median fit: \n' + \
+                    'DGR = {0:.2f}'.format(p[0]) + \
+                    r' $\pm$ ' + '{0:.2f}'.format(V[0, 0]) + \
+                    '\nIntercept = {0:.2f}'.format(p[1]) + \
+                    r' $\pm$ ' + '{0:.2f}'.format(V[1, 1]),
+                alpha=0.7,
+                )
+
 
     # Annotations
     anno_xpos = 0.95
@@ -4446,6 +4531,7 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
                     share_all=True)
 
     statistic = nanmedian
+    statistic = np.nanmean
 
     hi_data = np.copy(cloud.hi_data)
 
@@ -4461,8 +4547,17 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
 
     #hi_spectrum_masked = statistic(hi_data[:, mask], axis=1)
     hi_spectrum_unmasked = \
-            statistic(hi_data[:, hi_mask], axis=1)
+            statistic(hi_data[:, ~hi_mask], axis=1)
 
+    if 0:
+        hi_spectrum_unmasked = np.empty(hi_data.shape[0])
+        hi_std_spectrum = np.empty(hi_data.shape[0])
+        for i in xrange(hi_data.shape[0]):
+            hi = np.copy(hi_data[i, :, :][~hi_mask])
+            hi_spectrum_unmasked[i] = statistic(hi)
+
+    hi_std_spectrum = \
+            np.nanstd(hi_data[:, ~hi_mask], axis=1)
 
     ax = axes[0]
 
@@ -4472,6 +4567,14 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
             label=r'Median H$\textsc{i}$',
             drawstyle = 'steps-mid'
             )
+
+    if hi_std_spectrum is not None:
+        ax.plot(cloud.hi_vel_axis,
+                hi_std_spectrum,
+                linewidth=1.5,
+                linestyle='-.',
+                label=r'$\sigma_{HI}$',
+                )
 
     if hasattr(cloud, 'vel_center_fits'):
         ax.plot(cloud.hi_vel_axis, cloud.vel_center_fits[0],
@@ -4497,11 +4600,20 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
 
             co_data = np.copy(cloud.co_data)
             #co_data[:, cloud.region_mask] = np.nan
-            co_spectrum = \
-                    statistic(co_data[:, co_mask], axis=1)
 
-            co_scalar = np.max(hi_spectrum_unmasked) / 2
-            co_spectrum = co_spectrum / np.max(co_spectrum) * co_scalar
+            #co_data[co_data < 3 * 0.17] = np.nan
+
+            co_spectrum = \
+                    statistic(co_data[:, ~co_mask], axis=1)
+
+            if 0:
+                co_spectrum = np.empty(co_data.shape[0])
+                for i in xrange(co_data.shape[0]):
+                    co = np.copy(co_data[i, :, :][~co_mask])
+                    co_spectrum[i] = statistic(co)
+
+            co_scalar = np.nanmax(hi_spectrum_unmasked) / 2
+            co_spectrum = co_spectrum / np.nanmax(co_spectrum) * co_scalar
             ax.plot(cloud.co_vel_axis,
                     co_spectrum,
                     #color='k',
@@ -4537,6 +4649,25 @@ def plot_hi_spectrum(cloud=None, props=None, limits=None, filename='',
     if filename is not None:
         plt.draw()
         plt.savefig(filename, bbox_inches='tight', dpi=100)
+
+    if 0:
+        import matplotlib.pyplot
+        vmin, vmax = np.nanmin(co_data), np.nanmax(co_data)
+        for i in xrange(co_data.shape[0]):
+            plt.close(); plt.clf()
+            co = np.copy(co_data[i, :, :])
+            co[co_mask] = np.nan
+            im = plt.imshow(co,
+                            interpolation='nearest',
+                            cmap=plt.cm.gnuplot,
+                            vmin=vmin,
+                            vmax=vmax,
+                            origin='lower')
+            plt.colorbar(im)
+            plt.title('vel = ' + str(cloud.co_vel_axis[i]) + ' km/s, ' + \
+                      'median = ' + str(nanmedian(co.ravel())))
+            plt.savefig('/usr/users/ezbc/Desktop/cospectra/' + \
+                        'cospectrum_' + cloud.region + '_' + str(i) + '.png')
 
 def plot_co_spectra(clouds=None, props=None, limits=None, filename='',
         mask=None, ):
