@@ -140,7 +140,8 @@ def hrs2degs(ra=None, dec=None):
     return (ra_deg, dec_deg)
 
 def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
-        statistic=np.nansum, return_weights=False, weights=None):
+        statistic=np.nansum, return_weights=False, weights=None,
+        quick_bin=True):
 
     ''' Bins an image.
 
@@ -210,18 +211,26 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         ndarray = np.delete(ndarray, trim_indices, axis=axis)
         #statistic = lambda x: [print(element) for element in x]
 
-    if 0:
+    if quick_bin:
         # reshape trimmed array
         compression_pairs = [(d, c//d) for d,c in zip(new_shape,
                                                       ndarray.shape)]
         flattened = [l for p in compression_pairs for l in p]
-        ndarray = ndarray.reshape(flattened)
+        ndarray_bin = ndarray.reshape(flattened)
 
         # bin each axis
         for i in range(len(new_shape)):
             axis = -1*(i+1)
 
-            ndarray = func(ndarray, axis)
+            ndarray_bin = statistic(ndarray, axis)
+
+        flattened = [l for p in compression_pairs for l in p]
+        ndarray = ndarray.reshape(flattened)
+        for i in range(len(new_shape)):
+            ndarray = statistic(ndarray, (-1*(i+1)))
+        #return ndarray_bin
+        ndarray_bin = ndarray
+        #print ndarray_bin.shape
     elif 0:
         if weights is not None:
             def new_statistic(slice):
