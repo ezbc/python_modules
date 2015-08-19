@@ -828,6 +828,22 @@ def calc_logL(model, data, data_error=None, weights=None):
 
     return logL
 
+def logL2L(logL, normalize=True):
+
+    if normalize:
+        # Normalize the log likelihoods
+        logL -= np.nanmax(logL)
+
+    # Convert to likelihoods
+    likelihoods = np.exp(logL)
+
+    likelihoods[np.isnan(likelihoods)] = 0.0
+
+    # Normalize the likelihoods
+    likelihoods = likelihoods / np.nansum(likelihoods)
+
+    return likelihoods
+
 def gauss(x, width, amp, x0):
     import numpy as np
 

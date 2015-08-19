@@ -141,7 +141,7 @@ def hrs2degs(ra=None, dec=None):
 
 def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         statistic=np.nansum, return_weights=False, weights=None,
-        quick_bin=True):
+        quick_bin=False):
 
     ''' Bins an image.
 
@@ -208,7 +208,7 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
 
         trim_indices[excess / 2: excess] = end_indices
 
-        ndarray = np.delete(ndarray, trim_indices, axis=axis)
+        ndarray = np.delete(ndarray, trim_indices, axis)
         #statistic = lambda x: [print(element) for element in x]
 
     if quick_bin:
@@ -216,50 +216,13 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         compression_pairs = [(d, c//d) for d,c in zip(new_shape,
                                                       ndarray.shape)]
         flattened = [l for p in compression_pairs for l in p]
-        ndarray_bin = ndarray.reshape(flattened)
 
-        # bin each axis
-        for i in range(len(new_shape)):
-            axis = -1*(i+1)
-
-            ndarray_bin = statistic(ndarray, axis)
-
-        flattened = [l for p in compression_pairs for l in p]
         ndarray = ndarray.reshape(flattened)
         for i in range(len(new_shape)):
             ndarray = statistic(ndarray, (-1*(i+1)))
         #return ndarray_bin
         ndarray_bin = ndarray
         #print ndarray_bin.shape
-    elif 0:
-        if weights is not None:
-            def new_statistic(slice):
-                return statistic(ndarray[slice], weights=weights[slice])
-        else:
-            def new_statistic(slice):
-                return statistic(ndarray[slice])
-
-        ndarray_bin = np.empty(new_shape)
-
-        if len(binsize) <= 2:
-            if binsize.size == 1:
-                binsize = np.array(binsize, binsize)
-
-            for j in xrange(new_shape[0]):
-                for k in xrange(new_shape[1]):
-                    indices = (range(j*binsize[0], (j+1)*binsize[0]),
-                               range(k*binsize[1], (k+1)*binsize[1]))
-                    print indices
-                    ndarray_bin[j,k] = new_statistic(indices)
-        if len(binsize) == 3:
-            for i in xrange(new_shape[0]):
-                for j in xrange(new_shape[1]):
-                    for k in xrange(new_shape[2]):
-                        indices = (
-                                   range(i*binsize[0], (i+1)*binsize[0]),
-                                   range(j*binsize[1], (j+1)*binsize[1]),
-                                   range(k*binsize[2], (k+1)*binsize[2]))
-                        ndarray_bin[i, j,k] = new_statistic(indices)
     else:
         if len(binsize) == 2:
             xx, yy = np.meshgrid(np.arange(0, ndarray.shape[0], 1),
@@ -306,6 +269,35 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
                                                 values=ndarray[i, :, :].ravel(),
                                                 bins=new_shape[1:],
                                                 statistic=count)[0]
+    if 0:
+        if weights is not None:
+            def new_statistic(slice):
+                return statistic(ndarray[slice], weights=weights[slice])
+        else:
+            def new_statistic(slice):
+                return statistic(ndarray[slice])
+
+        ndarray_bin = np.empty(new_shape)
+
+        if len(binsize) <= 2:
+            if binsize.size == 1:
+                binsize = np.array(binsize, binsize)
+
+            for j in xrange(new_shape[0]):
+                for k in xrange(new_shape[1]):
+                    indices = (range(j*binsize[0], (j+1)*binsize[0]),
+                               range(k*binsize[1], (k+1)*binsize[1]))
+                    print indices
+                    ndarray_bin[j,k] = new_statistic(indices)
+        if len(binsize) == 3:
+            for i in xrange(new_shape[0]):
+                for j in xrange(new_shape[1]):
+                    for k in xrange(new_shape[2]):
+                        indices = (
+                                   range(i*binsize[0], (i+1)*binsize[0]),
+                                   range(j*binsize[1], (j+1)*binsize[1]),
+                                   range(k*binsize[2], (k+1)*binsize[2]))
+                        ndarray_bin[i, j,k] = new_statistic(indices)
 
     # Edit header
     if header is not None:

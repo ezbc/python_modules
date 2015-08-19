@@ -4245,7 +4245,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
         from scipy.stats import nanmedian, binned_statistic
         x_median = np.arange(np.min(nhi_nonans), np.max(nhi_nonans), 0.3)
         x_median = np.arange(np.min(nhi_nonans), np.max(nhi_nonans), 1)
-        x_median = np.arange(6.5, 9, 0.3)
+        #x_median = np.arange(6.5, 9, 0.3)
         y_median, x_median = binned_statistic(nhi_nonans, av_nonans,
                                     statistic=nanmedian,
                                     bins=x_median)[:2]
@@ -4320,7 +4320,7 @@ def plot_av_vs_nhi(nhi, av, av_error=None, limits=None,
             def f(x, A): # this is your 'straight line' y=f(x)
                 return A*x
 
-            p = curve_fit(f, x, y)[0] # your data x, y to fit
+            p = curve_fit(f, x_median, y_median)[0] # your data x, y to fit
             y_poly_fit = x_fit * p[0]
 
             p = [p[0], 0]
