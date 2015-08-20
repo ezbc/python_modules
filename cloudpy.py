@@ -305,7 +305,6 @@ class Cloud():
 
         import mygeometry as myg
 
-
         if not binned:
             if av_data is None:
                 av_data = self.av_data

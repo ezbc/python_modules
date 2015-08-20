@@ -91,25 +91,63 @@ def read_ds9_region(filename):
 
     return region[0].coord_list
 
-def load_ds9_region(filename, header=None):
+def calc_region_mask(filename, data, header, region_name='',):
+
+    import mygeometry as myg
+
+    regions = load_ds9_region(filename, header, region_name=region_name)
+
+    region_vertices = regions[region_name]['poly_verts']['pixel']
+
+    # block off region
+    region_mask = np.logical_not(myg.get_polygon_mask(data,
+                                                      region_vertices))
+
+    return region_mask
+
+def load_ds9_region(filename, header=None, region_name=''):
+
+    import pyregion as pyr
 
     # region[0] in following format:
     # [64.26975, 29.342033333333333, 1.6262027777777777, 3.32575, 130.0]
     # [ra center, dec center, width, height, rotation angle]
-    for core in cores:
-    	region = read_ds9_region(filename_base + core + '.reg')
-        box_center_pixel = get_pix_coords(ra = region[0],
-                                          dec = region[1],
-                                          header = header)
-        box_center_pixel = (int(box_center_pixel[1]), int(box_center_pixel[0]))
-        box_height = region[2] / header['CDELT1']
-        box_width = region[3] / header['CDELT2']
-        cores[core].update({'box_center_pix': box_center_pixel})
-        cores[core].update({'box_width': box_width})
-        cores[core].update({'box_height': box_height})
-        cores[core].update({'box_angle': region[4]})
 
-    return cores
+    regions = pyr.open(filename)
+
+    ds9_regions = {}
+    region_indices = []
+    for i, region in enumerate(regions):
+        # Cores defined in following format: 'tag={L1495A}'
+        tag = region.comment
+        name = tag[tag.find('text={')+6:tag.find('}')].lower()
+        if name == region_name:
+            region_indices.append(i)
+
+    for i in region_indices:
+        region = regions[i]
+
+        # Format vertices to be 2 x N array
+        poly_verts = []
+        for i in xrange(0, len(region.coord_list)/2):
+            poly_verts.append((region.coord_list[2*i],
+                               region.coord_list[2*i+1]))
+
+        ds9_regions[region_name] = {}
+        ds9_regions[region_name]['poly_verts'] = {}
+        ds9_regions[region_name]['poly_verts']['wcs'] = poly_verts
+
+        if header is not None:
+            poly_verts_pix = []
+            for i in xrange(0, len(poly_verts)):
+                poly_verts_pix.append(\
+                        get_pix_coords(ra=poly_verts[i][0],
+                                       dec=poly_verts[i][1],
+                                       header=header)[:-1][::-1].tolist())
+
+            ds9_regions[region_name]['poly_verts']['pixel'] = poly_verts_pix
+
+        return ds9_regions
 
 def get_pix_coords(ra=None, dec=None, header=None):
 
@@ -118,6 +156,7 @@ def get_pix_coords(ra=None, dec=None, header=None):
 
     import pywcsgrid2 as wcs
     import pywcs
+    from astropy.wcs import WCS
 
     # convert to degrees
     if type(ra) is tuple and type(dec) is tuple:
@@ -125,10 +164,10 @@ def get_pix_coords(ra=None, dec=None, header=None):
     else:
     	ra_deg, dec_deg = ra, dec
 
-    wcs_header = pywcs.WCS(header)
-    pix_coords = wcs_header.wcs_sky2pix([[ra_deg, dec_deg, 0]], 0)[0]
+    wcs_header = WCS(header)
+    pix_coords = wcs_header.wcs_world2pix([[ra_deg, dec_deg],], 0)[0]
 
-    return pix_coords
+    return np.hstack((pix_coords, -1))
 
 def hrs2degs(ra=None, dec=None):
     ''' Ra and dec tuples in hrs min sec and deg arcmin arcsec.
