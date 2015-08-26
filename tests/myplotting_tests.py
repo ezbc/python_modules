@@ -88,96 +88,112 @@ if 0:
         '''
 
 
-def test_scatter_contour():
+    def test_scatter_contour():
 
-    from astropy.io import fits
-    from myimage_analysis import calculate_nhi
-    import mygeometry as myg
-    from mycoords import make_velocity_axis
+        from astropy.io import fits
+        from myimage_analysis import calculate_nhi
+        import mygeometry as myg
+        from mycoords import make_velocity_axis
 
 
-    # Parameters
-    # ----------
-    levels = (0.99, 0.985, 0.7)
-    levels = (0.999, 0.998, 0.96, 0.86, 0.58,)
-    levels = 7
-    levels = np.logspace(np.log10(0.995), np.log10(0.50), 5)
-    log_counts = 0
-    limits = [1, 10, -3, 30]
-    limits = None
+        # Parameters
+        # ----------
+        levels = (0.99, 0.985, 0.7)
+        levels = (0.999, 0.998, 0.96, 0.86, 0.58,)
+        levels = 7
+        levels = np.logspace(np.log10(0.995), np.log10(0.50), 5)
+        log_counts = 0
+        limits = [1, 10, -3, 30]
+        limits = None
 
-    # Begin test
-    # ----------
-    data_dir = '/d/bip3/ezbc/perseus/data/'
-    av = fits.getdata(data_dir + 'av/perseus_av_planck_tau353_5arcmin.fits')
-    hi, hi_header = fits.getdata(data_dir + \
-                      'hi/perseus_hi_galfa_cube_regrid_planckres.fits',
-                      header=True)
+        # Begin test
+        # ----------
+        data_dir = '/d/bip3/ezbc/perseus/data/'
+        av = fits.getdata(data_dir + 'av/perseus_av_planck_tau353_5arcmin.fits')
+        hi, hi_header = fits.getdata(data_dir + \
+                          'hi/perseus_hi_galfa_cube_regrid_planckres.fits',
+                          header=True)
 
-    hi_vel_axis = make_velocity_axis(hi_header)
+        hi_vel_axis = make_velocity_axis(hi_header)
 
-    nhi = calculate_nhi(cube=hi,
-                        velocity_axis=hi_vel_axis,
-                        velocity_range=[0, 10],
-                        )
+        nhi = calculate_nhi(cube=hi,
+                            velocity_axis=hi_vel_axis,
+                            velocity_range=[0, 10],
+                            )
 
-    # Drop the NaNs from the images
-    indices = np.where((av == av) &\
-                       (nhi == nhi)
-                       )
+        # Drop the NaNs from the images
+        indices = np.where((av == av) &\
+                           (nhi == nhi)
+                           )
 
-    av_nonans = av[indices]
-    nhi_nonans = nhi[indices]
+        av_nonans = av[indices]
+        nhi_nonans = nhi[indices]
 
-    fig, ax = plt.subplots()
+        fig, ax = plt.subplots()
 
-    if limits is None:
-        xmin = np.min(nhi_nonans)
-        ymin = np.min(av_nonans)
-        xmax = np.max(nhi_nonans)
-        ymax = np.max(av_nonans)
-        xscalar = 0.25 * xmax
-        yscalar = 0.25 * ymax
-        limits = [xmin - xscalar, xmax + xscalar,
-                  ymin - yscalar, ymax + yscalar]
+        if limits is None:
+            xmin = np.min(nhi_nonans)
+            ymin = np.min(av_nonans)
+            xmax = np.max(nhi_nonans)
+            ymax = np.max(av_nonans)
+            xscalar = 0.25 * xmax
+            yscalar = 0.25 * ymax
+            limits = [xmin - xscalar, xmax + xscalar,
+                      ymin - yscalar, ymax + yscalar]
 
-    contour_range = ((limits[0], limits[1]),
-                     (limits[2], limits[3]))
+        contour_range = ((limits[0], limits[1]),
+                         (limits[2], limits[3]))
 
-    cmap = myplt.truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
+        cmap = myplt.truncate_colormap(plt.cm.binary, 0.2, 1, 1000)
 
-    l1 = myplt.scatter_contour(nhi_nonans.ravel(),
-                         av_nonans.ravel(),
-                         threshold=3,
-                         log_counts=log_counts,
-                         levels=levels,
-                         ax=ax,
-                         histogram2d_args=dict(bins=30,
-                                               range=contour_range),
-                         plot_args=dict(marker='o',
-                                        linestyle='none',
-                                        color='black',
-                                        alpha=0.3,
-                                        markersize=2),
-                         contour_args=dict(
-                                           #cmap=plt.cm.binary,
-                                           cmap=cmap,
-                                           #cmap=cmap,
-                                           ),
-                         )
+        l1 = myplt.scatter_contour(nhi_nonans.ravel(),
+                             av_nonans.ravel(),
+                             threshold=3,
+                             log_counts=log_counts,
+                             levels=levels,
+                             ax=ax,
+                             histogram2d_args=dict(bins=30,
+                                                   range=contour_range),
+                             plot_args=dict(marker='o',
+                                            linestyle='none',
+                                            color='black',
+                                            alpha=0.3,
+                                            markersize=2),
+                             contour_args=dict(
+                                               #cmap=plt.cm.binary,
+                                               cmap=cmap,
+                                               #cmap=cmap,
+                                               ),
+                             )
 
-    scale = ['linear', 'linear']
-    ax.set_xscale(scale[0], nonposx = 'clip')
-    ax.set_yscale(scale[1], nonposy = 'clip')
+        scale = ['linear', 'linear']
+        ax.set_xscale(scale[0], nonposx = 'clip')
+        ax.set_yscale(scale[1], nonposy = 'clip')
 
-    ax.set_xlim(limits[0],limits[1])
-    ax.set_ylim(limits[2],limits[3])
+        ax.set_xlim(limits[0],limits[1])
+        ax.set_ylim(limits[2],limits[3])
 
-    # Adjust asthetics
-    ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
-    ax.set_ylabel(r'$A_V$ [mag]')
-    #ax.set_title(core_names[i])
-    ax.legend(loc='lower right')
+        # Adjust asthetics
+        ax.set_xlabel(r'$N($H$\textsc{i}) \times\,10^{20}$ cm$^{-2}$')
+        ax.set_ylabel(r'$A_V$ [mag]')
+        #ax.set_title(core_names[i])
+        ax.legend(loc='lower right')
 
-    plt.savefig('test_plots/test_scatter_contour.png')
+        plt.savefig('test_plots/test_scatter_contour.png')
+
+
+def test_triangle_dist():
+
+    import numpy as np
+    import myplotting as myplt
+
+    dists = np.zeros((5,5,5))
+    dists[1,1,1] = 0.2
+    dists[1,2,1] = 0.3
+    dists[1,3,1] = 0.3
+    dists[2,3,1] = 0.1
+    dists[2,3,0] = 0.1
+
+    myplt.corner_plot(dists, filename='test_plots/test_corner_plot.png')
+
 

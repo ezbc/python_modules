@@ -257,6 +257,7 @@ def scatter_contour(x, y,
                     log_counts=False,
                     histogram2d_args={},
                     plot_args={},
+                    errors=None,
                     contour_args={},
                     ax=None):
     """Scatter plot with contour over dense regions
@@ -331,7 +332,11 @@ def scatter_contour(x, y,
     outline = ax.contour(H.T, levels=(np.min(levels),),
                          linewidths=0, extent=extent,
                          colors=outline_colors, alpha=1)
+
     outer_polys = outline.allsegs[0]
+
+    #print outer_polys
+    #print len(outer_polys)
 
     # Create filled contour
     C = ax.contourf(H.T, levels, extent=extent, **contour_args)
@@ -352,7 +357,12 @@ def scatter_contour(x, y,
 
     Xplot = X[~points_inside]
 
-    ax.plot(Xplot[:, 0], Xplot[:, 1], zorder=1, **plot_args)
+    if errors is None:
+        ax.plot(Xplot[:, 0], Xplot[:, 1], zorder=0, **plot_args)
+    else:
+        Xplot_error = errors[~points_inside]
+        ax.errorbar(Xplot[:, 0], Xplot[:, 1], yerr=Xplot_error, zorder=0,
+                    **plot_args)
 
     return level_fractions[:-1]
 
@@ -367,4 +377,126 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.gnuplot, cmap_limits=[0, 0.8]):
              }
 
     plt.rcParams.update(params)
+
+def corner_plot(distributions, column_names=None, plot_grids=None, labels=None,
+        filename=None):
+
+    # Import external modules
+    import numpy as np
+    import matplotlib
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    import myplotting as myplt
+
+    # Set up plot aesthetics
+    # ----------------------
+    plt.close;plt.clf()
+
+    params = {
+              'figure.figsize': (6, 6),
+              #'figure.titlesize': font_scale,
+             }
+    plt.rcParams.update(params)
+
+    nside = distributions.ndim
+
+    fig, axes = plt.subplots(nside, nside)
+    #fig = plt.figure()
+
+    # create extents of each plot
+    if plot_grids is None:
+        plot_grids = []
+        for i in xrange(distributions.ndim):
+            plot_grids.append(np.arange(len(distributions[i])))
+    if labels is None:
+        labels = [r'$\theta$' + str(i) for i in xrange(distributions.ndim)]
+
+    # Cycle through the plots, labeling and plotting
+    for x_i in xrange(nside):
+        for y_j in xrange(nside):
+            ax = axes[y_j, x_i]
+
+            # reduce number of tick
+            ax.locator_params(nbins = 4)
+
+            # determine which type of plot to use
+            if x_i == y_j:
+                _plot_corner_1dhist(ax,
+                                    distributions,
+                                    x_i,
+                                    plot_grids)
+            elif x_i > y_j:
+                fig.delaxes(ax)
+            else:
+                _plot_corner_2dhist(ax,
+                                    distributions,
+                                    (x_i, y_j),
+                                    plot_grids)
+
+            # turn labels on or off
+            if y_j > 0 and x_i == 0:
+                ax.set_ylabel(labels[y_j])
+            else:
+                ax.yaxis.set_ticklabels([])
+
+            if y_j == nside - 1:
+                ax.set_xlabel(labels[x_i])
+            else:
+                #no label
+                ax.xaxis.set_ticklabels([])
+
+    # Adjust asthetics
+    #ax.set_xlabel(axis_label)
+    #ax.set_ylabel('Counts')
+    if filename is not None:
+        plt.savefig(filename, bbox_inches='tight')
+
+def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids):
+
+    # Get the axes to marginalize the distributions over
+    dist_axes = np.arange(distributions.ndim)
+    marg_axes = dist_axes[dist_axes != plot_axis]
+    if not isinstance(marg_axes, np.int64):
+        marg_axes = tuple(marg_axes)
+
+    # Derive the histogram
+    hist = np.sum(distributions, axis=marg_axes)
+
+    ax.plot(plot_grids[plot_axis],
+            hist,
+            color='k',
+            drawstyle='steps-mid',
+            linewidth=2,
+            )
+
+def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
+
+    # Get the axes to marginalize the distributions over
+    dist_axes = np.arange(distributions.ndim)
+
+    marg_axes = \
+            dist_axes[(dist_axes != plot_axes[0]) & (dist_axes!= plot_axes[1])]
+
+    if not isinstance(marg_axes, np.int64):
+        marg_axes = tuple(marg_axes)
+
+    # Derive the histogram
+    hist_2d = np.sum(distributions, axis=marg_axes)
+
+    # get extent
+    xgrid = plot_grids[plot_axes[0]]
+    ygrid = plot_grids[plot_axes[1]]
+
+    ax.imshow(hist_2d,
+            extent=[xgrid[0], xgrid[-1], ygrid[0], ygrid[-1]],
+            cmap=plt.cm.binary,
+            origin='lower',
+            interpolation='nearest',
+            )
+
+
+
+
+
+
+
 
