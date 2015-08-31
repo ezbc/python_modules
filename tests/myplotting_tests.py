@@ -187,12 +187,12 @@ def test_triangle_dist():
     import numpy as np
     import myplotting as myplt
 
-    dists = np.zeros((5,5,5))
-    dists[1,1,1] = 0.2
-    dists[1,2,1] = 0.3
-    dists[1,3,1] = 0.3
-    dists[2,3,1] = 0.1
-    dists[2,3,0] = 0.1
+    dists = np.zeros((4,5,6))
+    dists[0,1,2] = 0.1
+    dists[1,1,2] = 0.1
+    dists[2,1,2] = 0.1
+    dists[3,4,4] = 0.1
+    dists[3,3,4] = 0.1
 
     myplt.corner_plot(dists, filename='test_plots/test_corner_plot.png')
 

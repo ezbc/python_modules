@@ -378,7 +378,7 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.gnuplot, cmap_limits=[0, 0.8]):
 
     plt.rcParams.update(params)
 
-def corner_plot(distributions, column_names=None, plot_grids=None, labels=None,
+def corner_plot(distributions, plot_grids=None, labels=None,
         filename=None):
 
     # Import external modules
@@ -406,7 +406,7 @@ def corner_plot(distributions, column_names=None, plot_grids=None, labels=None,
     if plot_grids is None:
         plot_grids = []
         for i in xrange(distributions.ndim):
-            plot_grids.append(np.arange(len(distributions[i])))
+            plot_grids.append(np.arange(distributions.shape[i]))
     if labels is None:
         labels = [r'$\theta$' + str(i) for i in xrange(distributions.ndim)]
 
@@ -414,9 +414,6 @@ def corner_plot(distributions, column_names=None, plot_grids=None, labels=None,
     for x_i in xrange(nside):
         for y_j in xrange(nside):
             ax = axes[y_j, x_i]
-
-            # reduce number of tick
-            ax.locator_params(nbins = 4)
 
             # determine which type of plot to use
             if x_i == y_j:
@@ -444,9 +441,14 @@ def corner_plot(distributions, column_names=None, plot_grids=None, labels=None,
                 #no label
                 ax.xaxis.set_ticklabels([])
 
+
+            # reduce number of tick
+            ax.locator_params(nbins = 4)
+
     # Adjust asthetics
     #ax.set_xlabel(axis_label)
     #ax.set_ylabel('Counts')
+    plt.tight_layout()
     if filename is not None:
         plt.savefig(filename, bbox_inches='tight')
 
@@ -461,12 +463,18 @@ def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids):
     # Derive the histogram
     hist = np.sum(distributions, axis=marg_axes)
 
-    ax.plot(plot_grids[plot_axis],
+    #hist = plot_grids[plot_axis]
+    plot_grid = plot_grids[plot_axis]
+
+    ax.plot(plot_grid,
             hist,
             color='k',
-            drawstyle='steps-mid',
+            drawstyle='steps-pre',
             linewidth=2,
             )
+
+    ax.set_ylim([0, 1.1 * np.max(hist)])
+    ax.set_xlim([plot_grid[0], plot_grid[-1]])
 
 def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
 
@@ -486,10 +494,11 @@ def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
     xgrid = plot_grids[plot_axes[0]]
     ygrid = plot_grids[plot_axes[1]]
 
-    ax.imshow(hist_2d,
+    ax.imshow(hist_2d.T,
             extent=[xgrid[0], xgrid[-1], ygrid[0], ygrid[-1]],
             cmap=plt.cm.binary,
             origin='lower',
+            aspect='auto',
             interpolation='nearest',
             )
 

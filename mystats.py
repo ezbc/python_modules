@@ -268,32 +268,28 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
 
     return median, high_error, low_error
 
-def calc_cdf_error(x, alpha=0.05):
+def calc_cdf_error(y, alpha=0.05):
 
     import numpy as np
-
     from scipy.integrate import simps as integrate
 
-    if len(x) != len(y):
-        raise ValueError('x and y must be the same shape')
-    if len(x) < 4:
-        raise ValueError('x and y must have lengths > 3')
+    y = np.sort(y)
 
-    cdf = np.cumsum(y) / np.sum(y)
+    cdf = np.cumsum(y)
+    cdf /= np.max(cdf)
 
-    import matplotlib.pyplot as plt
-    plt.plot(x, cdf)
-    plt.show()
+    #mid_pos = np.argmin(np.abs(cdf - 0.5))
+    #low_pos = np.argmin(np.abs(cdf - alpha / 2.0))
+    #high_pos = np.argmin(np.abs(alpha / 2.0 - cdf))
+    #median = y[mid_pos]
+    #low_error = y[mid_pos] - y[low_pos]
+    #high_error = y[high_pos] - y[mid_pos]
 
-    mid_pos = np.argmin(np.abs(cdf - 0.5)) + 1
-    low_pos = np.argmin(np.abs(cdf - alpha / 2.0))
-    high_pos = np.argmin(np.abs(alpha / 2.0 - cdf))
+    median = np.interp(0.5, cdf, y)
+    low_error = median - np.interp(alpha / 2.0, cdf, y)
+    high_error = np.interp(1 - alpha / 2.0, cdf, y) - median
 
-    median = x[mid_pos]
-    low_error = x[mid_pos] - x[low_pos]
-    high_error = x[high_pos] - x[mid_pos]
-
-    return median, high_error, low_error
+    return median, (low_error, high_error)
 
 # Bootstrapping using medians
 def bootstrap(data, num_samples):
