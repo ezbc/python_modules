@@ -9,6 +9,7 @@ import mymath
 import mycoords
 import matplotlib.pyplot as plt
 from astropy.io import fits
+from scipy.stats import nanmedian
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -835,6 +836,31 @@ def fit_background(av_data, background_mask=None, background_dim=1):
 
     return background
 
+def calc_spectrum(cube, statistic=nanmedian, mask=None):
 
+    ''' Calculates the spectrum of a cube. Assumes velocity axis is 0th
+    dimension of cube.
+
+    '''
+
+    if mask is None:
+        mask = np.zeros(cube.shape[1:], dtype=bool)
+
+    spectrum = statistic(cube[:, ~mask], axis=1)
+
+    return spectrum
+
+def crop_cube(cube, vel_axis, vel_range):
+
+    ''' Crops a cube to include only velocities within vel_range.
+
+    '''
+
+    crop_indices = (vel_axis > vel_range[0]) & (vel_axis < vel_range[1])
+
+    cube_crop = cube[crop_indices, :, :]
+    vel_axis_crop = vel_axis[crop_indices]
+
+    return cube_crop, vel_axis_crop
 
 

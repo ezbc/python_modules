@@ -503,9 +503,3 @@ def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
             )
 
 
-
-
-
-
-
-

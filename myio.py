@@ -1,4 +1,4 @@
-
+import pickle
 
 def check_file(filename, clobber=False):
 
@@ -16,3 +16,16 @@ def check_file(filename, clobber=False):
             exists = False
 
     return exists
+
+def save_pickle(filename, data):
+    with open(filename, 'wb') as f:
+        pickle.dump(data, f)
+    f.close()
+
+def load_pickle(filename):
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    f.close()
+
+    return data
+
