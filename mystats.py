@@ -268,7 +268,7 @@ def calc_symmetric_error(x, y=None, alpha=0.05):
 
     return median, high_error, low_error
 
-def calc_cdf_error(y, alpha=0.05):
+def calc_cdf_error(y, alpha=0.32):
 
     import numpy as np
     from scipy.integrate import simps as integrate
@@ -277,6 +277,7 @@ def calc_cdf_error(y, alpha=0.05):
 
     cdf = np.cumsum(y)
     cdf /= np.max(cdf)
+    cdf = 1. * np.arange(len(y)) / (len(y) - 1)
 
     #mid_pos = np.argmin(np.abs(cdf - 0.5))
     #low_pos = np.argmin(np.abs(cdf - alpha / 2.0))

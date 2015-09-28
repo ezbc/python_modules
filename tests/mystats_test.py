@@ -20,7 +20,14 @@ def test_calc_symmetric_error():
     plt.axvline(median, linestyle='--')
     plt.savefig('test_plots/test_calc_symmetric_error.png')
 
+def test_calc_cdf_error():
 
+    import mystats
+    import numpy as np
 
+    data = np.random.normal(0, 1, size=1000)
 
+    conf_int = mystats.calc_cdf_error(data)
 
+    print conf_int
+    assert conf_int == (0, -1, 1)

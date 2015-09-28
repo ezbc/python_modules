@@ -378,6 +378,8 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.gnuplot, cmap_limits=[0, 0.8]):
 
     plt.rcParams.update(params)
 
+    return color_cycle
+
 def corner_plot(distributions, plot_grids=None, labels=None,
         filename=None):
 
@@ -501,5 +503,41 @@ def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
             aspect='auto',
             interpolation='nearest',
             )
+
+
+def convert_wcs_limits(limits, header):
+
+    '''
+    Parameters
+    ----------
+    limits: array-like
+        (ra_min, ra_max, dec_min, dec_max) all in degrees
+
+    header: astropy.io.fits.header
+
+    Returns
+    -------
+        (ra_min, ra_max, dec_min, dec_max) all in pixels
+
+    '''
+
+    from astropy.coordinates import SkyCoord
+    from astropy import units as u
+    from astropy.io import fits
+    from astropy.wcs import WCS
+
+    # write limits as SkyCoords instances
+    coords_wcs_a = SkyCoord(limits[0], limits[2], unit='deg', frame='fk5')
+    coords_wcs_b = SkyCoord(limits[1], limits[3], unit='deg', frame='fk5')
+
+    # Convert limits from WCS to pixels
+    wcs_header = WCS(header)
+    coords_pix_a = coords_wcs_a.to_pixel(wcs_header)
+    coords_pix_b = coords_wcs_b.to_pixel(wcs_header)
+
+    limits = coords_pix_a[0], coords_pix_b[0], coords_pix_a[1], coords_pix_b[1]
+
+    return limits
+
 
 

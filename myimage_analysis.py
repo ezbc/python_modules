@@ -148,7 +148,7 @@ def load_ds9_region(filename, header=None, region_name=''):
 
             ds9_regions[region_name]['poly_verts']['pixel'] = poly_verts_pix
 
-        return ds9_regions
+    return ds9_regions
 
 def get_pix_coords(ra=None, dec=None, header=None):
 
@@ -160,7 +160,7 @@ def get_pix_coords(ra=None, dec=None, header=None):
     from astropy.wcs import WCS
 
     # convert to degrees
-    if type(ra) is tuple and type(dec) is tuple:
+    if type(ra) is tuple or type(ra) is list:
         ra_deg, dec_deg = hrs2degs(ra=ra, dec=dec)
     else:
     	ra_deg, dec_deg = ra, dec
