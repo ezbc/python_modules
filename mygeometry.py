@@ -180,7 +180,6 @@ def point_in_polygon(target, poly):
 
     return inside
 
-
 def point_in_polygon(xy, poly):
 
     x, y = xy
@@ -201,7 +200,6 @@ def point_in_polygon(xy, poly):
         p1x,p1y = p2x,p2y
 
     return inside
-
 
 def rotate_polygon(polygon, anchor, angle):
 
@@ -242,7 +240,61 @@ def rotate_polygon(polygon, anchor, angle):
 
     return polygon_translate
 
+def create_wedge(center_pos, radius, angle, center_rel_pos=0.1):
 
+    '''
+    Parameters
+    ----------
+    center_pos : array-like
+        x and y pixel coordinates of core
+    width : int, float
+        Width of box along x axis.
+    height : int, float
+        Height of box along y axis.
+    center_rel_pos : float, optional
+        Core position in box along y-axis as a fraction of the height with the
+        origin in the south.
 
+    Returns
+    -------
+    wedge_vertices : numpy.array
+        4 x 2 array with box pixel vertices, starting from lower-left going
+        clockwise.
+
+    '''
+
+    from matplotlib.patches import Circle, Wedge, Polygon
+
+    center_pos = (center_pos[0] - center_rel_pos * radius,
+                  center_pos[1])
+
+    wedge_vertices = Wedge(center_pos, radius, -angle/2., angle/2.).get_verts()
+
+    return wedge_vertices
+
+def rotate_wedge(wedge_vertices, anchor, angle):
+
+    '''
+    Parameters
+    ----------
+    wedge_vertices : numpy.array
+        4 x 2 array with box pixel vertices, starting from lower-left going
+        clockwise.
+    anchor : tuple
+        x and y coordinates of pivot point.
+    angle : float
+        Angle to rotate polygon clockwise from North.
+
+    Returns
+    -------
+    wedge_vertices_rotated : numpy.array
+        4 x 2 array with rotated box pixel vertices.
+    '''
+
+    from mygeometry import rotate_polygon
+
+    wedge_vertices_rotated = rotate_polygon(wedge_vertices, anchor, angle)
+
+    return wedge_vertices_rotated
 
 

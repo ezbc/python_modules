@@ -504,8 +504,7 @@ def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
             interpolation='nearest',
             )
 
-
-def convert_wcs_limits(limits, header):
+def convert_wcs_limits(limits, header, frame='fk5'):
 
     '''
     Parameters
@@ -527,8 +526,8 @@ def convert_wcs_limits(limits, header):
     from astropy.wcs import WCS
 
     # write limits as SkyCoords instances
-    coords_wcs_a = SkyCoord(limits[0], limits[2], unit='deg', frame='fk5')
-    coords_wcs_b = SkyCoord(limits[1], limits[3], unit='deg', frame='fk5')
+    coords_wcs_a = SkyCoord(limits[0], limits[2], unit='deg', frame=frame)
+    coords_wcs_b = SkyCoord(limits[1], limits[3], unit='deg', frame=frame)
 
     # Convert limits from WCS to pixels
     wcs_header = WCS(header)

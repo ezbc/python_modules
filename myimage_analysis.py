@@ -122,6 +122,7 @@ def load_ds9_region(filename, header=None, region_name=''):
         # Cores defined in following format: 'tag={L1495A}'
         tag = region.comment
         name = tag[tag.find('text={')+6:tag.find('}')].lower()
+
         if name == region_name:
             region_indices.append(i)
 
@@ -849,6 +850,27 @@ def calc_spectrum(cube, statistic=nanmedian, mask=None):
     spectrum = statistic(cube[:, ~mask], axis=1)
 
     return spectrum
+
+def get_radial_profile(image, center=None, stddev=False, binsize=1,
+        mask=None, weights=None):
+
+    ''' Calculates radial profiles of an image at the center.
+
+    '''
+
+    # import external modules
+    import numpy as np
+    from scipy.optimize import curve_fit
+    from agpy import azimuthalAverage as radial_average
+
+    if stddev and weights is not None:
+        weights=None
+
+    result = radial_average(image, binsize=binsize, center=center,
+            stddev=stddev, mask=mask, interpnan=False, returnradii=True,
+            weights=weights)
+
+    return result
 
 def crop_cube(cube, vel_axis, vel_range):
 
