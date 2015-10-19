@@ -240,7 +240,7 @@ def rotate_polygon(polygon, anchor, angle):
 
     return polygon_translate
 
-def create_wedge(center_pos, radius, angle, center_rel_pos=0.1):
+def create_wedge(center_pos, radius, angle, center_rel_pos=0.1, width=None):
 
     '''
     Parameters
@@ -268,7 +268,8 @@ def create_wedge(center_pos, radius, angle, center_rel_pos=0.1):
     center_pos = (center_pos[0] - center_rel_pos * radius,
                   center_pos[1])
 
-    wedge_vertices = Wedge(center_pos, radius, -angle/2., angle/2.).get_verts()
+    wedge_vertices = Wedge(center_pos, radius, -angle/2., angle/2.,
+            width=width).get_verts()
 
     return wedge_vertices
 

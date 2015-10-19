@@ -4,8 +4,8 @@
 Module for using the model of Sternberg et al. (2014)
 '''
 
-def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, radiation_type='isotropic',
-        return_fractions=True):
+def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, sigma_g21=1.9,
+        radiation_type='isotropic', return_fractions=True):
 
     '''
     Calculates ratio of molecular hydrogen to atomic hydrogen surface
@@ -32,7 +32,11 @@ def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, radiation_type='isotropic',
     import numpy as np
 
     if radiation_type == 'isotropic':
-        hi_sd = 9.5 / (Z * phi_g) * np.log(alphaG / 3.2 + 1) # Msun pc^-2
+        hi_sd = 6.7 / (Z * phi_g) * np.log(alphaG / 3.2 + 1) # Msun pc^-2
+        if 0:
+            hi_sd = 6.71 * (1.9 / sigma_g21) * \
+                    np.log(alphaG / 3.2 + 1) # Msun pc^-2
+
     elif radiation_type == 'beamed':
         hi_sd = 11.9 / (Z * phi_g) * np.log(alphaG / 2.0 + 1) # Msun pc^-2
     else:
@@ -54,4 +58,22 @@ def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, radiation_type='isotropic',
         return R_H2
     elif return_fractions:
         return R_H2, f_H2, f_HI
+
+def calc_n_H(I_UV=1, alphaG=1, phi_g=1.0, Z_g=1.0, Z_CO=1.0):
+
+    ''' Equation 5 in Bialy et al. (2015)
+    '''
+
+    phi_cnm = calc_phi_cnm(alphaG=alphaG, Z_g=Z_g, Z_CO=Z_CO, phi_g=phi_g)
+
+    n_H = 22.7 * I_UV * 4.1 / (1 + 3.1 * Z_g**0.365) * Z_g / Z_CO * phi_cnm / 3.
+
+    return n_H
+
+def calc_phi_cnm(alphaG=1.0, Z_g=1.0, Z_CO=1.0, phi_g=1.0,):
+
+    phi_cnm = 2.58 * (1 + 3.1 * Z_g**0.365) / 4.1 * Z_CO / Z_g * \
+              3.0 / alphaG * 2.62 / (1 + (2.63 * phi_g * Z_g)**0.5) * phi_g
+
+    return phi_cnm
 

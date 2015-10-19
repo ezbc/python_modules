@@ -273,22 +273,28 @@ def calc_cdf_error(y, alpha=0.32):
     import numpy as np
     from scipy.integrate import simps as integrate
 
-    y = np.sort(y)
+    y = np.array(y[~np.isnan(y)])
 
-    cdf = np.cumsum(y)
-    cdf /= np.max(cdf)
-    cdf = 1. * np.arange(len(y)) / (len(y) - 1)
+    if y.size > 3:
+        y = np.sort(y)
 
-    #mid_pos = np.argmin(np.abs(cdf - 0.5))
-    #low_pos = np.argmin(np.abs(cdf - alpha / 2.0))
-    #high_pos = np.argmin(np.abs(alpha / 2.0 - cdf))
-    #median = y[mid_pos]
-    #low_error = y[mid_pos] - y[low_pos]
-    #high_error = y[high_pos] - y[mid_pos]
+        cdf = np.cumsum(y)
+        cdf /= np.max(cdf)
+        cdf = 1. * np.arange(len(y)) / (len(y) - 1)
 
-    median = np.interp(0.5, cdf, y)
-    low_error = median - np.interp(alpha / 2.0, cdf, y)
-    high_error = np.interp(1 - alpha / 2.0, cdf, y) - median
+        #mid_pos = np.argmin(np.abs(cdf - 0.5))
+        #low_pos = np.argmin(np.abs(cdf - alpha / 2.0))
+        #high_pos = np.argmin(np.abs(alpha / 2.0 - cdf))
+        #median = y[mid_pos]
+        #low_error = y[mid_pos] - y[low_pos]
+        #high_error = y[high_pos] - y[mid_pos]
+
+        median = np.interp(0.5, cdf, y)
+        low_error = median - np.interp(alpha / 2.0, cdf, y)
+        high_error = np.interp(1 - alpha / 2.0, cdf, y) - median
+
+    else:
+        return np.nan, (np.nan, np.nan)
 
     return median, (low_error, high_error)
 

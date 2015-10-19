@@ -250,6 +250,28 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
 
     return new_cmap
 
+def reverse_colormap(cmap):
+
+    ''' Reverses a matplolib.colors colormap.
+
+    Parameters
+    ----------
+    cmap : matplotlib.pyplot.cm
+        Colormap
+
+    Returns
+    -------
+    cmap_r : matplotlib.pyplot.cm
+        Reversed colormap
+
+    '''
+
+    from matplotlib.colors import ListedColormap
+
+    cmap_r = ListedColormap(cmap.colors[::-1])
+
+    return cmap_r
+
 def scatter_contour(x, y,
                     levels=10,
                     fractional_levels=True,
@@ -366,7 +388,7 @@ def scatter_contour(x, y,
 
     return level_fractions[:-1]
 
-def set_color_cycle(num_colors=4, cmap=plt.cm.gnuplot, cmap_limits=[0, 0.8]):
+def set_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
 
     # color cycle, grabs colors from cmap
     color_cycle = [cmap(i) for i in np.linspace(cmap_limits[0],
