@@ -538,6 +538,20 @@ def calc_cdf(samples):
 
     return means, cdf
 
+def calc_cdf(y, return_axis=False):
+
+    import numpy as np
+
+    y = np.asarray(y)[~np.isnan(y)]
+    y = np.sort(y)
+
+    cdf = 1. * np.arange(len(y)) / (len(y) - 1)
+
+    if return_axis:
+        return cdf, y
+    else:
+        return cdf
+
 def calc_pdf(x, y):
 
     '''

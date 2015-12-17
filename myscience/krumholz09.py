@@ -119,7 +119,7 @@ def calc_phi_cnm(T_cnm, Z=1.0):
 
     return phi_cnm
 
-def calc_T_cnm(phi_cnm, Z=1.0, phi_cnm_error=(0.0,0.0)):
+def calc_T_cnm(phi_cnm, Z=1.0, phi_cnm_error=(0.0,0.0), calc_error=False):
 
     ''' Calculates T_cnm from equation 19 in Krumholz et al. (2009).
 
@@ -155,7 +155,7 @@ def calc_T_cnm(phi_cnm, Z=1.0, phi_cnm_error=(0.0,0.0)):
 
     T_cnm = T_cnm2_interp * 100.0
 
-    if phi_cnm_error != (0.0, 0.0):
+    if calc_error != (0.0, 0.0):
 
         phi_cnm_low = phi_cnm - phi_cnm_error[0]
         phi_cnm_hi = phi_cnm + phi_cnm_error[1]
@@ -164,11 +164,11 @@ def calc_T_cnm(phi_cnm, Z=1.0, phi_cnm_error=(0.0,0.0)):
 
         T_cnm2_hi = T_cnm2[np.argmin(np.abs(phi_cnm_interp - phi_cnm_hi))]
 
-        T_cnm2_error_low = (T_cnm2_interp - T_cnm2_low) / \
-                           (phi_cnm - phi_cnm_low)  * phi_cnm_error[0]
+        T_cnm2_error_low = abs((T_cnm2_interp - T_cnm2_low) / \
+                               (phi_cnm - phi_cnm_low))  * phi_cnm_error[0]
 
-        T_cnm2_error_hi = (T_cnm2_hi - T_cnm2_interp) / \
-                          (phi_cnm_hi - phi_cnm) * phi_cnm_error[1]
+        T_cnm2_error_hi = abs((T_cnm2_hi - T_cnm2_interp) / \
+                              (phi_cnm_hi - phi_cnm)) * phi_cnm_error[1]
 
         T_cnm_error = 100 * np.array((T_cnm2_error_low, T_cnm2_error_hi))
 
@@ -197,7 +197,7 @@ def calc_n_min(G_0=1.0, Z=1.0):
     return n_min
 
 def calc_n_cnm(G_0=1.0, T_cnm=70.0, Z=1.0, G_0_error=(0.0,0.0),
-        T_cnm_error=(0.0,0.0)):
+        T_cnm_error=(0.0,0.0), calc_error=False):
 
     ''' Calculates volume density of CNM. See equation (18). Returns n_cnm in
     cm^-3.
@@ -220,20 +220,20 @@ def calc_n_cnm(G_0=1.0, T_cnm=70.0, Z=1.0, G_0_error=(0.0,0.0),
 
     n_cnm = numerator / denominator
 
-    if G_0_error != (0.0,0.0):
+    if calc_error:
         T_cnm_comp = - 9.49 * np.exp(1.5 / T_cnm2) * G_0 * Z / \
                      (T_cnm2**0.7 * (T_cnm2**0.5 * Z)**0.635 * \
-                        (1 + 2.6 * (T_cnm**0.5 * Z)**0.365 )**2) + \
+                        (1 + 2.6 * (T_cnm2**0.5 * Z)**0.365 )**2) - \
                      30.0 * np.exp(1.5 / T_cnm2) * G_0 / \
-                     (T_cnm2**2.2 * (1 + 2.6 * (T_cnm**0.5 * Z)**0.365 )) - \
+                     (T_cnm2**2.2 * (1 + 2.6 * (T_cnm2**0.5 * Z)**0.365 )) - \
                      4.0 * np.exp(1.5 / T_cnm2) * G_0 / \
-                     (T_cnm2**1.2 * (1 + 2.6 * (T_cnm**0.5 * Z)**0.365 ))
+                     (T_cnm2**1.2 * (1 + 2.6 * (T_cnm2**0.5 * Z)**0.365 ))
 
-        G_0_comp = 20.0 * T_cnm2**-0.2 * np.exp(1.5 / T_cnm2) / (
-                    (1 + 2.6 * (T_cnm2**0.5 * Zprime)**0.365)
+        G_0_comp = 20.0 * T_cnm2**-0.2 * np.exp(1.5 / T_cnm2) / \
+                    (1 + 2.6 * (T_cnm2**0.5 * Z)**0.365)
 
-        n_cnm_error = np.sqrt(np.sum(T_cnm_comp**2 * T_cnm_error**2 + \
-                                     G_0_comp**2 * G_0_error**2))
+        n_cnm_error = np.sqrt((T_cnm_comp**2 * (T_cnm_error / 100)**2 + \
+                               G_0_comp**2 * G_0_error**2))
 
         return n_cnm, n_cnm_error
 

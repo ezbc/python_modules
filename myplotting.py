@@ -560,5 +560,18 @@ def convert_wcs_limits(limits, header, frame='fk5'):
 
     return limits
 
+def plot_cdf(data, ax=None, plot_kwargs={}, return_axis=False):
+
+    import mystats
+
+    cdf, x = mystats.calc_cdf(data, return_axis=True)
+
+    if ax is None:
+        plt.plot(x, cdf, **plot_kwargs)
+    else:
+        ax.plot(x, cdf, **plot_kwargs)
+
+    if return_axis:
+        return x
 
 

@@ -94,6 +94,10 @@ def read_ds9_region(filename):
 
 def calc_region_mask(filename, data, header, region_name='',):
 
+    ''' Masks all pixels which are not within the region.
+
+    '''
+
     import mygeometry as myg
 
     regions = load_ds9_region(filename, header, region_name=region_name)
