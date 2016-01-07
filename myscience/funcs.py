@@ -100,12 +100,12 @@ def calc_temperature(n_H=1.0, pressure=3800.0, n_H_error=0, calc_error=True):
 
     return T
 
-def Tkin_to_FWHM():
+def Tkin_to_FWHM(Tkin):
 
     '''
     Tkin <= m_H * FWHM^2 / (8 k_B * ln(2))
     FWHM = (Tkin * (8 k_B * ln(2)) / m_H)^2
-    ''''
+    '''
 
     import constants
 

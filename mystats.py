@@ -861,6 +861,22 @@ def logL2L(logL, normalize=True):
 
     return likelihoods
 
+def calc_likelihood_conf(likelihoods, conf, df=1):
+
+    '''
+    Calculates confidence intervals for each axis.
+
+    '''
+
+    import scipy.stats as stats
+
+    alpha = 1.0 - conf
+
+    interval = stats.chi2.interval(alpha, df)
+
+    #-2.0 * (np.log(conf) - np.log(
+
+
 def gauss(x, width, amp, x0):
     import numpy as np
 

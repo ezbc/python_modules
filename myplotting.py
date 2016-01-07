@@ -403,7 +403,7 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
     return color_cycle
 
 def corner_plot(distributions, plot_grids=None, labels=None,
-        filename=None):
+        filename=None, logscale=False):
 
     # Import external modules
     import numpy as np
@@ -444,14 +444,25 @@ def corner_plot(distributions, plot_grids=None, labels=None,
                 _plot_corner_1dhist(ax,
                                     distributions,
                                     x_i,
-                                    plot_grids)
+                                    plot_grids,
+                                    logscale=logscale,
+                                    )
+                if not logscale:
+                    # reduce number of tick
+                    ax.locator_params(nbins = 4,)
+                else:
+                    ax.locator_params(nbins = 4, axis='x')
             elif x_i > y_j:
                 fig.delaxes(ax)
             else:
                 _plot_corner_2dhist(ax,
                                     distributions,
                                     (x_i, y_j),
-                                    plot_grids)
+                                    plot_grids,
+                                    logscale=logscale,
+                                    )
+                # reduce number of tick
+                ax.locator_params(nbins = 4)
 
             # turn labels on or off
             if y_j > 0 and x_i == 0:
@@ -466,9 +477,6 @@ def corner_plot(distributions, plot_grids=None, labels=None,
                 ax.xaxis.set_ticklabels([])
 
 
-            # reduce number of tick
-            ax.locator_params(nbins = 4)
-
     # Adjust asthetics
     #ax.set_xlabel(axis_label)
     #ax.set_ylabel('Counts')
@@ -476,7 +484,8 @@ def corner_plot(distributions, plot_grids=None, labels=None,
     if filename is not None:
         plt.savefig(filename, bbox_inches='tight')
 
-def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids):
+def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids,
+        logscale=False, plot_confs=True):
 
     # Get the axes to marginalize the distributions over
     dist_axes = np.arange(distributions.ndim)
@@ -487,20 +496,58 @@ def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids):
     # Derive the histogram
     hist = np.sum(distributions, axis=marg_axes)
 
+
     #hist = plot_grids[plot_axis]
     plot_grid = plot_grids[plot_axis]
 
-    ax.plot(plot_grid,
-            hist,
-            color='k',
-            drawstyle='steps-pre',
-            linewidth=2,
-            )
+    lines = ax.plot(plot_grid,
+                    hist,
+                    color='k',
+                    drawstyle='steps-mid',
+                    linewidth=2,
+                    )
+
+    if plot_confs:
+        # get plotted hist
+        #xdata = lines[0].get_path().vertices[:,0]
+        #ydata = lines[0].get_path().vertices[:,1]
+        xdata = plot_grid
+        ydata = hist
+        cdf = np.cumsum(ydata) / sum(ydata)
+
+        # get the left and right boundary of the interval that contains 95% of
+        # the probability mass
+        right = np.argmax(cdf > 0.975)
+        left = np.argmax(cdf > 0.025)
+        center = np.argmax(cdf > 0.5)
+
+        conf_interval = np.array([xdata[left],
+                                  xdata[center],
+                                  xdata[right],]
+                                  )
+        if 0:
+            ax.fill_between(xdata[left:right],
+                            ydata[left:right],
+                            facecolor='k',
+                            alpha=0.5)
+        ax.axvline(xdata[center],
+                   alpha=0.5,
+                   linewidth=2,
+                   color='k',
+                   linestyle='--',
+                   )
+
+
+    if logscale:
+        ax.set_yscale('log')
 
     ax.set_ylim([0, 1.1 * np.max(hist)])
     ax.set_xlim([plot_grid[0], plot_grid[-1]])
 
-def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
+def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids,
+        logscale=False):
+
+    from matplotlib.colors import LogNorm
 
     # Get the axes to marginalize the distributions over
     dist_axes = np.arange(distributions.ndim)
@@ -518,12 +565,19 @@ def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids):
     xgrid = plot_grids[plot_axes[0]]
     ygrid = plot_grids[plot_axes[1]]
 
+    if logscale:
+        norm = LogNorm(vmin=np.min(hist_2d[hist_2d != 0]),
+                       vmax=np.max(hist_2d))
+    else:
+        norm = None
+
     ax.imshow(hist_2d.T,
             extent=[xgrid[0], xgrid[-1], ygrid[0], ygrid[-1]],
             cmap=plt.cm.binary,
             origin='lower',
             aspect='auto',
             interpolation='nearest',
+            norm=norm,
             )
 
 def convert_wcs_limits(limits, header, frame='fk5'):
