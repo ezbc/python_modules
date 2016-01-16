@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import numpy as np
+from gausspy import gp
+import pickle
 
 def construct_spectrum(fit_params, vel_axis):
 
@@ -54,8 +56,8 @@ def decompose_data(filename_data, g_train=None, filename_decomposed=None,
         #results_dict['spectra'] = []
         results_dict['results'] = []
 
-        if filename_decomposed is not None:
-            results_dict = pickle.load(open(filename_decomposed, 'r'))
+        #if filename_decomposed is not None:
+        #    results_dict = pickle.load(open(filename_decomposed, 'r'))
 
         for i in xrange(len(data_dict['data_list'])):
             print '\n\titeration ' + str(i)
