@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
 import numpy as np
+import gausspy.gp as gp
+import traingp as train
+import pickle
 
 def construct_spectrum(fit_params, vel_axis):
 
@@ -42,7 +45,7 @@ def decompose_data(filename_data, g_train=None, filename_decomposed=None,
         g.set('SNR_thresh', 3.)
         g.set('SNR2_thresh', 3.)
     g.set('mode', 'conv')
-    g.set('verbose', True)
+    g.set('verbose', False)
 
     if data_dict is None:
         new_data = g.batch_decomposition(filename_data)
@@ -57,32 +60,36 @@ def decompose_data(filename_data, g_train=None, filename_decomposed=None,
         if filename_decomposed is not None:
             results_dict = pickle.load(open(filename_decomposed, 'r'))
 
+        x_values = data_dict['velocity_axis']
+
         for i in xrange(len(data_dict['data_list'])):
-            print '\n\titeration ' + str(i)
+        #for i in xrange(12274, 12276):
+            print('\n\titeration ' + str(i))
             try:
-                results = g.decompose(data_dict['x_values'][0],
+                results = g.decompose(x_values,
                                       data_dict['data_list'][i],
-                                      data_dict['errors'][i])
-            except np.linalg.LinAlgError:
+                                      data_dict['errors'])
+            except (np.linalg.LinAlgError, ValueError):
                 results['N_components'] = 0
 
             # record location of spectrum
             results['spectrum_number'] = i
 
-            # Construct spectrum
-            if results['N_components'] > 0:
-                spectrum = construct_spectrum(results['best_fit_parameters'],
-                                              data_dict['x_values'][0])
-            else:
-                spectrum = np.zeros(len(data_dict['x_values'][0]))
-
-            # Plot scratch plot of fits
             if 0:
+                # Construct spectrum
+                if results['N_components'] > 0:
+                    spectrum = \
+                        construct_spectrum(results['best_fit_parameters'],
+                                           x_values)
+                else:
+                    spectrum = np.zeros(len(x_values))
+
+                # Plot scratch plot of fits
                 import matplotlib.pyplot as plt
                 plt.close(); plt.clf()
-                plt.plot(data_dict['x_values'][0],
+                plt.plot(x_values,
                          data_dict['data_list'][i])
-                plt.plot(data_dict['x_values'][0],
+                plt.plot(x_values,
                          spectrum,
                          alpha=0.5,
                          linewidth=3)
@@ -95,10 +102,13 @@ def decompose_data(filename_data, g_train=None, filename_decomposed=None,
         # Add positions to results
         results_dict['positions'] = data_dict['positions'].copy()
 
+        # Add velocity axis to results
+        results_dict['velocity_axis'] = data_dict['velocity_axis'].copy()
+
         if filename_decomposed is not None:
             pickle.dump(results_dict, open(filename_decomposed, 'w'))
 
-        return result_dict
+        return results_dict
 
 def get_decomposed_data(filename_data, g_train=None,
         filename_decomposed=None, data_dict=None, load=False,):
@@ -126,111 +136,348 @@ def get_decomposed_data(filename_data, g_train=None,
 
     return data_decomp
 
-def perform_PCA(data, cluster=False):
+def perform_PCA(data, n_components=3):
 
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
-    from sklearn import datasets
     from sklearn.decomposition import PCA
 
-    for i in xrange(data.shape[1]):
-        print np.sort(data[:, i])
-
-    n_components = 2
     pca = PCA(n_components=n_components)
 
-    X_reduced = pca.fit_transform(data)
-    #X_reduced = pca.fit(data)
-    #print pca.score_samples(data)
+    data_reduced = pca.fit_transform(data)
 
-    if cluster:
-        colors = cluster_data(X_reduced, n_clusters=5)
+    return data_reduced
 
-    print colors
+def cluster_data(data, n_clusters=2, method='kmeans'):
 
-    if n_components <= 100:
-        from myplotting import scatter_contour
-        fig = plt.figure(1, figsize=(4,4))
-        ax = fig.add_subplot(111)
-        #X_reduced[:,0] += np.abs(np.min(X_reduced[:,0]) + 1.0)
+    ''' Clusters data.
 
-        ax.scatter(X_reduced[:, 0], X_reduced[:, 1],
-                   color=colors,
-                   alpha=0.1)
-        #ax.set_xscale('log')
-        if 0:
-            scatter_contour(X_reduced[:, 0],
-                                    X_reduced[:,1],
-                                 threshold=2,
-                                 log_counts=0,
-                                 levels=5,
-                                 ax=ax,
-                                 histogram2d_args=dict(bins=50,),
-                                 plot_args=dict(marker='o',
-                                                linestyle='none',
-                                                markeredgewidth=0,
-                                                color='black',
-                                                alpha=0.4,
-                                                markersize=2.5,
-                                                ),
-                                 contour_args=dict(cmap=plt.cm.binary,)
-                                 )
+    Parameters
+    ----------
+    n_cluster : int
+        Number of clusters
+    method : str
+        Either kmeans or spectral
 
-    elif n_components > 3:
-        plt.close(); plt.clf()
-        if 0:
-            fig = plt.figure(1, figsize=(4,4))
+    '''
 
-            # plot the first three PCA dimensions
-            ax = Axes3D(fig, elev=-150, azim=50)
-            ax.scatter(X_reduced[:, 0], X_reduced[:, 1], X_reduced[:, 2],
-                       cmap=plt.cm.Paired)
-            ax.set_title("First three PCA directions")
-            ax.set_xlabel("1st eigenvector")
-            ax.w_xaxis.set_ticklabels([])
-            ax.set_ylabel("2nd eigenvector")
-            ax.w_yaxis.set_ticklabels([])
-            ax.set_zlabel("3rd eigenvector")
-            ax.w_zaxis.set_ticklabels([])
+    from sklearn.cluster import KMeans, SpectralClustering
 
-        # Clustered data
-        fig = plt.figure(1, figsize=(4,4))
-        ax = Axes3D(fig, rect=[0, 0, .95, 1], elev=48, azim=134)
-        ax.scatter(X_reduced[:, 0], X_reduced[:, 1], X_reduced[:, 2], c=colors)
-        #ax.w_xaxis.set_ticklabels([])
-        #ax.w_yaxis.set_ticklabels([])
-        #ax.w_zaxis.set_ticklabels([])
-        ax.set_xlabel('PC 1')
-        ax.set_ylabel('PC 2')
-        ax.set_zlabel('PC 3')
-        ax.set_xlim([1e10, 0.5e10])
-        ax.set_ylim([5e3, 10e3])
-        ax.set_zlim([4e3, -10e3])
-
-    plt.savefig('/d/bip3/ezbc/scratch/pca.png')
-    plt.show()
-
-def cluster_data(data, n_clusters=2):
-
-    from sklearn.cluster import KMeans
-    from sklearn import datasets
-
-    # Initialize the kmeans instance
-    estimator = KMeans(n_clusters=n_clusters)
+    # Initialize the clustering method instance
+    if method == 'kmeans':
+        estimator = KMeans(n_clusters=n_clusters)
+    elif method == 'spectral':
+        estimator = SpectralClustering(n_clusters=n_clusters,
+                                       #eigen_solver='arpack',
+                                       affinity="nearest_neighbors"
+                                       )
 
     # Fit the data
     estimator.fit(data)
 
     labels = estimator.labels_
 
-    import matplotlib as mpl
     colors = labels.astype(np.float)
     colors /= colors.max()
 
-    colors = mpl.cm.rainbow(colors)
-
     return colors
 
+def create_synthetic_cube(results_dict=None, cube_data=None,
+        pix_positions=None, velocity_axis=None, fit_params_list=None,):
 
+    if results_dict is not None:
+        # Create cube based on number of pixels
+        xy_pix = results_dict['positions']['pix']
+        z_pix = np.arange(0, len(results_dict['velocity_axis'])+1)
+        shape = (np.max(z_pix), np.max(xy_pix[:,0]), np.max(xy_pix[:, 1]),)
+        cube = np.zeros(shape)
 
+        shape = (np.max(z_pix), cube_data.shape[1], cube_data.shape[2])
+        cube = np.zeros(shape)
 
+        n_spectra = len(results_dict['results'])
+
+        # Add a spectrum to each xy pixel in cube
+        for i in xrange(n_spectra):
+            if results_dict['results'][i]['N_components'] > 0:
+                result = results_dict['results'][i]
+                fit_params = result['best_fit_parameters']
+
+                # Get pixel positions
+                x, y = results_dict['positions']['pix'][i]
+
+                # If any gaussians present add them to the cube
+                if result['N_components'] > 0:
+                    spectrum = construct_spectrum(result['best_fit_parameters'],
+                                                  results_dict['velocity_axis'])
+
+                    cube[:, int(x), int(y)] = spectrum
+    else:
+        # Create cube based on number of pixels
+        xy_pix = pix_positions
+        z_pix = np.arange(0, len(velocity_axis)+1)
+
+        shape = (np.max(z_pix), cube_data.shape[1], cube_data.shape[2])
+        cube = np.zeros(shape)
+
+        n_spectra = len(fit_params_list)
+
+        # Add a spectrum to each xy pixel in cube
+        for i in xrange(n_spectra):
+            # Get pixel positions
+            x, y = xy_pix[i]
+
+            fit_params = fit_params_list[i]
+
+            # add Gaussians to cube
+            spectrum = construct_spectrum(fit_params,
+                                          velocity_axis)
+
+            cube[:, int(x), int(y)] = spectrum
+
+    return cube
+
+def plot_nhi_maps(nhi_1, nhi_2, header=None, contour_image=None,
+        limits=None, contours=None, filename=None, show=False,
+        nhi_1_vlimits=[None,None], nhi_2_vlimits=[None,None]):
+
+    # Import external modules
+    import matplotlib.pyplot as plt
+    import matplotlib
+    import numpy as np
+    import pyfits as fits
+    import matplotlib.pyplot as plt
+    import myplotting as myplt
+    import pywcsgrid2 as wcs
+    import pywcs
+    from pylab import cm # colormaps
+    from matplotlib.patches import Polygon
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
+
+    # Set up plot aesthetics
+    plt.clf(); plt.close()
+
+    # Color map
+    cmap = plt.cm.gnuplot
+    #cmap = myplt.reverse_colormap(plt.cm.copper)
+    cmap = plt.cm.copper
+
+    # Create figure instance
+    fig = plt.figure(figsize=(7.5, 3.6*2))
+
+    if nhi_2 is not None:
+        nrows_ncols=(2,1)
+        ngrids=2
+    else:
+        nrows_ncols=(1,1)
+        ngrids=1
+
+    grid_helper = wcs.GridHelper(wcs=header)
+    axes = AxesGrid(fig, (1,1,1),
+                 nrows_ncols=nrows_ncols,
+                 ngrids=ngrids,
+                 cbar_mode="each",
+                 cbar_location='right',
+                 cbar_pad="2%",
+                 cbar_size='3%',
+                 axes_pad=0.1,
+                 axes_class=(wcs.Axes,
+                             dict(grid_helper=grid_helper)),
+                 aspect=True,
+                 label_mode='L',
+                 share_all=True)
+
+    # ------------------
+    # NHI image
+    # ------------------
+    # create axes
+    ax = axes[0]
+
+    # show the image
+    im = ax.imshow(nhi_1,
+            interpolation='nearest',origin='lower',
+            cmap=cmap,
+            vmin=nhi_1_vlimits[0],
+            vmax=nhi_1_vlimits[1],
+            #norm=matplotlib.colors.LogNorm()
+            )
+
+    # Asthetics
+    ax.set_display_coord_system("gal")
+    #ax.set_ticklabel_type("hms", "dms")
+    ax.set_ticklabel_type("absdeg", "absdeg")
+
+    #ax.set_xlabel('Right Ascension [J2000]',)
+    #ax.set_ylabel('Declination [J2000]',)
+    ax.set_xlabel('Glong',)
+    ax.set_ylabel('Glat',)
+
+    ax.locator_params(nbins=6)
+
+    # colorbar
+    cb = ax.cax.colorbar(im)
+    cmap.set_bad(color='w')
+
+    # plot limits
+    if limits is not None:
+        limits_pix = myplt.convert_wcs_limits(limits,
+                                              header,
+                                              frame='galactic')
+        ax.set_xlim(limits_pix[0],limits_pix[1])
+        ax.set_ylim(limits_pix[2],limits_pix[3])
+
+    # Plot Av contours
+    if contour_image is not None:
+        ax.contour(contour_image, levels=contours, colors='r')
+
+    # Write label to colorbar
+    cb.set_label_text(r'$N$(H\textsc{i}) [10$^{20}$ cm$^{-2}$]',)
+
+    # ------------------
+    # Av image
+    # ------------------
+    if nhi_2 is not None:
+        # create axes
+        ax = axes[1]
+        # show the image
+        im = ax.imshow(nhi_2,
+                interpolation='nearest',origin='lower',
+                cmap=cmap,
+                vmin=nhi_2_vlimits[0],
+                vmax=nhi_2_vlimits[1],
+                #norm=matplotlib.colors.LogNorm()
+                )
+
+        # Asthetics
+        ax.set_display_coord_system("gal")
+        #ax.set_ticklabel_type("hms", "dms")
+        ax.set_ticklabel_type("absdeg", "absdeg")
+
+        #ax.set_xlabel('Right Ascension [J2000]',)
+        #ax.set_ylabel('Declination [J2000]',)
+        ax.set_xlabel('Glong',)
+        ax.set_ylabel('Glat',)
+
+        ax.locator_params(nbins=6)
+
+        # colorbar
+        cb = ax.cax.colorbar(im)
+        cmap.set_bad(color='w')
+
+        # plot limits
+        if limits is not None:
+            limits_pix = myplt.convert_wcs_limits(limits,
+                                                  header,
+                                                  frame='galactic')
+            ax.set_xlim(limits_pix[0],limits_pix[1])
+            ax.set_ylim(limits_pix[2],limits_pix[3])
+
+        ax.tick_params(axis='xy', which='major', colors='w')
+
+        # Plot Av contours
+        if contour_image is not None:
+            ax.contour(contour_image, levels=contours, colors='r')
+
+        # Write label to colorbar
+        cb.set_label_text(r'$N$(H\textsc{i}) [10$^{20}$ cm$^{-2}$]',)
+
+    if filename is not None:
+        plt.savefig(filename, bbox_inches='tight')
+    if show:
+        plt.show()
+
+def plot_nhi_map_panels(nhi_list, header=None, contour_image=None,
+        limits=None, contours=None, filename=None, show=False,
+        nhi_vlimits=[None,None],):
+
+    # Import external modules
+    import matplotlib.pyplot as plt
+    import matplotlib
+    import numpy as np
+    import pyfits as fits
+    import matplotlib.pyplot as plt
+    import myplotting as myplt
+    import pywcsgrid2 as wcs
+    import pywcs
+    from pylab import cm # colormaps
+    from matplotlib.patches import Polygon
+    from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
+
+    # Set up plot aesthetics
+    plt.clf(); plt.close()
+
+    # Color map
+    cmap = plt.cm.gnuplot
+    #cmap = myplt.reverse_colormap(plt.cm.copper)
+    cmap = plt.cm.copper
+
+    #
+    ngrids = len(nhi_list)
+    nrows, ncols = myplt.get_square_grid_sides(ngrids)
+    nrows_ncols = (nrows, ncols)
+
+    # Create figure instance
+    fig = plt.figure(figsize=(3 * ncols + 1, 3 * nrows + 1))
+
+    grid_helper = wcs.GridHelper(wcs=header)
+    axes = AxesGrid(fig, (1,1,1),
+                 nrows_ncols=nrows_ncols,
+                 ngrids=ngrids,
+                 cbar_mode="each",
+                 cbar_location='right',
+                 cbar_pad="2%",
+                 cbar_size='3%',
+                 axes_pad=0.5,
+                 axes_class=(wcs.Axes,
+                             dict(grid_helper=grid_helper)),
+                 aspect=True,
+                 label_mode='L',
+                 share_all=True)
+
+    for i in xrange(ngrids):
+        # create axes
+        ax = axes[i]
+
+        # show the image
+        im = ax.imshow(nhi_list[i],
+                       #interpolation='nearest',
+                       origin='lower',
+                       cmap=cmap,
+                       vmin=nhi_vlimits[0],
+                       vmax=nhi_vlimits[1],
+                       #norm=matplotlib.colors.LogNorm()
+                       )
+
+        # Asthetics
+        ax.set_display_coord_system("gal")
+        #ax.set_ticklabel_type("hms", "dms")
+        ax.set_ticklabel_type("absdeg", "absdeg")
+
+        #ax.set_xlabel('Right Ascension [J2000]',)
+        #ax.set_ylabel('Declination [J2000]',)
+        ax.set_xlabel(r'$l$ [deg]',)
+        ax.set_ylabel(r'$b$ [deg]',)
+        ax.tick_params(axis='xy', which='major', colors='w')
+        ax.locator_params(nbins=4)
+
+        # colorbar
+        cb = ax.cax.colorbar(im)
+        cmap.set_bad(color='w')
+
+        # plot limits
+        if limits is not None:
+            limits_pix = myplt.convert_wcs_limits(limits,
+                                                  header,
+                                                  frame='galactic')
+            ax.set_xlim(limits_pix[0],limits_pix[1])
+            ax.set_ylim(limits_pix[2],limits_pix[3])
+
+        # Plot Av contours
+        if contour_image is not None:
+            ax.contour(contour_image, levels=contours, colors='r')
+
+        # Write label to colorbar
+        cb.set_label_text(r'$N$(H\textsc{i}) [10$^{20}$ cm$^{-2}$]',)
+
+    if filename is not None:
+        plt.savefig(filename, bbox_inches='tight')
+    if show:
+        plt.show()

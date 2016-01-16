@@ -629,3 +629,24 @@ def plot_cdf(data, ax=None, plot_kwargs={}, return_axis=False):
         return x
 
 
+def get_square_grid_sides(ngrids):
+
+    ''' Calculates the number of rows and columns needed to encompass N
+    subplots.
+
+    '''
+
+    n = int(np.ceil(ngrids**0.5))
+
+    if n**2 - n >= ngrids:
+        nrows = n - 1
+        ncols = n
+    else:
+        nrows, ncols = n, n
+
+    nrows_ncols = nrows, ncols
+
+    return nrows_ncols
+
+
+
