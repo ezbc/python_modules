@@ -142,10 +142,12 @@ def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
     # Break up tuples to be more easily read
     x_grid, y_grid = grids[0], grids[1]
     x_coord_res, y_coord_res = coord_reses[0], coord_reses[1]
-    x_range, y_range = ranges[0], ranges[1]
+    x_range, y_range = list(ranges[0]), list(ranges[1])
 
     if reverse_xaxis:
         x_coord_res *= -1.0
+
+    #print 'coord res:', x_coord_res, y_coord_res
 
     # Initialize WCS object
     # CRPIX should be at 0, 0 so that unsophisticated software like Kvis can
@@ -153,12 +155,31 @@ def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
     w = wcs.WCS(naxis=2)
     w.wcs.cdelt = np.array([x_coord_res, y_coord_res])
     w.wcs.crval = [0, 0]
-    if reverse_xaxis:
-        w.wcs.crpix = [-x_range[1] / w.wcs.cdelt[0],
-                       -y_range[0] / w.wcs.cdelt[1]]
+
+    # check if coords are wrapped around 180. astropy.wcs ra domain is [-180,
+    # 180]
+    delta_x = x_range[1] - x_range[0]
+    wrapped_coords = False
+    for i, x in enumerate(x_range):
+        if x > 180:
+            x_range[i] = -180 + x
+            wrapped_coords = True
+
+    if wrapped_coords:
+        # define
+        if reverse_xaxis:
+            w.wcs.crpix = [(-x_range[0]) / w.wcs.cdelt[0],
+                           (-y_range[0]) / w.wcs.cdelt[1]]
+        else:
+            w.wcs.crpix = [(-x_range[1]) / w.wcs.cdelt[0],
+                           (-y_range[0]) / w.wcs.cdelt[1]]
     else:
-        w.wcs.crpix = [-x_range[0] / w.wcs.cdelt[0],
-                       -y_range[0] / w.wcs.cdelt[1]]
+        if reverse_xaxis:
+            w.wcs.crpix = [(-x_range[1]) / w.wcs.cdelt[0],
+                           (-y_range[0]) / w.wcs.cdelt[1]]
+        else:
+            w.wcs.crpix = [(-x_range[0]) / w.wcs.cdelt[0],
+                           (-y_range[0]) / w.wcs.cdelt[1]]
 
     # Define coordinate type
     if coord_type.lower() == 'equatorial':
@@ -166,10 +187,18 @@ def build_wcs(grids=None, coord_reses=None, ranges=None, reverse_xaxis=True,
     elif coord_type.lower() == 'galactic':
         w.wcs.ctype = ['GLON-CAR', 'GLAT-CAR']
 
-    # Get pixel coordinates as WCS coordinates
+    # Convert pixel coordinates to world
     x_coords, y_coords = w.all_pix2world(x_grid,
                                          y_grid,
-                                         1,)
+                                         1,
+                                         )
+
+    # readjust x coordinates back to domain of [0, 360]
+    if wrapped_coords:
+        if x_range[0] > x_range[1]:
+            x_coords += delta_x
+        else:
+            x_coords += delta_x + 180.0
 
     # Write wcs object as an easily readable header object
     wcs_header = w.to_header()
@@ -481,7 +510,6 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
     # Get nside from HEALPix format, acts as resolution of HEALPix image
     nside = header_pf['NSIDE']
 
-
     # Set up longitude / latitude grid for extracting the region
     x_coord_res, y_coord_res = resolution, resolution
     x_pixel_count = np.ceil((x_range[1] - x_range[0]) / x_coord_res) + 1
@@ -512,6 +540,10 @@ def get_data(data_location='./', data_type=None, x_range=(0,360), y_range=(-90,
                                         ranges=(x_range, y_range),
                                         reverse_xaxis=reverse_xaxis,
                                         coord_type='equatorial')
+
+    # check if any NaNs present in coords
+    if np.sum(np.isnan(x_coords)) > 0 or np.sum(np.isnan(y_coords)) > 0:
+        raise ValueError('Invalid coordinate ranges')
 
     # Get galactic coordinates for angles
     if coord_type == 'equatorial':
