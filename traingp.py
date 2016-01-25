@@ -73,6 +73,7 @@ def create_train_data(velocity_axis=None,
     else:
         nchannels = len(velocity_axis)
 
+
     # Gaussian mean range
     if mean_range is not None:
         #velocity_diff = np.max(velocity_axis) - np.min(velocity_axis)
@@ -85,19 +86,24 @@ def create_train_data(velocity_axis=None,
                                  NSPECTRA=nspectra,
                                  AMP_lims=amp_range,
                                  FWHM_lims=FWHM_range,
-                                 MEAN_lims=mean_range)
+                                 MEAN_lims=mean_range,
+                                 x_value=velocity_axis)
 
     return agd_data
 
 def format_train_data(RMS=0.05, NCOMPS=4, NCHANNELS=512, NSPECTRA=10,
         AMP_lims=None,
         FWHM_lims=None,
-        MEAN_lims=None,):
+        MEAN_lims=None,
+        x_value=None):
 
     # Component properties
     AMP_lims = [RMS * 5, RMS * 25]
     FWHM_lims = [10, 35] # channels
     MEAN_lims = [0.25 * NCHANNELS, 0.75 * NCHANNELS]
+
+    if x_value is not None:
+        NCHANNELS = len(x_value)
 
     # Initialize
     agd_data = {}
@@ -122,7 +128,8 @@ def format_train_data(RMS=0.05, NCOMPS=4, NCHANNELS=512, NSPECTRA=10,
 
         # Enter results into AGD dataset
         agd_data['data_list'] = agd_data.get('data_list', []) + [spectrum_i]
-        agd_data['x_values'] = agd_data.get('x_values', []) + [chan]
+        #agd_data['x_values'] = agd_data.get('x_values', []) + [chan]
+        agd_data['x_values'] = agd_data.get('x_values', []) + [x_value]
         agd_data['errors'] = agd_data.get('errors', []) + [errors]
 
         # If training data, keep answers
