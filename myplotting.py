@@ -405,6 +405,24 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
 def corner_plot(distributions, plot_grids=None, labels=None,
         filename=None, logscale=False):
 
+    '''
+
+    Parameters
+    ----------
+    distributions : array-like
+        N-dimensional array
+    plot_grids : list
+        List of arrays, where each array corresponds to the parameter values of
+        the corresponding axis of the distributions.
+    labels : list
+        List of parameter strings.
+    filename : string
+        Filename to save to.
+    logscale : bool
+        Plot both 1D and 2D PDFs in logscale?
+
+    '''
+
     # Import external modules
     import numpy as np
     import matplotlib
