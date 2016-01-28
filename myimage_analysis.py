@@ -889,4 +889,25 @@ def crop_cube(cube, vel_axis, vel_range):
 
     return cube_crop, vel_axis_crop
 
+def calculate_moment(data, moment=0, weights=1):
+
+    ''' Calculates moment of data. Weights needed for moment of 1 or 2.
+    '''
+
+    data, weights = np.squeeze(data), np.squeeze(weights)
+
+    if moment == 0:
+        result = np.nanmean(data)
+    elif moment == 1:
+        result = np.zeros(data.shape[1:])
+        for i in xrange(result.shape[0]):
+            for j in xrange(result.shape[1]):
+                result[i,j] = \
+                    np.nansum(data[:,i,j] * weights)/np.nansum(data[:,i,j])
+    elif moment == 2:
+        M1 = np.nansum(data*weights)/np.nansum(data),
+        result = np.sqrt(np.nansum(data*(weights-M1)**2)/np.nansum(data))
+
+    return result
+
 
