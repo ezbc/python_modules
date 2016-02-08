@@ -403,7 +403,7 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
     return color_cycle
 
 def corner_plot(distributions, plot_grids=None, labels=None,
-        filename=None, logscale=False):
+        filename=None, logscale=False, confidence_intervals=None):
 
     '''
 
@@ -420,6 +420,9 @@ def corner_plot(distributions, plot_grids=None, labels=None,
         Filename to save to.
     logscale : bool
         Plot both 1D and 2D PDFs in logscale?
+    confidence_intervals : array-like
+        Confidence intervals for 1D distributions. N-dimesional array, with
+        lower, best estimate and upper bounds.
 
     '''
 
@@ -459,11 +462,17 @@ def corner_plot(distributions, plot_grids=None, labels=None,
 
             # determine which type of plot to use
             if x_i == y_j:
+                if confidence_intervals is not None:
+                    plot_confs = confidence_intervals[x_i]
+                else:
+                    plot_confs = None
+
                 _plot_corner_1dhist(ax,
                                     distributions,
                                     x_i,
                                     plot_grids,
                                     logscale=logscale,
+                                    plot_confs=plot_confs,
                                     )
                 if not logscale:
                     # reduce number of tick
@@ -503,7 +512,7 @@ def corner_plot(distributions, plot_grids=None, labels=None,
         plt.savefig(filename, bbox_inches='tight')
 
 def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids,
-        logscale=False, plot_confs=True):
+        logscale=False, plot_confs=None):
 
     # Get the axes to marginalize the distributions over
     dist_axes = np.arange(distributions.ndim)
@@ -511,9 +520,9 @@ def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids,
     if not isinstance(marg_axes, np.int64):
         marg_axes = tuple(marg_axes)
 
-    # Derive the histogram
-    hist = np.sum(distributions, axis=marg_axes)
 
+    # Derive the histogram
+    hist = np.nansum(distributions, axis=marg_axes)
 
     #hist = plot_grids[plot_axis]
     plot_grid = plot_grids[plot_axis]
@@ -525,36 +534,27 @@ def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids,
                     linewidth=2,
                     )
 
-    if plot_confs:
-        # get plotted hist
-        #xdata = lines[0].get_path().vertices[:,0]
-        #ydata = lines[0].get_path().vertices[:,1]
-        xdata = plot_grid
-        ydata = hist
-        cdf = np.cumsum(ydata) / sum(ydata)
+    if plot_confs is not None:
+        ax.axvline(plot_confs[0],
+                        color='k',
+                        alpha=0.5,
+                        linestyle='--',
+                        linewidth=1,
+                        )
 
-        # get the left and right boundary of the interval that contains 95% of
-        # the probability mass
-        right = np.argmax(cdf > 0.975)
-        left = np.argmax(cdf > 0.025)
-        center = np.argmax(cdf > 0.5)
-
-        conf_interval = np.array([xdata[left],
-                                  xdata[center],
-                                  xdata[right],]
-                                  )
-        if 0:
-            ax.fill_between(xdata[left:right],
-                            ydata[left:right],
-                            facecolor='k',
-                            alpha=0.5)
-        ax.axvline(xdata[center],
+        ax.axvline(plot_confs[1],
                    alpha=0.5,
                    linewidth=2,
                    color='k',
                    linestyle='--',
                    )
 
+        ax.axvline(plot_confs[2],
+                        color='k',
+                        alpha=0.5,
+                        linestyle='--',
+                        linewidth=1,
+                        )
 
     if logscale:
         ax.set_yscale('log')
@@ -577,7 +577,7 @@ def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids,
         marg_axes = tuple(marg_axes)
 
     # Derive the histogram
-    hist_2d = np.sum(distributions, axis=marg_axes)
+    hist_2d = np.nansum(distributions, axis=marg_axes)
 
     # get extent
     xgrid = plot_grids[plot_axes[0]]

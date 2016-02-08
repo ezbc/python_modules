@@ -839,6 +839,10 @@ def calc_logL(model, data, data_error=None, weights=None):
             model_weighted[count:count + weights[i]] = model[i]
             count += weights[i]
 
+    # get the size of the data
+    size = data_weighted[~np.isnan(data_weighted)].size
+    data_error_weighted = np.median(data_error_weighted)
+
     #logL = -np.nansum((data - model)**2 / (2 * (data_error)**2))
     logL = -np.nansum((data_weighted - model_weighted)**2 / \
             (2 * (data_error_weighted)**2))
@@ -849,7 +853,7 @@ def logL2L(logL, normalize=True):
 
     if normalize:
         # Normalize the log likelihoods
-        logL -= np.nanmax(logL)
+        logL = normalize_logL(logL)
 
     # Convert to likelihoods
     likelihoods = np.exp(logL)
@@ -860,6 +864,13 @@ def logL2L(logL, normalize=True):
     likelihoods = likelihoods / np.nansum(likelihoods)
 
     return likelihoods
+
+def normalize_logL(logL):
+
+    # Normalize the log likelihoods
+    logL -= np.nanmax(logL)
+
+    return logL
 
 def calc_likelihood_conf(likelihoods, conf, df=1):
 
@@ -882,7 +893,29 @@ def gauss(x, width, amp, x0):
 
     return amp * np.exp(-(x - x0)**2 / (2 * width**2))
 
+def calc_hessian(x):
+    """
+    Calculate the hessian matrix with finite differences
+    Parameters:
+       - x : ndarray
+    Returns:
+       an array of shape (x.dim, x.ndim) + x.shape
+       where the array[i, j, ...] corresponds to the second derivative x_ij
+    """
+
+    x_grad = np.gradient(x)
+    hessian = np.empty((x.ndim, x.ndim) + x.shape, dtype=x.dtype)
+    for k, grad_k in enumerate(x_grad):
+        # iterate over dimensions
+        # apply gradient again to every component of the first derivative.
+        tmp_grad = np.gradient(grad_k)
+        for l, grad_kl in enumerate(tmp_grad):
+            hessian[k, l, :, :] = grad_kl
+
+    return hessian
+
 # Perumations
+
 
 def unique_permutations(elements):
     if len(elements) == 1:
@@ -894,6 +927,7 @@ def unique_permutations(elements):
             remaining_elements.remove(first_element)
             for sub_permutation in unique_permutations(remaining_elements):
                 yield (first_element,) + sub_permutation
+
 
 
 if __name__ == '__main__':
