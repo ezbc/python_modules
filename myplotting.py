@@ -646,6 +646,86 @@ def plot_cdf(data, ax=None, plot_kwargs={}, return_axis=False):
     if return_axis:
         return x
 
+def plot_cdf_confint(data, data_error=0, ax=None, plot_kwargs_line={},
+        plot_kwargs_fill_between={}, return_axis=False, nsim=100, nbins=20):
+
+    ''' Performs Monte Carlo simulation with data error to calculate the CDF
+    point-wise confidence interval.
+
+    Parameters
+    ----------
+    data : array-like
+        Distribution of data.
+    data_error : float, array-like
+        Normal error on data. If an array, must have same dimensions as data.
+    ax : matplotlib.pyplot.axis, optional
+        If provided, adds plot to axis object. Else plots matplotlib.pyplot.
+    plot_kwargs_line : dict
+        Kwargs to provide to matplotlib.pyplot.plot for median CDF.
+    plot_kwargs_fill_between : dict
+        Kwargs to provide to matplotlib.pyplot.fill_between for CDF confidence
+        interval.
+    return_axis : bool, optional
+        Return the CDF bin values of the data?
+    nsim : int
+        Number of Monte Carlo simulations to run.
+    nbins : int
+        Number of bins with which to sample the simulated data.
+
+    Returns
+    -------
+    x : array-like, optional
+        If return_axis is True, then the CDF sample locations for the original
+        dataset is returned.
+
+    '''
+
+    import mystats
+
+    # Initialize CDF array
+    cdfs = np.empty((nsim, data.size))
+    xs = np.empty((nsim, data.size))
+
+    # simulate different CDFs in monte carlo
+    for i in xrange(nsim):
+        data_sim = data + np.random.normal(scale=data_error)
+        cdfs[i], xs[i] = mystats.calc_cdf(data_sim, return_axis=True)
+
+    # initialize new plotted x-values / bins for confidence interval
+    x_fit = np.linspace(np.min(xs), np.max(xs), 10, endpoint=False)
+
+    # initialize empty array for confidence interval
+    cdf_confint = np.ones((3, x_fit.size))
+
+    # Calculate the median and uncertainty on the median in each bin given the
+    # simulation results
+    for i in xrange(x_fit.size - 1):
+        cdf_bin = cdfs[(xs >= x_fit[i]) & (xs < x_fit[i+1])]
+        median, conf_err = mystats.calc_cdf_error(cdf_bin)
+        cdf_confint[1, i] = median
+        cdf_confint[0, i] = median - conf_err[0]
+        cdf_confint[2, i] = median + conf_err[1]
+
+    # eliminate nans
+    nan_mask = (np.isnan(cdf_confint[0]) | \
+                np.isnan(cdf_confint[1]) | \
+                np.isnan(cdf_confint[2]))
+    cdf_confint = cdf_confint[:, ~nan_mask]
+    x_fit = x_fit[~nan_mask]
+
+    # Plot the results with the median estimate and the confidence interval
+    if ax is None:
+        plt.plot(x_fit, cdf_confint[1], **plot_kwargs_line)
+        plt.fill_between(x_fit, cdf_confint[0], cdf_confint[2],
+                **plot_kwargs_fill_between)
+    else:
+        ax.plot(x_fit, cdf_confint[1], **plot_kwargs_line)
+        ax.fill_between(x_fit, cdf_confint[0], cdf_confint[2],
+                        **plot_kwargs_fill_between)
+
+    # Return the original data x axis?
+    if return_axis:
+        return x
 
 def get_square_grid_sides(ngrids):
 

@@ -99,7 +99,7 @@ def calc_temperature(n_H=1.0, pressure=3800.0, pressure_error=(100,100),
         n_H_error = np.array(n_H_error, dtype=float)
         pressure_error = np.array(pressure_error, dtype=float)
         n_H_comp = pressure / n_H**2 * n_H_error
-        pressure_comp = pressure * 1.0 / n_H * pressure_error
+        pressure_comp =  1.0 / n_H * pressure_error
         T_error = (n_H_comp**2 + pressure_comp**2)**0.5
         return T, T_error
 
