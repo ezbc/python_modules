@@ -49,8 +49,735 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="documentation-for-collection-of-python-modules">
-<h1>Documentation for Collection of Python Modules<a class="headerlink" href="#documentation-for-collection-of-python-modules" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-myplotting">
+<span id="documentation-for-collection-of-python-modules"></span><h1>Documentation for Collection of Python Modules<a class="headerlink" href="#module-myplotting" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="myplotting.check_overlaps">
+<code class="descclassname">myplotting.</code><code class="descname">check_overlaps</code><span class="sig-paren">(</span><em>bbox1</em>, <em>bbox2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#check_overlaps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.check_overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if this bounding box overlaps with the given
+bounding box <em>other</em>. OR IF NANA!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.convert_wcs_limits">
+<code class="descclassname">myplotting.</code><code class="descname">convert_wcs_limits</code><span class="sig-paren">(</span><em>limits</em>, <em>header</em>, <em>frame='fk5'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#convert_wcs_limits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.convert_wcs_limits" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>limits: array-like</strong></p>
+<blockquote>
+<div><p>(ra_min, ra_max, dec_min, dec_max) all in degrees</p>
+</div></blockquote>
+<p><strong>header: astropy.io.fits.header</strong></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(ra_min, ra_max, dec_min, dec_max) all in pixels</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.corner_plot">
+<code class="descclassname">myplotting.</code><code class="descname">corner_plot</code><span class="sig-paren">(</span><em>distributions</em>, <em>plot_grids=None</em>, <em>labels=None</em>, <em>filename=None</em>, <em>logscale=False</em>, <em>confidence_intervals=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#corner_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.corner_plot" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>distributions</strong> : array-like</p>
+<blockquote>
+<div><p>N-dimensional array</p>
+</div></blockquote>
+<p><strong>plot_grids</strong> : list</p>
+<blockquote>
+<div><p>List of arrays, where each array corresponds to the parameter values of
+the corresponding axis of the distributions.</p>
+</div></blockquote>
+<p><strong>labels</strong> : list</p>
+<blockquote>
+<div><p>List of parameter strings.</p>
+</div></blockquote>
+<p><strong>filename</strong> : string</p>
+<blockquote>
+<div><p>Filename to save to.</p>
+</div></blockquote>
+<p><strong>logscale</strong> : bool</p>
+<blockquote>
+<div><p>Plot both 1D and 2D PDFs in logscale?</p>
+</div></blockquote>
+<p><strong>confidence_intervals</strong> : array-like</p>
+<blockquote class="last">
+<div><p>Confidence intervals for 1D distributions. N-dimesional array, with
+lower, best estimate and upper bounds.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.delete_overlapping_xlabels">
+<code class="descclassname">myplotting.</code><code class="descname">delete_overlapping_xlabels</code><span class="sig-paren">(</span><em>fig</em>, <em>ax</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#delete_overlapping_xlabels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.delete_overlapping_xlabels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes overlapping xtick labels in axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>fig</strong> : matplotlib.pyplot.figure</p>
+<blockquote>
+<div><p>Figure object.</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.pyplot.axis</p>
+<blockquote>
+<div><p>Axis object.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>ax</strong> : matplotlib.pyplot.axis</p>
+<blockquote class="last">
+<div><p>Axis object without overlapping xtick labels.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.get_square_grid_sides">
+<code class="descclassname">myplotting.</code><code class="descname">get_square_grid_sides</code><span class="sig-paren">(</span><em>ngrids</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#get_square_grid_sides"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.get_square_grid_sides" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the number of rows and columns needed to encompass N
+subplots.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.plot_cdf_confint">
+<code class="descclassname">myplotting.</code><code class="descname">plot_cdf_confint</code><span class="sig-paren">(</span><em>data</em>, <em>data_error=0</em>, <em>ax=None</em>, <em>plot_kwargs_line={}</em>, <em>plot_kwargs_fill_between={}</em>, <em>return_axis=False</em>, <em>nsim=100</em>, <em>nbins=20</em>, <em>bin_limits=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#plot_cdf_confint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.plot_cdf_confint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs Monte Carlo simulation with data error to calculate the CDF
+point-wise confidence interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : array-like</p>
+<blockquote>
+<div><p>Distribution of data.</p>
+</div></blockquote>
+<p><strong>data_error</strong> : float, array-like</p>
+<blockquote>
+<div><p>Normal error on data. If an array, must have same dimensions as data.</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.pyplot.axis, optional</p>
+<blockquote>
+<div><p>If provided, adds plot to axis object. Else plots matplotlib.pyplot.</p>
+</div></blockquote>
+<p><strong>plot_kwargs_line</strong> : dict, optional</p>
+<blockquote>
+<div><p>Kwargs to provide to matplotlib.pyplot.plot for median CDF.</p>
+</div></blockquote>
+<p><strong>plot_kwargs_fill_between</strong> : dict, optional</p>
+<blockquote>
+<div><p>Kwargs to provide to matplotlib.pyplot.fill_between for CDF confidence
+interval.</p>
+</div></blockquote>
+<p><strong>return_axis</strong> : bool, optional</p>
+<blockquote>
+<div><p>Return the CDF bin values of the data?</p>
+</div></blockquote>
+<p><strong>nsim</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of Monte Carlo simulations to run.</p>
+</div></blockquote>
+<p><strong>nbins</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of bins with which to sample the simulated data.</p>
+</div></blockquote>
+<p><strong>bin_limits</strong> : array-like, optional</p>
+<blockquote>
+<div><p>Lower and upper bound of bins with which to calculate point-wise
+confidence intervals.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>x</strong> : array-like, optional</p>
+<blockquote class="last">
+<div><p>If return_axis is True, then the CDF sample locations for the original
+dataset is returned.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.reverse_colormap">
+<code class="descclassname">myplotting.</code><code class="descname">reverse_colormap</code><span class="sig-paren">(</span><em>cmap</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#reverse_colormap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.reverse_colormap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverses a matplolib.colors colormap.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cmap</strong> : matplotlib.pyplot.cm</p>
+<blockquote>
+<div><p>Colormap</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>cmap_r</strong> : matplotlib.pyplot.cm</p>
+<blockquote class="last">
+<div><p>Reversed colormap</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.scatter_contour">
+<code class="descclassname">myplotting.</code><code class="descname">scatter_contour</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>levels=10</em>, <em>fractional_levels=True</em>, <em>threshold=100</em>, <em>log_counts=False</em>, <em>histogram2d_args={}</em>, <em>plot_args={}</em>, <em>errors=None</em>, <em>contour_args={}</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#scatter_contour"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.scatter_contour" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scatter plot with contour over dense regions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x, y</strong> : arrays</p>
+<blockquote>
+<div><p>x and y data for the contour plot</p>
+</div></blockquote>
+<p><strong>levels</strong> : integer or array (optional, default=10)</p>
+<blockquote>
+<div><p>number of contour levels, or array of contour levels</p>
+</div></blockquote>
+<p><strong>fractional_levels</strong> : bool (optional, default=True)</p>
+<blockquote>
+<div><p>If True, then levels argument (if array-like) is interpreted as levels
+within which contain the fraction of data points specified. The
+threshold and log_counts arguments will not have an effect if True.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : float (default=100)</p>
+<blockquote>
+<div><p>number of points per 2D bin at which to begin drawing contours</p>
+</div></blockquote>
+<p><strong>log_counts :boolean (optional)</strong></p>
+<blockquote>
+<div><p>if True, contour levels are the base-10 logarithm of bin counts.</p>
+</div></blockquote>
+<p><strong>histogram2d_args</strong> : dict</p>
+<blockquote>
+<div><p>keyword arguments passed to numpy.histogram2d
+see doc string of numpy.histogram2d for more information</p>
+</div></blockquote>
+<p><strong>plot_args</strong> : dict</p>
+<blockquote>
+<div><p>keyword arguments passed to pylab.scatter
+see doc string of pylab.scatter for more information</p>
+</div></blockquote>
+<p><strong>contourf_args</strong> : dict</p>
+<blockquote>
+<div><p>keyword arguments passed to pylab.contourf
+see doc string of pylab.contourf for more information</p>
+</div></blockquote>
+<p><strong>ax</strong> : pylab.Axes instance</p>
+<blockquote>
+<div><p>the axes on which to plot.  If not specified, the current
+axes will be used</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>level_fractions</strong> : numpy.array</p>
+<blockquote class="last">
+<div><p>Data fraction levels for each contour.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.truncate_colormap">
+<code class="descclassname">myplotting.</code><code class="descname">truncate_colormap</code><span class="sig-paren">(</span><em>cmap</em>, <em>minval=0.0</em>, <em>maxval=1.0</em>, <em>n=100</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#truncate_colormap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.truncate_colormap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncates a matplolib.colors colormap to a smaller range.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cmap</strong> : matplotlib.pyplot.cm</p>
+<blockquote>
+<div><p>Colormap</p>
+</div></blockquote>
+<p><strong>minval</strong> : float</p>
+<blockquote>
+<div><p>Lower value to truncate.</p>
+</div></blockquote>
+<p><strong>maxval</strong> : float</p>
+<blockquote>
+<div><p>Upper value to truncate</p>
+</div></blockquote>
+<p><strong>n</strong> : int</p>
+<blockquote>
+<div><p>Number of discrete samples of colormap between minval and maxval.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>new_cmap</strong> : matplotlib.pyplot.cm</p>
+<blockquote class="last">
+<div><p>Truncated colormap</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<span class="target" id="module-mystats"></span><dl class="function">
+<dt id="mystats.bootstrap">
+<code class="descclassname">mystats.</code><code class="descname">bootstrap</code><span class="sig-paren">(</span><em>data</em>, <em>num_samples</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#bootstrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.bootstrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bootstraps data to determine errors. Resamples the data num_samples
+times. Returns errors of a bootstrap simulation at the 100.*(1 - alpha)
+confidence interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : array-like</p>
+<blockquote>
+<div><p>Array of data in the form of an numpy.ndarray</p>
+</div></blockquote>
+<p><strong>num_samples</strong> : int</p>
+<blockquote>
+<div><p>Number of times to resample the data.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>conf_int</strong> : tuple, float</p>
+<blockquote>
+<div><p>Lower error and upper error at 100*(1-alpha) confidence of the data.</p>
+</div></blockquote>
+<p><strong>samples</strong> : array-like</p>
+<blockquote class="last">
+<div><p>Array of each resampled data. Will have one extra dimension than the
+data of length num_samples, representing each simulation.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>-&gt; arrays can be initialized with numpy.empty
+-&gt; random samples can be retrieved from an array with random.sample</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">scipy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(100,)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(50, 100,)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.bootstrap_model">
+<code class="descclassname">mystats.</code><code class="descname">bootstrap_model</code><span class="sig-paren">(</span><em>data</em>, <em>model</em>, <em>num_samples=100</em>, <em>alpha=0.05</em>, <em>data_error=None</em>, <em>sigma=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#bootstrap_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.bootstrap_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bootstraps data with models a given number of times and calculates the
+Goodness of fit for each run. The standard deviation of the Goodness-of-fit
+values is then used to estimate the confidence interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : array_like</p>
+<blockquote>
+<div><p>The observed data, must be the same size as the model</p>
+</div></blockquote>
+<p><strong>model</strong> : array_like</p>
+<blockquote>
+<div><p>The model data, must be the same size as the observed data.</p>
+</div></blockquote>
+<p><strong>num_samples</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of runs in the bootstrapping.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float, optional</p>
+<blockquote>
+<div><p>Significance of confidence interval.</p>
+</div></blockquote>
+<p><strong>data_error</strong> : float, array_like, optional</p>
+<blockquote>
+<div><p>If unset, the error will be the standard deviation of the data. If an
+array, it must have the same dimensions as the observed data.</p>
+</div></blockquote>
+<p><strong>sigma</strong> : float, optional</p>
+<blockquote>
+<div><p>If set, the confidence interval will be calculated using the number of
+standard deviations from the mean.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : bool, optional</p>
+<blockquote>
+<div><p>Print out progress?</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>out</strong> : list</p>
+<blockquote class="last">
+<div><p>A list, [confidence interval, goodness of fit array]</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.bootstrap_residuals">
+<code class="descclassname">mystats.</code><code class="descname">bootstrap_residuals</code><span class="sig-paren">(</span><em>data</em>, <em>model</em>, <em>num_samples=100</em>, <em>statistic=&lt;function mean at 0x2eb52a8&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#bootstrap_residuals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.bootstrap_residuals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bootstraps data with models a given number of times and calculates the
+Goodness of fit for each run. The standard deviation of the Goodness-of-fit
+values is then used to estimate the confidence interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : array_like</p>
+<blockquote>
+<div><p>The observed data, must be the same size as the model</p>
+</div></blockquote>
+<p><strong>model</strong> : array_like</p>
+<blockquote>
+<div><p>The model data, must be the same size as the observed data.</p>
+</div></blockquote>
+<p><strong>num_samples</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of runs in the bootstrapping.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float, optional</p>
+<blockquote>
+<div><p>Significance of confidence interval.</p>
+</div></blockquote>
+<p><strong>data_error</strong> : float, array_like, optional</p>
+<blockquote>
+<div><p>If unset, the error will be the standard deviation of the data. If an
+array, it must have the same dimensions as the observed data.</p>
+</div></blockquote>
+<p><strong>sigma</strong> : float, optional</p>
+<blockquote>
+<div><p>If set, the confidence interval will be calculated using the number of
+standard deviations from the mean.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : bool, optional</p>
+<blockquote>
+<div><p>Print out progress?</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>out</strong> : list</p>
+<blockquote class="last">
+<div><p>A list, [confidence interval, goodness of fit array]</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.calc_bootstrap_error">
+<code class="descclassname">mystats.</code><code class="descname">calc_bootstrap_error</code><span class="sig-paren">(</span><em>samples</em>, <em>alpha</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#calc_bootstrap_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.calc_bootstrap_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns errors of a bootstrap simulation at the 100.*(1 - alpha)
+confidence interval. Errors are computed by deriving a cumulative
+distribution function of the means of the sampled data and determining the
+distance between the mean and the value including alpha/2 % of the data,
+and the value including alpha/2 % of the data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>samples</strong> : array-like</p>
+<blockquote>
+<div><p>Array of each resampled data.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>conf_int</strong> : tuple, float</p>
+<blockquote class="last">
+<div><p>Mean of the data, the lower error and the upper error at 100*(1-alpha)
+confidence of the data.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>-&gt; To find the index in an array closest to a given value, use the
+numpy.argmin function to find the index of the minimum value in an array.
+For example to find the value closest to 11.1 in an array of 10, 11, and 12:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="mf">11.1</span><span class="p">)))</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">scipy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">errors</span> <span class="o">=</span> <span class="n">calc_bootstrap_error</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.calc_hessian">
+<code class="descclassname">mystats.</code><code class="descname">calc_hessian</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#calc_hessian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.calc_hessian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the hessian matrix with finite differences
+Parameters:</p>
+<blockquote>
+<div><ul class="simple">
+<li>x : ndarray</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>an array of shape (x.dim, x.ndim) + x.shape
+where the array[i, j, ...] corresponds to the second derivative x_ij</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.calc_likelihood_conf">
+<code class="descclassname">mystats.</code><code class="descname">calc_likelihood_conf</code><span class="sig-paren">(</span><em>likelihoods</em>, <em>conf</em>, <em>df=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#calc_likelihood_conf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.calc_likelihood_conf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates confidence intervals for each axis.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.calc_logL">
+<code class="descclassname">mystats.</code><code class="descname">calc_logL</code><span class="sig-paren">(</span><em>model</em>, <em>data</em>, <em>data_error=None</em>, <em>weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#calc_logL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.calc_logL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates log likelihood</p>
+<p><a class="reference external" href="http://www.physics.utah.edu/~detar/phys6720/handouts/curve_fit/curve_fit/node2.html">http://www.physics.utah.edu/~detar/phys6720/handouts/curve_fit/curve_fit/node2.html</a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.calc_pdf">
+<code class="descclassname">mystats.</code><code class="descname">calc_pdf</code><span class="sig-paren">(</span><em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#calc_pdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.calc_pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates probability density function of the data. Uses a non-parametric
+approach to estimate the PDF.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.calc_symmetric_error">
+<code class="descclassname">mystats.</code><code class="descname">calc_symmetric_error</code><span class="sig-paren">(</span><em>x</em>, <em>y=None</em>, <em>alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#calc_symmetric_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.calc_symmetric_error" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : array-like</p>
+<p><strong>y</strong> : array-like, optional</p>
+<blockquote class="last">
+<div><p>If provided, treated as the PDF of x</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.ftest">
+<code class="descclassname">mystats.</code><code class="descname">ftest</code><span class="sig-paren">(</span><em>chi1</em>, <em>chi2</em>, <em>dof1</em>, <em>dof2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#ftest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.ftest" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function ftest() c omputes the probability for a value drawn
+from the F-distribution to equal or exceed the given value of F.
+This can be used for confidence testing of a measured value obeying
+the F-distribution (i.e., ffor testing the ratio of variances, or
+equivalently for the addition of parameters to a fitted model).</p>
+<blockquote>
+<div>P_F(X &gt; F; DOF1, DOF2) = PROB</div></blockquote>
+<p>In specifying the returned probability level the user has three
+choices:</p>
+<blockquote>
+<div><ul class="simple">
+<li>return the confidence level when the /CLEVEL keyword is passed;
+OR</li>
+<li>return the significance level (i.e., 1 - confidence level) when
+the /SLEVEL keyword is passed (default); OR</li>
+<li>return the &#8220;sigma&#8221; of the probability (i.e., compute the
+probability based on the normal  distribution) when the /SIGMA
+keyword is passed.</li>
+</ul>
+</div></blockquote>
+<p>Note that /SLEVEL, /CLEVEL and /SIGMA are mutually exclusive.</p>
+<p>For the ratio of variance test, the two variances, VAR1 and VAR2,
+should be distributed according to the chi-squared distribution
+with degrees of freedom DOF1 and DOF2 respectively.  The F-value is
+computed as:</p>
+<blockquote>
+<div>F = (VAR1/DOF1)  / (VAR2/DOF2)</div></blockquote>
+<p>and then the probability is computed as:</p>
+<blockquote>
+<div>PROB = MPFTEST(F, DOF1, DOF2, ... )</div></blockquote>
+<p>For the test of additional parameters in least squares fitting, the
+user should perform two separate fits, and have two chi-squared
+values.  One fit should be the &#8220;original&#8221; fit with no additional
+parameters, and one fit should be the &#8220;new&#8221; fit with M additional
+parameters.</p>
+<blockquote>
+<div><p>CHI1 - chi-squared value for original fit</p>
+<dl class="docutils">
+<dt>DOF1 - number of degrees of freedom of CHI1 (number of data</dt>
+<dd>points minus number of original parameters)</dd>
+</dl>
+<p>CHI2 - chi-squared value for new fit</p>
+<p>DOF2 - number of degrees of freedom of CHI2</p>
+</div></blockquote>
+<p>Note that according to this formalism, the number of degrees of
+freedom in the &#8220;new&#8221; fit, DOF2, should be less than the number of
+degrees of freedom in the &#8220;original&#8221; fit, DOF1 (DOF2 &lt; DOF1); and
+also CHI2 &lt; CHI1.</p>
+<p>With the above definition, the F value is computed as:</p>
+<blockquote>
+<div>F = ( (CHI1-CHI2)/(DOF1-DOF2) )   /  (CHI2/DOF2)</div></blockquote>
+<p>where DOF1-DOF2 is equal to M, and then the F-test probability is
+computed as:</p>
+<blockquote>
+<div>PROB = MPFTEST(F, DOF1-DOF2, DOF2, ... )</div></blockquote>
+<p>Note that this formalism assumes that the addition of the M
+parameters is a small peturbation to the overall fit.  If the
+additional parameters dramatically changes the character of the
+model, then the first &#8220;ratio of variance&#8221; test is more appropriate,
+where F = (CHI1/DOF1) / (CHI2/DOF2).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.get_rms">
+<code class="descclassname">mystats.</code><code class="descname">get_rms</code><span class="sig-paren">(</span><em>x</em>, <em>axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#get_rms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.get_rms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the rms of an array.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="mystats.rv2d_discrete">
+<em class="property">class </em><code class="descclassname">mystats.</code><code class="descname">rv2d_discrete</code><span class="sig-paren">(</span><em>likelihoods=None</em>, <em>param_grid1=None</em>, <em>param_grid2=None</em>, <em>param_name1='param1'</em>, <em>param_name2='param2'</em>, <em>L_scalar=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#rv2d_discrete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.rv2d_discrete" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic discrete 2D random variable class meant for subclassing.
+Similar to scipy.stats.rv_discrete.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>likelihoods</strong> : array-like</p>
+<blockquote>
+<div><p>N x M array of relative likelihoods corresponding to parameter 1 and 2
+values.</p>
+</div></blockquote>
+<p><strong>param_grid1, param_grid2</strong> : array-like</p>
+<blockquote>
+<div><p>Parameter values corresponding to element positions of likelihoods.
+The lengths of param_grid1 and param_grid2 must be N and M respectively.</p>
+</div></blockquote>
+<p><strong>param_name1, param_name2</strong> : str</p>
+<blockquote>
+<div><p>Names of parameters 1 and 2.</p>
+</div></blockquote>
+<p><strong>L_scalar</strong> : float</p>
+<blockquote class="last">
+<div><p>Inverse scalar of the likelihoods to calculate the 2D PDF. The
+likelihoods are divided by the minimum non-zero likelihood otherwise.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="attribute">
+<dt id="mystats.rv2d_discrete.np">
+<code class="descname">np</code><em class="property"> = &lt;module 'numpy' from '/usr/local/lib64/python2.7/site-packages/numpy/__init__.pyc'&gt;</em><a class="headerlink" href="#mystats.rv2d_discrete.np" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mystats.rv2d_discrete.rvs">
+<code class="descname">rvs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#rv2d_discrete.rvs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.rv2d_discrete.rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns parameters random sample from the pdf.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mystats.rv3d_discrete">
+<em class="property">class </em><code class="descclassname">mystats.</code><code class="descname">rv3d_discrete</code><span class="sig-paren">(</span><em>likelihoods=None</em>, <em>param_grid1=None</em>, <em>param_grid2=None</em>, <em>param_grid3=None</em>, <em>param_name1='param1'</em>, <em>param_name2='param2'</em>, <em>param_name3='param3'</em>, <em>L_scalar=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#rv3d_discrete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.rv3d_discrete" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic discrete 3D random variable class meant for subclassing.
+Similar to scipy.stats.rv_discrete.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>likelihoods</strong> : array-like</p>
+<blockquote>
+<div><p>N x M X P array of relative likelihoods corresponding to parameter 1
+2, and 3 values.</p>
+</div></blockquote>
+<p><strong>param_grid1, param_grid2, param_grid3: array-like</strong></p>
+<blockquote>
+<div><p>Parameter values corresponding to element positions of likelihoods.
+The lengths of param_grid1, param_grid2 and param_grid3 must be N and M
+and P respectively.</p>
+</div></blockquote>
+<p><strong>param_name1, param_name2, param_name3</strong> : str</p>
+<blockquote>
+<div><p>Names of parameters 1, 2 and 3.</p>
+</div></blockquote>
+<p><strong>L_scalar</strong> : float</p>
+<blockquote class="last">
+<div><p>Inverse scalar of the likelihoods to calculate the 3D PDF. The
+likelihoods are divided by the minimum non-zero likelihood otherwise.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="attribute">
+<dt id="mystats.rv3d_discrete.np">
+<code class="descname">np</code><em class="property"> = &lt;module 'numpy' from '/usr/local/lib64/python2.7/site-packages/numpy/__init__.pyc'&gt;</em><a class="headerlink" href="#mystats.rv3d_discrete.np" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mystats.rv3d_discrete.rvs">
+<code class="descname">rvs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#rv3d_discrete.rvs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.rv3d_discrete.rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns parameters random sample from the pdf.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.unique_permutations">
+<code class="descclassname">mystats.</code><code class="descname">unique_permutations</code><span class="sig-paren">(</span><em>elements</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#unique_permutations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.unique_permutations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unique permutations of a set of elements</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>elements</strong> : array-like</p>
+<blockquote>
+<div><p>List of N elements to be permutated</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>permutations</strong> : array-like</p>
+<blockquote class="last">
+<div><p>N x M array, where M is the number of unique permutations.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <span class="target" id="module-mygeometry"></span><dl class="function">
 <dt id="mygeometry.create_wedge">
 <code class="descclassname">mygeometry.</code><code class="descname">create_wedge</code><span class="sig-paren">(</span><em>center_pos</em>, <em>radius</em>, <em>angle</em>, <em>center_rel_pos=0.1</em>, <em>width=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mygeometry.html#create_wedge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.create_wedge" title="Permalink to this definition">¶</a></dt>
@@ -310,7 +1037,7 @@ axis is the velocity axis in km/s using the radio definition.</p>
 <span class="target" id="module-myimage_analysis"></span><p>Module for image analysis in astro applications.</p>
 <dl class="function">
 <dt id="myimage_analysis.bin_image">
-<code class="descclassname">myimage_analysis.</code><code class="descname">bin_image</code><span class="sig-paren">(</span><em>ndarray</em>, <em>binsize=(1</em>, <em>1)</em>, <em>header=None</em>, <em>origin='lower left'</em>, <em>statistic=&lt;function nansum at 0x3846848&gt;</em>, <em>return_weights=False</em>, <em>weights=None</em>, <em>quick_bin=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#bin_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.bin_image" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">myimage_analysis.</code><code class="descname">bin_image</code><span class="sig-paren">(</span><em>ndarray</em>, <em>binsize=(1</em>, <em>1)</em>, <em>header=None</em>, <em>origin='lower left'</em>, <em>statistic=&lt;function nansum at 0x2f647d0&gt;</em>, <em>return_weights=False</em>, <em>weights=None</em>, <em>quick_bin=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#bin_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.bin_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bins an image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -371,7 +1098,7 @@ used to create a binned pixel?</p>
 
 <dl class="function">
 <dt id="myimage_analysis.calc_spectrum">
-<code class="descclassname">myimage_analysis.</code><code class="descname">calc_spectrum</code><span class="sig-paren">(</span><em>cube</em>, <em>statistic=&lt;function nanmedian at 0x6254500&gt;</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#calc_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calc_spectrum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">myimage_analysis.</code><code class="descname">calc_spectrum</code><span class="sig-paren">(</span><em>cube</em>, <em>statistic=&lt;function nanmedian at 0x5ffa398&gt;</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#calc_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calc_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the spectrum of a cube. Assumes velocity axis is 0th
 dimension of cube.</p>
 </dd></dl>
@@ -544,7 +1271,7 @@ box(4:17:04.740,+29:20:31.32,5854.33&#8221;,11972.7&#8221;,130) # text={test}</d
 coordinates of the image or DS9 regions.</p>
 </dd></dl>
 
-</div>
+<span class="target" id="module-myscience"></span></div>
 
 
           </div>
