@@ -1,7 +1,0 @@
-.. _intro:
-
-===============
- Introduction
-===============
-
-First version of the documenation. Good luck.
