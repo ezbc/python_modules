@@ -11,6 +11,7 @@ def scatter_contour(x, y,
                     errors=None,
                     contour_args={},
                     ax=None):
+
     """Scatter plot with contour over dense regions
 
     Parameters
@@ -376,13 +377,14 @@ def corner_plot(distributions, plot_grids=None, labels=None,
         plt.savefig(filename, bbox_inches='tight')
 
 def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids,
-        logscale=False, plot_confs=True):
+        logscale=False, plot_confs=None):
 
     # Get the axes to marginalize the distributions over
     dist_axes = np.arange(distributions.ndim)
     marg_axes = dist_axes[dist_axes != plot_axis]
     if not isinstance(marg_axes, np.int64):
         marg_axes = tuple(marg_axes)
+
 
     # Derive the histogram
     hist = np.nansum(distributions, axis=marg_axes)
@@ -406,31 +408,6 @@ def _plot_corner_1dhist(ax, distributions, plot_axis, plot_grids,
                         )
 
         ax.axvline(plot_confs[1],
-
-    if plot_confs:
-        # get plotted hist
-        #xdata = lines[0].get_path().vertices[:,0]
-        #ydata = lines[0].get_path().vertices[:,1]
-        xdata = plot_grid
-        ydata = hist
-        cdf = np.cumsum(ydata) / sum(ydata)
-
-        # get the left and right boundary of the interval that contains 95% of
-        # the probability mass
-        right = np.argmax(cdf > 0.975)
-        left = np.argmax(cdf > 0.025)
-        center = np.argmax(cdf > 0.5)
-
-        conf_interval = np.array([xdata[left],
-                                  xdata[center],
-                                  xdata[right],]
-                                  )
-        if 0:
-            ax.fill_between(xdata[left:right],
-                            ydata[left:right],
-                            facecolor='k',
-                            alpha=0.5)
-        ax.axvline(xdata[center],
                    alpha=0.5,
                    linewidth=2,
                    color='k',
