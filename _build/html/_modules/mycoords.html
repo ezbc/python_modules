@@ -8,7 +8,7 @@
     
     <title>mycoords &mdash; custom_modules 0.0.1 documentation</title>
     
-    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -37,15 +37,15 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for mycoords</h1><div class="highlight"><pre>
 <span class="ch">#!/usr/bin/python</span>
@@ -62,8 +62,8 @@
 
     <span class="n">array</span> <span class="o">=</span> <span class="p">(</span><span class="n">arange</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="s1">&#39;NAXIS3&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;CRPIX3&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;CDELT3&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span><span class="p">[</span><span class="s1">&#39;CRVAL3&#39;</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">array</span> <span class="o">/</span> <span class="mf">1000.</span>
-</div>
+    <span class="k">return</span> <span class="n">array</span> <span class="o">/</span> <span class="mf">1000.</span></div>
+
 <div class="viewcode-block" id="calc_image_origin"><a class="viewcode-back" href="../code.html#mycoords.calc_image_origin">[docs]</a><span class="k">def</span> <span class="nf">calc_image_origin</span><span class="p">(</span><span class="n">x_limits</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">y_limits</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">delta_x</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">delta_y</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
         <span class="n">coord_type</span><span class="o">=</span><span class="s1">&#39;equatorial&#39;</span><span class="p">,</span> <span class="n">ref_wcs</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)):</span>
 
@@ -127,8 +127,8 @@
 
     <span class="n">npix</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_length_pix</span><span class="p">,</span> <span class="n">y_length_pix</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">ref_pixel</span><span class="p">,</span> <span class="n">npix</span>
-</div>
+    <span class="k">return</span> <span class="n">ref_pixel</span><span class="p">,</span> <span class="n">npix</span></div>
+
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        dec_range = (21.3, 30.3)</span>
 <span class="sd">        ra_range = (60.0, 73.0)</span>
@@ -204,8 +204,8 @@
     <span class="c1">#pix_coords = wcs_header.wcs_sky2pix([[ra_deg, dec_deg, 0]], 0)[0]</span>
     <span class="n">pix_coords</span> <span class="o">=</span> <span class="n">wcs_header</span><span class="o">.</span><span class="n">wcs_world2pix</span><span class="p">([[</span><span class="n">ra_deg</span><span class="p">,</span> <span class="n">dec_deg</span><span class="p">],],</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pix_coords</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-</div>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pix_coords</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="hrs2degs"><a class="viewcode-back" href="../code.html#mycoords.hrs2degs">[docs]</a><span class="k">def</span> <span class="nf">hrs2degs</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Ra and dec tuples in hrs min sec and deg arcmin arcsec.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
@@ -213,8 +213,8 @@
     <span class="n">ra_deg</span> <span class="o">=</span> <span class="mi">15</span><span class="o">*</span><span class="p">(</span><span class="n">ra</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">ra</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">60.</span> <span class="o">+</span> <span class="n">ra</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mf">3600.</span><span class="p">)</span>
     <span class="n">dec_deg</span> <span class="o">=</span> <span class="n">dec</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dec</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">60.</span> <span class="o">+</span> <span class="n">dec</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mf">3600.</span>
 
-    <span class="k">return</span> <span class="p">(</span><span class="n">ra_deg</span><span class="p">,</span> <span class="n">dec_deg</span><span class="p">)</span>
-</div>
+    <span class="k">return</span> <span class="p">(</span><span class="n">ra_deg</span><span class="p">,</span> <span class="n">dec_deg</span><span class="p">)</span></div>
+
 <span class="k">def</span> <span class="nf">load_ds9_region</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;regions&#39;</span><span class="p">):</span>
 
     <span class="kn">import</span> <span class="nn">pyregion</span> <span class="kn">as</span> <span class="nn">pyr</span>
@@ -251,14 +251,20 @@
             <span class="n">props</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">region_name</span><span class="p">][</span><span class="s1">&#39;poly_verts&#39;</span><span class="p">][</span><span class="s1">&#39;pixel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poly_verts_pix</span>
 
     <span class="k">return</span> <span class="n">props</span>
+
+
+
+
+
+
 </pre></div>
 
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -275,7 +281,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -284,13 +290,13 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2016, Elijah Bernstein-Cooper.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4a0+.
     </div>
   </body>
 </html>

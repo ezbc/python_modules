@@ -8,7 +8,7 @@
     
     <title>myimage_analysis &mdash; custom_modules 0.0.1 documentation</title>
     
-    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -37,15 +37,15 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for myimage_analysis</h1><div class="highlight"><pre>
 <span class="ch">#!/usr/bin/python</span>
@@ -106,8 +106,8 @@
 
     <span class="n">image</span> <span class="o">-=</span> <span class="n">image_fit</span>
 
-    <span class="k">return</span> <span class="n">image</span>
-</div>
+    <span class="k">return</span> <span class="n">image</span></div>
+
 <div class="viewcode-block" id="read_ds9_region"><a class="viewcode-back" href="../code.html#myimage_analysis.read_ds9_region">[docs]</a><span class="k">def</span> <span class="nf">read_ds9_region</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Converts DS9 region file into format for plotting region.</span>
@@ -140,8 +140,8 @@
     <span class="c1"># [64.26975, 29.342033333333333, 1.6262027777777777, 3.32575, 130.0]</span>
     <span class="c1"># [ra center, dec center, width, height, rotation angle]</span>
 
-    <span class="k">return</span> <span class="n">region</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coord_list</span>
-</div>
+    <span class="k">return</span> <span class="n">region</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">coord_list</span></div>
+
 <div class="viewcode-block" id="calc_region_mask"><a class="viewcode-back" href="../code.html#myimage_analysis.calc_region_mask">[docs]</a><span class="k">def</span> <span class="nf">calc_region_mask</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,):</span>
 
     <span class="sd">&#39;&#39;&#39; Masks all pixels which are not within the region.</span>
@@ -158,8 +158,8 @@
     <span class="n">region_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">myg</span><span class="o">.</span><span class="n">get_polygon_mask</span><span class="p">(</span><span class="n">data</span><span class="p">,</span>
                                                       <span class="n">region_vertices</span><span class="p">))</span>
 
-    <span class="k">return</span> <span class="n">region_mask</span>
-</div>
+    <span class="k">return</span> <span class="n">region_mask</span></div>
+
 <span class="k">def</span> <span class="nf">load_ds9_region</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">region_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
 
     <span class="kn">import</span> <span class="nn">pyregion</span> <span class="kn">as</span> <span class="nn">pyr</span>
@@ -223,8 +223,8 @@
     <span class="n">wcs_header</span> <span class="o">=</span> <span class="n">WCS</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
     <span class="n">pix_coords</span> <span class="o">=</span> <span class="n">wcs_header</span><span class="o">.</span><span class="n">wcs_world2pix</span><span class="p">([[</span><span class="n">ra_deg</span><span class="p">,</span> <span class="n">dec_deg</span><span class="p">],],</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pix_coords</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-</div>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">pix_coords</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="hrs2degs"><a class="viewcode-back" href="../code.html#myimage_analysis.hrs2degs">[docs]</a><span class="k">def</span> <span class="nf">hrs2degs</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Ra and dec tuples in hrs min sec and deg arcmin arcsec.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
@@ -232,8 +232,8 @@
     <span class="n">ra_deg</span> <span class="o">=</span> <span class="mi">15</span><span class="o">*</span><span class="p">(</span><span class="n">ra</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">ra</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">60.</span> <span class="o">+</span> <span class="n">ra</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mf">3600.</span><span class="p">)</span>
     <span class="n">dec_deg</span> <span class="o">=</span> <span class="n">dec</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dec</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">60.</span> <span class="o">+</span> <span class="n">dec</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mf">3600.</span>
 
-    <span class="k">return</span> <span class="p">(</span><span class="n">ra_deg</span><span class="p">,</span> <span class="n">dec_deg</span><span class="p">)</span>
-</div>
+    <span class="k">return</span> <span class="p">(</span><span class="n">ra_deg</span><span class="p">,</span> <span class="n">dec_deg</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="bin_image"><a class="viewcode-back" href="../code.html#myimage_analysis.bin_image">[docs]</a><span class="k">def</span> <span class="nf">bin_image</span><span class="p">(</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">binsize</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower left&#39;</span><span class="p">,</span>
         <span class="n">statistic</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">,</span> <span class="n">return_weights</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
         <span class="n">quick_bin</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
@@ -421,8 +421,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">ndarray_bin</span>
 
-    <span class="k">return</span> <span class="n">result</span>
-</div>
+    <span class="k">return</span> <span class="n">result</span></div>
+
 <span class="k">def</span> <span class="nf">_bin_image</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">binsize</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower left&#39;</span><span class="p">,</span>
         <span class="n">func</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">,</span> <span class="n">return_weights</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
 
@@ -748,8 +748,8 @@
         <span class="n">nhi_image_error</span> <span class="o">=</span> <span class="n">image_error</span> <span class="o">*</span> <span class="mf">1.823e-2</span> <span class="o">*</span> <span class="n">delta_v</span>
         <span class="k">return</span> <span class="n">nhi_image</span><span class="p">,</span> <span class="n">nhi_image_error</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">nhi_image</span>
-</div>
+        <span class="k">return</span> <span class="n">nhi_image</span></div>
+
 <div class="viewcode-block" id="calculate_noise_cube"><a class="viewcode-back" href="../code.html#myimage_analysis.calculate_noise_cube">[docs]</a><span class="k">def</span> <span class="nf">calculate_noise_cube</span><span class="p">(</span><span class="n">cube</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">velocity_axis</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
             <span class="n">velocity_noise_range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">110</span><span class="p">,</span><span class="o">-</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">110</span><span class="p">],</span> <span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">Tsys</span><span class="o">=</span><span class="mf">30.</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -773,8 +773,8 @@
     <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">fits</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">noise_cube</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">noise_cube</span>
-</div>
+    <span class="k">return</span> <span class="n">noise_cube</span></div>
+
 <div class="viewcode-block" id="calculate_noise"><a class="viewcode-back" href="../code.html#myimage_analysis.calculate_noise">[docs]</a><span class="k">def</span> <span class="nf">calculate_noise</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">velocity_axis</span><span class="p">,</span> <span class="n">velocity_range</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Calculates rms noise of Tile profile given velocity ranges.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -793,8 +793,8 @@
         <span class="n">std</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">profile</span><span class="p">[</span><span class="n">noise_region</span><span class="p">])</span>
 
     <span class="n">std</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">velocity_range</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="k">return</span> <span class="n">std</span>
-</div>
+    <span class="k">return</span> <span class="n">std</span></div>
+
 <div class="viewcode-block" id="calculate_noise_scale"><a class="viewcode-back" href="../code.html#myimage_analysis.calculate_noise_scale">[docs]</a><span class="k">def</span> <span class="nf">calculate_noise_scale</span><span class="p">(</span><span class="n">Tsys</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Creates an array for scaling the noise by (Tsys + Tb) / Tsys</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -802,8 +802,8 @@
     <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">profile</span><span class="p">))</span>
     <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="n">Tsys</span> <span class="o">+</span> <span class="n">profile</span><span class="p">)</span> <span class="o">/</span> <span class="n">Tsys</span> <span class="o">*</span> <span class="n">noise</span>
 
-    <span class="k">return</span> <span class="n">n</span>
-</div>
+    <span class="k">return</span> <span class="n">n</span></div>
+
 <div class="viewcode-block" id="calculate_sd"><a class="viewcode-back" href="../code.html#myimage_analysis.calculate_sd">[docs]</a><span class="k">def</span> <span class="nf">calculate_sd</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">sd_factor</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mf">1.25</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Calculates a surface density image given a velocity range within which</span>
@@ -822,8 +822,8 @@
     <span class="c1"># NHI in units of 1e20 cm^-2</span>
     <span class="n">sd_image</span> <span class="o">=</span> <span class="n">image</span> <span class="o">*</span> <span class="n">sd_factor</span>
 
-    <span class="k">return</span> <span class="n">sd_image</span>
-</div>
+    <span class="k">return</span> <span class="n">sd_image</span></div>
+
 <div class="viewcode-block" id="calculate_nh2"><a class="viewcode-back" href="../code.html#myimage_analysis.calculate_nh2">[docs]</a><span class="k">def</span> <span class="nf">calculate_nh2</span><span class="p">(</span><span class="n">nhi_image</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">av_image</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">dgr</span> <span class="o">=</span> <span class="mf">1.1e-1</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Calculates the total gas column density given N(HI), A_v and a</span>
@@ -837,8 +837,8 @@
 
     <span class="n">nh2_image</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">av_image</span> <span class="o">/</span> <span class="n">dgr</span> <span class="o">-</span> <span class="n">nhi_image</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">nh2_image</span>
-</div>
+    <span class="k">return</span> <span class="n">nh2_image</span></div>
+
 <div class="viewcode-block" id="calculate_nh2_error"><a class="viewcode-back" href="../code.html#myimage_analysis.calculate_nh2_error">[docs]</a><span class="k">def</span> <span class="nf">calculate_nh2_error</span><span class="p">(</span><span class="n">nhi_image_error</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">av_image_error</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dgr</span><span class="o">=</span><span class="mf">1.1e-1</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Calculates the total gas column density given N(HI), A_v and a</span>
@@ -853,8 +853,8 @@
     <span class="n">nh2_image_error</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">av_image_error</span> <span class="o">/</span> <span class="n">dgr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> \
             <span class="n">nhi_image_error</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
 
-    <span class="k">return</span> <span class="n">nh2_image_error</span>
-</div>
+    <span class="k">return</span> <span class="n">nh2_image_error</span></div>
+
 <span class="k">def</span> <span class="nf">fit_background</span><span class="p">(</span><span class="n">av_data</span><span class="p">,</span> <span class="n">background_mask</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">background_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 
     <span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp2d</span>
@@ -903,8 +903,8 @@
 
     <span class="n">spectrum</span> <span class="o">=</span> <span class="n">statistic</span><span class="p">(</span><span class="n">cube</span><span class="p">[:,</span> <span class="o">~</span><span class="n">mask</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">spectrum</span>
-</div>
+    <span class="k">return</span> <span class="n">spectrum</span></div>
+
 <div class="viewcode-block" id="get_radial_profile"><a class="viewcode-back" href="../code.html#myimage_analysis.get_radial_profile">[docs]</a><span class="k">def</span> <span class="nf">get_radial_profile</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">binsize</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">mask</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
 
@@ -924,8 +924,8 @@
             <span class="n">stddev</span><span class="o">=</span><span class="n">stddev</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">interpnan</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">returnradii</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
             <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">result</span>
-</div>
+    <span class="k">return</span> <span class="n">result</span></div>
+
 <div class="viewcode-block" id="crop_cube"><a class="viewcode-back" href="../code.html#myimage_analysis.crop_cube">[docs]</a><span class="k">def</span> <span class="nf">crop_cube</span><span class="p">(</span><span class="n">cube</span><span class="p">,</span> <span class="n">vel_axis</span><span class="p">,</span> <span class="n">vel_range</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Crops a cube to include only velocities within vel_range.</span>
@@ -937,8 +937,8 @@
     <span class="n">cube_crop</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="n">crop_indices</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
     <span class="n">vel_axis_crop</span> <span class="o">=</span> <span class="n">vel_axis</span><span class="p">[</span><span class="n">crop_indices</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">cube_crop</span><span class="p">,</span> <span class="n">vel_axis_crop</span>
-</div>
+    <span class="k">return</span> <span class="n">cube_crop</span><span class="p">,</span> <span class="n">vel_axis_crop</span></div>
+
 <div class="viewcode-block" id="calculate_moment"><a class="viewcode-back" href="../code.html#myimage_analysis.calculate_moment">[docs]</a><span class="k">def</span> <span class="nf">calculate_moment</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">moment</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Calculates moment of data. Weights needed for moment of 1 or 2.</span>
@@ -958,15 +958,17 @@
         <span class="n">M1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">data</span><span class="o">*</span><span class="n">weights</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">data</span><span class="o">*</span><span class="p">(</span><span class="n">weights</span><span class="o">-</span><span class="n">M1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
 
-    <span class="k">return</span> <span class="n">result</span>
-</pre></div></div>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+</pre></div>
 
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -983,7 +985,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -992,13 +994,13 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2016, Elijah Bernstein-Cooper.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4a0+.
     </div>
   </body>
 </html>
