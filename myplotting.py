@@ -1,277 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-def delete_overlapping_xlabels(fig, ax):
-
-    ''' Deletes overlapping xtick labels'''
-
-    import numpy as np
-
-    fig.canvas.draw()
-    major_labels = ax.get_xticklabels(minor=False)
-    new_major_text = [item.get_text() for item in major_labels]
-
-    print new_major_text
-
-    old_box = None
-    for i, label in enumerate(major_labels):
-        new_box = label.get_window_extent().get_points()[:, 0]
-
-        if old_box is not None:
-            if ((new_box[0] < old_box[1]) & \
-                (new_box[0] > old_box[0])):
-                new_major_text[i] = ''
-                new_box = [np.nan, np.nan]
-
-        old_box = new_box
-
-    ax.set_xticklabels(new_major_text)
-
-    # minor ticks
-    fig.canvas.draw()
-    minor_labels = ax.get_xticklabels(minor=True)
-    new_minor_text = [item.get_text() for item in minor_labels]
-
-    print new_minor_text
-
-    old_box = None
-    for i, label in enumerate(minor_labels):
-        new_box = label.get_window_extent().get_points()[:, 0]
-
-        print new_box, new_minor_text[i]
-
-        if old_box is not None:
-            if (((new_box[0] > old_box[0]) & \
-                 (new_box[0] < old_box[1])) | \
-                ((new_box[1] > old_box[0]) & \
-                 (new_box[1] < old_box[1]))):
-                print 'bounded'
-                new_minor_text[i] = ''
-                new_box = [np.nan, np.nan]
-
-        old_box = new_box
-
-    ax.set_xticklabels(new_minor_text, minor=True)
-
-    # minor ticks against major
-    fig.canvas.draw()
-    minor_labels = ax.get_xticklabels(minor=True)
-    major_labels = ax.get_xticklabels(minor=False)
-    new_minor_text = [item.get_text() for item in minor_labels]
-
-    for i, minor_label in enumerate(minor_labels):
-        box_minor = minor_label.get_window_extent().get_points()[:, 0]
-
-        for major_label in major_labels:
-            box_major = \
-                    major_label.get_window_extent().get_points()[:, 0]
-
-            if (((box_minor[0] > box_major[0]) & \
-                 (box_minor[0] < box_major[1])) | \
-                ((box_minor[1] > box_major[0]) & \
-                 (box_minor[1] < box_major[1]))):
-                new_minor_text[i] = ''
-
-    ax.set_xticklabels(new_minor_text, minor=True)
-
-    return ax
-
-
-def delete_overlapping_xlabels2(fig, ax):
-
-    ''' Deletes overlapping xtick labels'''
-
-    import numpy as np
-
-    fig.canvas.draw()
-    major_labels = ax.get_xticklabels(minor=False)
-    new_major_text = [item.get_text() for item in major_labels]
-
-    print new_major_text
-
-    old_box = None
-    for i in xrange(len(major_labels)):
-        label = major_labels[i]
-        new_box = label.get_window_extent().get_points()[:, 0]
-
-        if old_box is not None:
-            for j in xrange(i):
-                old_box = major_labels[j].get_window_extent().get_points()[:, 0]
-                if new_box[1] > old_box[0]:
-                    new_major_text[i] = ''
-                    new_box = [np.nan, np.nan]
-
-        old_box = new_box
-
-    print new_major_text
-    ax.set_xticklabels(new_major_text)
-
-    # minor ticks
-    fig.canvas.draw()
-    minor_labels = ax.get_xticklabels(minor=True)
-    new_minor_text = [item.get_text() for item in minor_labels]
-
-    print new_minor_text
-
-    old_box = None
-    for i in xrange(len(minor_labels)):
-        label = minor_labels[i]
-        new_box = label.get_window_extent().get_points()[:, 0]
-
-        if old_box is not None:
-            # check
-            for j in xrange(i):
-                old_box = minor_labels[j].get_window_extent().get_points()[:, 0]
-                if new_box[1] > old_box[0]:
-                    new_minor_text[i] = ''
-                    new_box = [np.nan, np.nan]
-
-        old_box = new_box
-
-    ax.set_xticklabels(new_minor_text, minor=True)
-
-    # minor ticks against major
-    fig.canvas.draw()
-    minor_labels = ax.get_xticklabels(minor=True)
-    major_labels = ax.get_xticklabels(minor=False)
-    new_minor_text = [item.get_text() for item in minor_labels]
-
-    for i, minor_label in enumerate(minor_labels):
-        box_minor = minor_label.get_window_extent().get_points()[:, 0]
-
-        for major_label in major_labels:
-            box_major = \
-                    major_label.get_window_extent().get_points()[:, 0]
-
-            if (((box_minor[0] > box_major[0]) & \
-                 (box_minor[0] < box_major[1])) | \
-                ((box_minor[1] > box_major[0]) & \
-                 (box_minor[1] < box_major[1]))):
-                new_minor_text[i] = ''
-
-    ax.set_xticklabels(new_minor_text, minor=True)
-
-    return ax
-
-
-def delete_overlapping_xlabels3(fig, ax):
-
-    ''' Deletes overlapping xtick labels'''
-
-    import numpy as np
-
-    fig.canvas.draw()
-    major_labels = ax.get_xticklabels(minor=False)
-    new_major_text = [item.get_text() for item in major_labels]
-    bboxes = [label.get_window_extent() for label in major_labels]
-
-    bbox_overlaps = check_overlaps(bboxes)
-    overlaps = any(bbox_overlaps)
-
-    while overlaps:
-        i = np.argmax(bbox_overlaps)
-        new_major_text[i] = ''
-        bboxes[i].set_points(np.array([[np.nan, np.nan], [np.nan, np.nan]]))
-        bbox_overlaps = check_overlaps(bboxes)
-        overlaps = any(bbox_overlaps)
-
-    ax.set_xticklabels(new_major_text)
-
-
-def check_overlaps(bboxes):
-
-    '''
-    takes list of bboxes
-    returns a list of how many times each bbox overlaps with other bboxes
-    '''
-
-    overlaps = [0] * len(bboxes)
-    for i, box in enumerate(bboxes):
-        for other_box in bboxes:
-            if (box != other_box):
-                #overlaps[i] += box.overlaps(other_box)
-                overlaps[i] += check_overlaps(box, other_box)
-    return overlaps
-
-
-def check_overlaps(bbox1, bbox2):
-    """
-    Returns True if this bounding box overlaps with the given
-    bounding box *other*. OR IF NANA!
-    """
-    ax1, ay1, ax2, ay2 = bbox1._get_extents()
-    bx1, by1, bx2, by2 = bbox2._get_extents()
-
-    if ax2 < ax1:
-        ax2, ax1 = ax1, ax2
-    if ay2 < ay1:
-        ay2, ay1 = ay1, ay2
-    if bx2 < bx1:
-        bx2, bx1 = bx1, bx2
-    if by2 < by1:
-        by2, by1 = by1, by2
-
-    if np.isnan(np.sum(extents1)) or np.isnan(np.sum(extents2)):
-        return False
-
-    return not ((bx2 < ax1) or
-                (by2 < ay1) or
-                (bx1 > ax2) or
-                (by1 > ay2))
-
-def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
-
-    ''' Truncates a matplolib.colors colormap to a smaller range.
-
-    Parameters
-    ----------
-    cmap : matplotlib.pyplot.cm
-        Colormap
-    minval : float
-        Lower value to truncate.
-    maxval : float
-        Upper value to truncate
-    n : int
-        Number of discrete samples of colormap between minval and maxval.
-
-    Returns
-    -------
-    new_cmap : matplotlib.pyplot.cm
-        Truncated colormap
-
-    '''
-
-    import matplotlib.colors as colors
-
-    new_cmap = colors.LinearSegmentedColormap.from_list(
-        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
-        cmap(np.linspace(minval, maxval, n)))
-
-    return new_cmap
-
-def reverse_colormap(cmap):
-
-    ''' Reverses a matplolib.colors colormap.
-
-    Parameters
-    ----------
-    cmap : matplotlib.pyplot.cm
-        Colormap
-
-    Returns
-    -------
-    cmap_r : matplotlib.pyplot.cm
-        Reversed colormap
-
-    '''
-
-    from matplotlib.colors import ListedColormap
-
-    cmap_r = ListedColormap(cmap.colors[::-1])
-
-    return cmap_r
-
 def scatter_contour(x, y,
                     levels=10,
                     fractional_levels=True,
@@ -310,6 +39,13 @@ def scatter_contour(x, y,
     ax : pylab.Axes instance
         the axes on which to plot.  If not specified, the current
         axes will be used
+
+    Returns
+    -------
+    level_fractions : numpy.array
+        Data fraction levels for each contour.
+
+
     """
 
     import matplotlib.pyplot as plt
@@ -388,6 +124,105 @@ def scatter_contour(x, y,
 
     return level_fractions[:-1]
 
+def plot_cdf_confint(data, data_error=0, ax=None, plot_kwargs_line={},
+        plot_kwargs_fill_between={}, return_axis=False, nsim=100, nbins=20,
+        bin_limits=None):
+
+    ''' Performs Monte Carlo simulation with data error to calculate the CDF
+    point-wise confidence interval.
+
+    Parameters
+    ----------
+    data : array-like
+        Distribution of data.
+    data_error : float, array-like
+        Normal error on data. If an array, must have same dimensions as data.
+    ax : matplotlib.pyplot.axis, optional
+        If provided, adds plot to axis object. Else plots matplotlib.pyplot.
+    plot_kwargs_line : dict, optional
+        Kwargs to provide to matplotlib.pyplot.plot for median CDF.
+    plot_kwargs_fill_between : dict, optional
+        Kwargs to provide to matplotlib.pyplot.fill_between for CDF confidence
+        interval.
+    return_axis : bool, optional
+        Return the CDF bin values of the data?
+    nsim : int, optional
+        Number of Monte Carlo simulations to run.
+    nbins : int, optional
+        Number of bins with which to sample the simulated data.
+    bin_limits : array-like, optional
+        Lower and upper bound of bins with which to calculate point-wise
+        confidence intervals.
+
+    Returns
+    -------
+    x : array-like, optional
+        If return_axis is True, then the CDF sample locations for the original
+        dataset is returned.
+
+    '''
+
+    import mystats
+
+    # Initialize CDF array
+    cdfs = np.empty((nsim, data.size))
+    xs = np.empty((nsim, data.size))
+
+    # simulate different CDFs in monte carlo
+    for i in xrange(nsim):
+        data_sim = data + np.random.normal(scale=data_error)
+        cdfs[i], xs[i] = mystats.calc_cdf(data_sim, return_axis=True)
+
+    # initialize new plotted x-values / bins for confidence interval
+    if bin_limits is None:
+        x_fit = np.linspace(np.min(xs), np.max(xs), nbins, endpoint=True)
+    else:
+        if bin_limits[0] is not None:
+            lim_low = bin_limits[0]
+        else:
+            lim_low = np.min(xs)
+        if bin_limits[1] is not None:
+            lim_high = bin_limits[1]
+        else:
+            lim_high = np.max(xs)
+        x_fit = np.linspace(lim_low, lim_high, nbins, endpoint=True)
+
+    # initialize empty array for confidence interval
+    cdf_confint = np.ones((3, x_fit.size))
+
+    # Calculate the median and uncertainty on the median in each bin given the
+    # simulation results
+    for i in xrange(x_fit.size - 1):
+        cdf_bin = cdfs[(xs >= x_fit[i]) & (xs < x_fit[i+1])]
+        median, conf_err = mystats.calc_cdf_error(cdf_bin)
+        cdf_confint[1, i] = median
+        cdf_confint[0, i] = median - conf_err[0]
+        cdf_confint[2, i] = median + conf_err[1]
+
+    # Use center of bins to plot
+    x_plot = x_fit + (x_fit[1] - x_fit[0]) / 2.0
+
+    # eliminate nans
+    nan_mask = (np.isnan(cdf_confint[0]) | \
+                np.isnan(cdf_confint[1]) | \
+                np.isnan(cdf_confint[2]))
+    cdf_confint = cdf_confint[:, ~nan_mask]
+    x_plot = x_plot[~nan_mask]
+
+    # Plot the results with the median estimate and the confidence interval
+    if ax is None:
+        plt.plot(x_plot, cdf_confint[1], **plot_kwargs_line)
+        plt.fill_between(x_plot, cdf_confint[0], cdf_confint[2],
+                **plot_kwargs_fill_between)
+    else:
+        ax.plot(x_plot, cdf_confint[1], **plot_kwargs_line)
+        ax.fill_between(x_plot, cdf_confint[0], cdf_confint[2],
+                        **plot_kwargs_fill_between)
+
+    # Return the original data x axis?
+    if return_axis:
+        return x
+
 def set_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
 
     # color cycle, grabs colors from cmap
@@ -401,6 +236,36 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
     plt.rcParams.update(params)
 
     return color_cycle
+
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+
+    ''' Truncates a matplolib.colors colormap to a smaller range.
+
+    Parameters
+    ----------
+    cmap : matplotlib.pyplot.cm
+        Colormap
+    minval : float
+        Lower value to truncate.
+    maxval : float
+        Upper value to truncate
+    n : int
+        Number of discrete samples of colormap between minval and maxval.
+
+    Returns
+    -------
+    new_cmap : matplotlib.pyplot.cm
+        Truncated colormap
+
+    '''
+
+    import matplotlib.colors as colors
+
+    new_cmap = colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+
+    return new_cmap
 
 def corner_plot(distributions, plot_grids=None, labels=None,
         filename=None, logscale=False, confidence_intervals=None):
@@ -598,6 +463,161 @@ def _plot_corner_2dhist(ax, distributions, plot_axes, plot_grids,
             norm=norm,
             )
 
+def delete_overlapping_xlabels(fig, ax):
+
+    ''' Deletes overlapping xtick labels in axis.
+
+    Parameters
+    ----------
+    fig : matplotlib.pyplot.figure
+        Figure object.
+
+    ax : matplotlib.pyplot.axis
+        Axis object.
+
+    Returns
+    -------
+    ax : matplotlib.pyplot.axis
+        Axis object without overlapping xtick labels.
+
+    '''
+
+    import numpy as np
+
+    fig.canvas.draw()
+    major_labels = ax.get_xticklabels(minor=False)
+    new_major_text = [item.get_text() for item in major_labels]
+
+    old_box = None
+    for i, label in enumerate(major_labels):
+        new_box = label.get_window_extent().get_points()[:, 0]
+
+        if old_box is not None:
+            if ((new_box[0] < old_box[1]) & \
+                (new_box[0] > old_box[0])):
+                new_major_text[i] = ''
+                new_box = [np.nan, np.nan]
+
+        old_box = new_box
+
+    ax.set_xticklabels(new_major_text)
+
+    # minor ticks
+    fig.canvas.draw()
+    minor_labels = ax.get_xticklabels(minor=True)
+    new_minor_text = [item.get_text() for item in minor_labels]
+
+    old_box = None
+    for i, label in enumerate(minor_labels):
+        new_box = label.get_window_extent().get_points()[:, 0]
+
+        if old_box is not None:
+            if (((new_box[0] > old_box[0]) & \
+                 (new_box[0] < old_box[1])) | \
+                ((new_box[1] > old_box[0]) & \
+                 (new_box[1] < old_box[1]))):
+                new_minor_text[i] = ''
+                new_box = [np.nan, np.nan]
+
+        old_box = new_box
+
+    ax.set_xticklabels(new_minor_text, minor=True)
+
+    # minor ticks against major
+    fig.canvas.draw()
+    minor_labels = ax.get_xticklabels(minor=True)
+    major_labels = ax.get_xticklabels(minor=False)
+    new_minor_text = [item.get_text() for item in minor_labels]
+
+    for i, minor_label in enumerate(minor_labels):
+        box_minor = minor_label.get_window_extent().get_points()[:, 0]
+
+        for major_label in major_labels:
+            box_major = \
+                    major_label.get_window_extent().get_points()[:, 0]
+
+            if (((box_minor[0] > box_major[0]) & \
+                 (box_minor[0] < box_major[1])) | \
+                ((box_minor[1] > box_major[0]) & \
+                 (box_minor[1] < box_major[1]))):
+                new_minor_text[i] = ''
+
+    ax.set_xticklabels(new_minor_text, minor=True)
+
+    return ax
+
+def check_overlaps(bboxes):
+
+    '''
+    Returns a list of how many times each bbox overlaps with other bboxes.
+
+    Paramters
+    ---------
+    bboxes : list
+        List of matplotlib.transforms.Bbox objects.
+
+    Returns
+    -------
+    overlaps : list
+        List of number of overlaps the bbox has with neighbors.
+
+    '''
+
+    overlaps = [0] * len(bboxes)
+    for i, box in enumerate(bboxes):
+        for other_box in bboxes:
+            if (box != other_box):
+                #overlaps[i] += box.overlaps(other_box)
+                overlaps[i] += check_overlaps(box, other_box)
+    return overlaps
+
+def check_overlaps(bbox1, bbox2):
+    """
+    Returns True if this bounding box overlaps with the given
+    bounding box *other*. OR IF NANA!
+    """
+    ax1, ay1, ax2, ay2 = bbox1._get_extents()
+    bx1, by1, bx2, by2 = bbox2._get_extents()
+
+    if ax2 < ax1:
+        ax2, ax1 = ax1, ax2
+    if ay2 < ay1:
+        ay2, ay1 = ay1, ay2
+    if bx2 < bx1:
+        bx2, bx1 = bx1, bx2
+    if by2 < by1:
+        by2, by1 = by1, by2
+
+    if np.isnan(np.sum(extents1)) or np.isnan(np.sum(extents2)):
+        return False
+
+    return not ((bx2 < ax1) or
+                (by2 < ay1) or
+                (bx1 > ax2) or
+                (by1 > ay2))
+
+def reverse_colormap(cmap):
+
+    ''' Reverses a matplolib.colors colormap.
+
+    Parameters
+    ----------
+    cmap : matplotlib.pyplot.cm
+        Colormap
+
+    Returns
+    -------
+    cmap_r : matplotlib.pyplot.cm
+        Reversed colormap
+
+    '''
+
+    from matplotlib.colors import ListedColormap
+
+    cmap_r = ListedColormap(cmap.colors[::-1])
+
+    return cmap_r
+
 def convert_wcs_limits(limits, header, frame='fk5'):
 
     '''
@@ -643,87 +663,6 @@ def plot_cdf(data, ax=None, plot_kwargs={}, return_axis=False):
     else:
         ax.plot(x, cdf, **plot_kwargs)
 
-    if return_axis:
-        return x
-
-def plot_cdf_confint(data, data_error=0, ax=None, plot_kwargs_line={},
-        plot_kwargs_fill_between={}, return_axis=False, nsim=100, nbins=20):
-
-    ''' Performs Monte Carlo simulation with data error to calculate the CDF
-    point-wise confidence interval.
-
-    Parameters
-    ----------
-    data : array-like
-        Distribution of data.
-    data_error : float, array-like
-        Normal error on data. If an array, must have same dimensions as data.
-    ax : matplotlib.pyplot.axis, optional
-        If provided, adds plot to axis object. Else plots matplotlib.pyplot.
-    plot_kwargs_line : dict
-        Kwargs to provide to matplotlib.pyplot.plot for median CDF.
-    plot_kwargs_fill_between : dict
-        Kwargs to provide to matplotlib.pyplot.fill_between for CDF confidence
-        interval.
-    return_axis : bool, optional
-        Return the CDF bin values of the data?
-    nsim : int
-        Number of Monte Carlo simulations to run.
-    nbins : int
-        Number of bins with which to sample the simulated data.
-
-    Returns
-    -------
-    x : array-like, optional
-        If return_axis is True, then the CDF sample locations for the original
-        dataset is returned.
-
-    '''
-
-    import mystats
-
-    # Initialize CDF array
-    cdfs = np.empty((nsim, data.size))
-    xs = np.empty((nsim, data.size))
-
-    # simulate different CDFs in monte carlo
-    for i in xrange(nsim):
-        data_sim = data + np.random.normal(scale=data_error)
-        cdfs[i], xs[i] = mystats.calc_cdf(data_sim, return_axis=True)
-
-    # initialize new plotted x-values / bins for confidence interval
-    x_fit = np.linspace(np.min(xs), np.max(xs), 10, endpoint=False)
-
-    # initialize empty array for confidence interval
-    cdf_confint = np.ones((3, x_fit.size))
-
-    # Calculate the median and uncertainty on the median in each bin given the
-    # simulation results
-    for i in xrange(x_fit.size - 1):
-        cdf_bin = cdfs[(xs >= x_fit[i]) & (xs < x_fit[i+1])]
-        median, conf_err = mystats.calc_cdf_error(cdf_bin)
-        cdf_confint[1, i] = median
-        cdf_confint[0, i] = median - conf_err[0]
-        cdf_confint[2, i] = median + conf_err[1]
-
-    # eliminate nans
-    nan_mask = (np.isnan(cdf_confint[0]) | \
-                np.isnan(cdf_confint[1]) | \
-                np.isnan(cdf_confint[2]))
-    cdf_confint = cdf_confint[:, ~nan_mask]
-    x_fit = x_fit[~nan_mask]
-
-    # Plot the results with the median estimate and the confidence interval
-    if ax is None:
-        plt.plot(x_fit, cdf_confint[1], **plot_kwargs_line)
-        plt.fill_between(x_fit, cdf_confint[0], cdf_confint[2],
-                **plot_kwargs_fill_between)
-    else:
-        ax.plot(x_fit, cdf_confint[1], **plot_kwargs_line)
-        ax.fill_between(x_fit, cdf_confint[0], cdf_confint[2],
-                        **plot_kwargs_fill_between)
-
-    # Return the original data x axis?
     if return_axis:
         return x
 
