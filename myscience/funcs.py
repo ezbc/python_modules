@@ -76,7 +76,7 @@ def calc_radiation_field(T_dust, a=100, T_dust_error=0.):
 def calc_temperature(n_H=1.0, pressure=3800.0, pressure_error=(100,100),
         n_H_error=0, calc_error=True):
 
-    ''' Calculates pressure of atomic hydrogen assuming thermal equilibrium.
+    ''' Calculates temperature of atomic hydrogen assuming thermal equilibrium.
     P/k = n_H * T --> T = (P / k) / n_H
 
     Parameters
@@ -90,6 +90,43 @@ def calc_temperature(n_H=1.0, pressure=3800.0, pressure_error=(100,100),
     -------
     T : float
         Temperature of atomic hydrogen in K.
+
+    '''
+
+    T = pressure / n_H
+
+    if calc_error:
+        n_H_error = np.array(n_H_error, dtype=float)
+        pressure_error = np.array(pressure_error, dtype=float)
+        n_H_comp = pressure / n_H**2 * n_H_error
+        pressure_comp =  1.0 / n_H * pressure_error
+        T_error = (n_H_comp**2 + pressure_comp**2)**0.5
+        return T, T_error
+
+    return T
+
+def calc_density(T_H=1.0, pressure=3700.0, pressure_error=(1200,1200),
+        T_H_error=0, calc_error=True):
+
+    ''' Calculates density of atomic hydrogen assuming thermal equilibrium.
+    P/k = n_H * T --> n_H = (P / k) / T_H. Assumes pressure from Jenkins & Tripp
+    (2011).
+
+    Parameters
+    ----------
+    T_H : float
+        Atomic hydrogen kinetic temperature.
+    pressure : float
+        P / k of atomic hydrogen in K / cm^3
+    T_H_error : float, array-like
+        Atomic hydrogen kinetic temperature error.
+
+    Returns
+    -------
+    n_H : float
+        Density of atomic hydrogen in cm^-3.
+    n_H_error : float, optional
+        Density error of atomic hydrogen in cm^-3.
 
     '''
 
