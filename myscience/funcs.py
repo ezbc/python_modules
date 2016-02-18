@@ -130,17 +130,17 @@ def calc_density(T_H=1.0, pressure=3700.0, pressure_error=(1200,1200),
 
     '''
 
-    T = pressure / n_H
+    n = pressure / T_H
 
     if calc_error:
-        n_H_error = np.array(n_H_error, dtype=float)
+        T_H_error = np.array(T_H_error, dtype=float)
         pressure_error = np.array(pressure_error, dtype=float)
-        n_H_comp = pressure / n_H**2 * n_H_error
-        pressure_comp =  1.0 / n_H * pressure_error
-        T_error = (n_H_comp**2 + pressure_comp**2)**0.5
-        return T, T_error
+        T_H_comp = pressure / T_H**2 * T_H_error
+        pressure_comp =  1.0 / T_H * pressure_error
+        n_error = (T_H_comp**2 + pressure_comp**2)**0.5
+        return n, n_error
 
-    return T
+    return n
 
 def Tkin_to_FWHM(Tkin):
 
