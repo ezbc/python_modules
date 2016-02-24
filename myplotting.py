@@ -172,6 +172,7 @@ def plot_cdf_confint(data, data_error=0, ax=None, plot_kwargs_line={},
     for i in xrange(nsim):
         data_sim = data + np.random.normal(scale=data_error)
         cdfs[i], xs[i] = mystats.calc_cdf(data_sim, return_axis=True)
+        #ax.plot(xs[i], cdfs[i], alpha=0.05, color='k')
 
     # initialize new plotted x-values / bins for confidence interval
     if bin_limits is None:
