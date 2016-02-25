@@ -916,7 +916,6 @@ def calc_hessian(x):
 
 # Perumations
 
-
 def unique_permutations(elements):
     if len(elements) == 1:
         yield (elements[0],)
@@ -928,7 +927,13 @@ def unique_permutations(elements):
             for sub_permutation in unique_permutations(remaining_elements):
                 yield (first_element,) + sub_permutation
 
+def sigfig(value, sig_digits=1):
 
+    ''' Converts number to have the significant digits.
+
+    '''
+
+    return round(value, -np.abs(sig_digits))
 
 if __name__ == '__main__':
     main()
