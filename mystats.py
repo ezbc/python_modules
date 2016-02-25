@@ -933,7 +933,20 @@ def sigfig(value, sig_digits=1):
 
     '''
 
-    return round(value, -np.abs(sig_digits))
+    # if an array cycle through each element
+    if type(value) is np.ndarray:
+        new_array = np.empty(np.shape(value))
+        for i, element in enumerate(value):
+            decimals = -np.int(sig_digits * np.floor(np.log10(np.abs(element))))
+            print decimals
+            new_array[i] = np.around(element, decimals=decimals)
+            print new_array[i]
+
+        return new_array
+    else:
+        decimals = -np.int(sig_digits * np.floor(np.log10(np.abs(value))))
+
+        return np.around(value, decimals=decimals)
 
 if __name__ == '__main__':
     main()
