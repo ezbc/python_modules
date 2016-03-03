@@ -10,7 +10,6 @@ def calc_rh2(h_sd, phi_cnm = None,
         f_diss = 0.1, # fraction of absorbing H2 which disociates
         phi_mol = 10.0, # molecular gas fraction
         mu_H = 2.3e-24, # molecular weight of H, g
-        G_0 = 1.0, # Radiation field
         return_fractions=False
         ):
 
