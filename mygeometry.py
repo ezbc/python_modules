@@ -82,9 +82,14 @@ def get_polygon_mask(image, polygon, return_indices=False):
     Parameters
     ----------
     image : array-like
-
+        N x M array.
     polygon : array-like
-        N x 2 array of vertices
+        K x 2 array of vertices.
+
+    Returns
+    -------
+    mask : array-like
+        N x M boolean array. True for any point inside of polygon.
 
     '''
 
@@ -108,13 +113,13 @@ def get_polygon_mask(image, polygon, return_indices=False):
         except IndexError:
             raise IndexError('Polygon contains no pixels')
 
-def point_in_polygon(target, poly):
+def point_in_polygon(xy, poly):
 
     ''' Tests whether a point is in a polygon.
 
     Parameters
     ----------
-    target : tuple
+    xy : tuple
         (x,y) positions of point to test in polygon.
     poly : list
         List of tuples comprising the polygon.
@@ -125,62 +130,6 @@ def point_in_polygon(target, poly):
         Whether or not the point is inside the polygon.
 
     '''
-
-    from collections import namedtuple
-
-    point = namedtuple("Point", ("x", "y"))
-    line = namedtuple("Line", ("p1", "p2"))
-    target = point(*target)
-
-    inside = False
-    # Build list of coordinate pairs
-    # First, turn it into named tuples
-
-    poly = map(lambda p: point(*p), poly)
-
-    # Make two lists, with list2 shifted forward by one and wrapped around
-    list1 = poly
-    list2 = poly[1:] + [poly[0]]
-    poly = map(line, list1, list2)
-
-    for l in poly:
-        p1 = l.p1
-        p2 = l.p2
-
-        if p1.y == p2.y:
-            # This line is horizontal and thus not relevant.
-            continue
-        if max(p1.y, p2.y) < target.y <= min(p1.y, p2.y):
-            # This line is too high or low
-            continue
-        if target.x < max(p1.x, p2.x):
-            # Ignore this line because it's to the right of our point
-            continue
-        # Now, the line still might be to the right of our target point, but
-        # still to the right of one of the line endpoints.
-        rise = p1.y - p2.y
-        run =  p1.x - p2.x
-        try:
-            slope = rise/float(run)
-        except ZeroDivisionError:
-            slope = float('inf')
-
-        # Find the x-intercept, that is, the place where the line we are
-        # testing equals the y value of our target point.
-
-        # Pick one of the line points, and figure out what the run between it
-        # and the target point is.
-        run_to_intercept = target.x - p1.x
-        x_intercept = p1.x + run_to_intercept / slope
-        if target.x < x_intercept:
-            # We almost crossed the line.
-            continue
-
-        inside = not inside
-
-    return inside
-
-def point_in_polygon(xy, poly):
 
     x, y = xy
 
@@ -208,11 +157,17 @@ def rotate_polygon(polygon, anchor, angle):
     ----------
     polygon : array-like
         N x 2 array with x coordinates in column 0 and y coordinates in
-        column 1
+        column 1.
     anchor : tuple
         x and y coordinates of pivot point.
     angle : float
         Angle to rotate polygon clockwise from North.
+
+    Returns
+    -------
+    polygon_translate : array-like
+        N x 2 array of rotated x and y coordinates.
+
     '''
 
     import numpy
@@ -247,13 +202,13 @@ def create_wedge(center_pos, radius, angle, center_rel_pos=0.1, width=None):
     ----------
     center_pos : array-like
         x and y pixel coordinates of core
-    width : int, float
-        Width of box along x axis.
     height : int, float
         Height of box along y axis.
     center_rel_pos : float, optional
         Core position in box along y-axis as a fraction of the height with the
         origin in the south.
+    width : int, float
+        Width of box along x axis.
 
     Returns
     -------
