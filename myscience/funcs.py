@@ -72,7 +72,7 @@ def calc_radiation_field(T_dust, a=100, T_dust_error=0., beta=2.0,
     T_norm = 17.5 # K
     U = (T_dust / T_norm)**(4.0 + beta)
 
-    if T_dust_error > 0.0 or beta_error > 0.0:
+    if np.any(T_dust_error > 0.0) or np.any(beta_error > 0.0):
 
         # derive for T_dust
         # http://www.wolframalpha.com/input/?i=d%2FdT+(T%2Fc)%5E(4%2BB)
@@ -105,7 +105,7 @@ def calc_radiation_field(T_dust, a=100, T_dust_error=0., beta=2.0,
     elif field_type == 'habing':
         U *= 1.14
 
-    return I_UV
+    return U
 
 def calc_temperature(n_H=1.0, pressure=3800.0, pressure_error=(100,100),
         n_H_error=0, calc_error=True):
