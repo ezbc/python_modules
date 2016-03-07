@@ -69,7 +69,7 @@ def calc_radiation_field(T_dust, a=100, T_dust_error=0., beta=2.0,
     '''
 
     # Calculate Mathis field for dust in equilibrium
-    T_norm = T_norm # K
+    T_norm = 17.5 # K
     U = (T_dust / T_norm)**(4.0 + beta)
 
     if T_dust_error > 0.0 or beta_error > 0.0:
