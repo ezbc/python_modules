@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import numpy as np
+
 def calc_sf_threshold(alphaG, sigma_g=1.0):
 
     ''' Calculates star formation threshold gas surface density from Bialy et
