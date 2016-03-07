@@ -10,7 +10,6 @@ def calc_rh2(h_sd, phi_cnm = None,
         f_diss = 0.1, # fraction of absorbing H2 which disociates
         phi_mol = 10.0, # molecular gas fraction
         mu_H = 2.3e-24, # molecular weight of H, g
-        G_0 = 1.0, # Radiation field
         return_fractions=False
         ):
 
@@ -178,7 +177,7 @@ def calc_T_cnm(phi_cnm, Z=1.0, phi_cnm_error=(0.0,0.0), calc_error=False):
 
     return T_cnm
 
-def calc_n_min(G_0=1.0, Z=1.0):
+def calc_n_min(G_0=1.0, G_0_error=(0.0,0.0), Z=1.0, calc_error=False):
 
     ''' Calculates minimum volume density of CNM to maintain pressure balance
     with the WNM. See equation (5). Returns n_min in cm^-3.
@@ -193,6 +192,11 @@ def calc_n_min(G_0=1.0, Z=1.0):
     '''
 
     n_min = 31.0 * G_0 / (1 + 3.1 * Z**(0.365))
+
+    if calc_error:
+        n_min_error = 31.0 * G_0_error / (1 + 3.1 * Z**(0.365))
+
+        return n_min, n_min_error
 
     return n_min
 
