@@ -139,6 +139,38 @@ def calc_temperature(n_H=1.0, pressure=3800.0, pressure_error=(100,100),
 
     return T
 
+def calc_density(T_H=1.0, pressure=3800.0, pressure_error=(100,100),
+        T_H_error=0, calc_error=True):
+
+    ''' Calculates pressure of atomic hydrogen assuming thermal equilibrium.
+    P/k = T_H * n --> n = (P / k) / T_H
+
+    Parameters
+    ----------
+    T_H : float
+        Atomic hydrogen number density.
+    pressure : float
+        P / k of atomic hydrogen in K / cm^3
+
+    Returns
+    -------
+    n : float
+        Temperature of atomic hydrogen in K.
+
+    '''
+
+    n = pressure / T_H
+
+    if calc_error:
+        T_H_error = np.array(T_H_error, dtype=float)
+        pressure_error = np.array(pressure_error, dtype=float)
+        T_H_comp = pressure / T_H**2 * T_H_error
+        pressure_comp =  1.0 / T_H * pressure_error
+        n_error = (T_H_comp**2 + pressure_comp**2)**0.5
+        return n, n_error
+
+    return n
+
 def Tkin_to_FWHM(Tkin):
 
     '''
