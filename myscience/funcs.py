@@ -110,7 +110,7 @@ def calc_radiation_field(T_dust, a=100, T_dust_error=0., beta=2.0,
 def calc_temperature(n_H=1.0, pressure=3800.0, pressure_error=(100,100),
         n_H_error=0, calc_error=True):
 
-    ''' Calculates pressure of atomic hydrogen assuming thermal equilibrium.
+    ''' Calculates temperature of atomic hydrogen assuming thermal equilibrium.
     P/k = n_H * T --> T = (P / k) / n_H
 
     Parameters
@@ -156,7 +156,6 @@ def calc_density(T_H=1.0, pressure=3800.0, pressure_error=(100,100),
     -------
     n : float
         Temperature of atomic hydrogen in K.
-
     '''
 
     n = pressure / T_H

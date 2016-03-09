@@ -917,6 +917,21 @@ def calc_hessian(x):
 # Perumations
 
 def unique_permutations(elements):
+
+    ''' Calculates the unique permutations of a set of elements
+
+    Parameters
+    ----------
+    elements : array-like
+        List of N elements to be permutated
+
+    Returns
+    -------
+    permutations : array-like
+        N x M array, where M is the number of unique permutations.
+
+    '''
+
     if len(elements) == 1:
         yield (elements[0],)
     else:
