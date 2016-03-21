@@ -843,9 +843,13 @@ def calc_logL(model, data, data_error=None, weights=None):
     size = data_weighted[~np.isnan(data_weighted)].size
     data_error_weighted = np.median(data_error_weighted)
 
+    N = size
+
     #logL = -np.nansum((data - model)**2 / (2 * (data_error)**2))
     logL = -np.nansum((data_weighted - model_weighted)**2 / \
-            (2 * (data_error_weighted)**2))
+             (2 * (data_error_weighted)**2)) - \
+            N/2.0 * np.log(2 * np.pi) - \
+            N/2.0 * np.log(data_error_weighted**2)
 
     return logL
 
