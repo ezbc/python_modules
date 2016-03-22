@@ -891,6 +891,32 @@ def calc_likelihood_conf(likelihoods, conf, df=1):
 
     #-2.0 * (np.log(conf) - np.log(
 
+def calc_chisq(model, data, uncertainty, reduced=True, dof=1):
+
+    ''' Calculates chi squared statistic given a model, data, and associated
+    uncertainty.
+
+    Parameters
+    ----------
+    model : array-like
+        Model of data.
+    data : array-like
+        Observed data same shape as model.
+    uncertainty : float, array-like
+        Uncertainty on data.
+    reduced : bool
+        Calculate reduced chi squared?
+    dof : int
+        Degrees of freedom.
+
+    '''
+
+    chisq = np.nansum((model - data)**2 / uncertainty**2)
+
+    if reduced:
+        chisq /= dof
+
+    return chisq
 
 def gauss(x, width, amp, x0):
     import numpy as np
