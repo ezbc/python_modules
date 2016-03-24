@@ -4,12 +4,13 @@
 Module for using the model of Krumholz et al. (2009)
 '''
 
-def calc_rh2(h_sd, phi_cnm = None,
+def calc_rh2(h_sd,
+        phi_cnm = 3.0,
         Z = 1.0, # metallicity
         a = 0.2, # ?
         f_diss = 0.1, # fraction of absorbing H2 which disociates
         phi_mol = 10.0, # molecular gas fraction
-        mu_H = 2.3e-24, # molecular weight of H, g
+        sigma_d=1.0,
         return_fractions=False,
         remove_helium=True,
         ):
@@ -23,16 +24,17 @@ def calc_rh2(h_sd, phi_cnm = None,
     ----------
     h_sd : array-like
         Hydrogen surface density in units of solar mass per parsec**2-
+    phi_cnm : float
+        Ratio of CNM number density and minimum number density to maintain
+        pressure balance with the WNM.
     Z : float
         Gas-phase metallicity relative to solar.
     a : float
         ?
-    f_diss : float
-        Fraction of absorbing H2 which dissociates.
     phi_mol : float
         Molecular gas fraction.
-    mu_H : float
-        Molecular weight of H in units of 10^-21 g (solar).
+    sigma_d : float
+        Dust cross section in units of 10^-21 cm^-2 (solar).
     return_fractions : bool
         Return f_H2 and f_HI?
     remove_helium : bool
@@ -55,18 +57,21 @@ def calc_rh2(h_sd, phi_cnm = None,
     c = 3.0e10 # speed of light, cm/s
 
     # solar values
-    sigma_d_solar = 1e-21 # solar dust grain cross section, cm^2
     R_d_solar = 10**-16.5 # solar cloud radius, cm
     E_0_solar = 7.5e-4 # Radiation field, erg/s
+    mu_H = 2.34e-24, # molecular weight of H + He, g
 
     # cloud values
-    sigma_d = sigma_d_solar * Z # dust grain cross section, cm^2
-    R_d = R_d_solar * Z # cloud radius, cm
+    #R_d = R_d_solar * Z # cloud radius, cm
 
     # normalized radiation field strength, EQ 7
-    chi = ((f_diss * sigma_d_solar * c * E_0_solar) \
-            * (1.0 + (3.1 * Z**0.365))) \
-            / (31.0 * phi_cnm * R_d_solar)
+    #chi = ((f_diss * (sigma_d / 10**-21) * c * E_0_solar) \
+            #* (1.0 + (3.1 * Z**0.365))) \
+            #/ (31.0 * phi_cnm * R_d_solar)
+
+    # normalized radiation field strength, EQ 7
+    #chi = 2.3 * (sigma_d / R_d_solar) * (1 + 3.1 * Z**0.365) / phi_cnm
+    chi = 2.3 * (1 + 3.1 * Z**0.365) / phi_cnm
 
     # dust-adjusted radiation field, EQ 10
     psi = chi * (2.5 + chi) / (2.5 + (chi * np.e))
