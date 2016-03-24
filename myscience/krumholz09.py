@@ -10,7 +10,8 @@ def calc_rh2(h_sd, phi_cnm = None,
         f_diss = 0.1, # fraction of absorbing H2 which disociates
         phi_mol = 10.0, # molecular gas fraction
         mu_H = 2.3e-24, # molecular weight of H, g
-        return_fractions=False
+        return_fractions=False,
+        remove_helium=True,
         ):
 
     '''
@@ -22,8 +23,20 @@ def calc_rh2(h_sd, phi_cnm = None,
     ----------
     h_sd : array-like
         Hydrogen surface density in units of solar mass per parsec**2-
+    Z : float
+        Gas-phase metallicity relative to solar.
+    a : float
+        ?
+    f_diss : float
+        Fraction of absorbing H2 which disociates.
+    phi_mol : float
+        Molecular gas fraction.
+    mu_H : float
+        Molecular weight of H in units of g.
     return_fractions : bool
         Return f_H2 and f_HI?
+    remove_helium : bool
+        Remove contribution from Helium to total gas surface density?
 
     Returns
     -------
