@@ -911,7 +911,8 @@ def calc_chisq(model, data, uncertainty, reduced=True, dof=1):
 
     '''
 
-    chisq = np.nansum((model - data)**2 / uncertainty**2)
+    chisq = np.nansum((np.ravel(model) - np.ravel(data))**2 / \
+                       np.ravel(uncertainty)**2)
 
     if reduced:
         chisq /= dof
