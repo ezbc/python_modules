@@ -91,11 +91,11 @@ def calc_radiation_field(T_dust, a=100, T_dust_error=0., beta=2.0,
 
         # Scale Draine Field by the Draine / Mathis field in the FUV
         if field_type == 'draine':
-            U *= 1.48
-            U_error *= 1.48
+            U /= 1.48
+            U_error /= 1.48
         elif field_type == 'habing':
-            U *= 1.14
-            U_error *= 1.14
+            U /= 1.14
+            U_error /= 1.14
 
         return U, U_error
 
