@@ -28,15 +28,16 @@ def calc_rh2(h_sd, phi_cnm = None,
     a : float
         ?
     f_diss : float
-        Fraction of absorbing H2 which disociates.
+        Fraction of absorbing H2 which dissociates.
     phi_mol : float
         Molecular gas fraction.
     mu_H : float
-        Molecular weight of H in units of g.
+        Molecular weight of H in units of 10^-21 g (solar).
     return_fractions : bool
         Return f_H2 and f_HI?
     remove_helium : bool
-        Remove contribution from Helium to total gas surface density?
+        Remove contribution from Helium to total gas surface density? If
+        True, assumes h_sd does not include Helium.
 
     Returns
     -------
@@ -61,6 +62,10 @@ def calc_rh2(h_sd, phi_cnm = None,
     # cloud values
     sigma_d = sigma_d_solar * Z # dust grain cross section, cm^2
     R_d = R_d_solar * Z # cloud radius, cm
+
+    # remove contribution from Helium by adding helium
+    if remove_helium:
+        h_sd *= 1.4
 
     # normalized radiation field strength, EQ 7
     chi = ((f_diss * sigma_d_solar * c * E_0_solar) \
