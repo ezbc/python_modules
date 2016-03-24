@@ -63,10 +63,6 @@ def calc_rh2(h_sd, phi_cnm = None,
     sigma_d = sigma_d_solar * Z # dust grain cross section, cm^2
     R_d = R_d_solar * Z # cloud radius, cm
 
-    # remove contribution from Helium by adding helium
-    if remove_helium:
-        h_sd *= 1.4
-
     # normalized radiation field strength, EQ 7
     chi = ((f_diss * sigma_d_solar * c * E_0_solar) \
             * (1.0 + (3.1 * Z**0.365))) \
@@ -76,13 +72,18 @@ def calc_rh2(h_sd, phi_cnm = None,
     psi = chi * (2.5 + chi) / (2.5 + (chi * np.e))
 
     # cloud optical depth, EQ 21
-    tau_c = (3.0 * h_sd * sigma_d) / (4.0 * (3.1 * Z**0.365) * mu_H)
+    #tau_c = (3.0 * h_sd * sigma_d) / (4.0 * (3.1 * Z**0.365) * mu_H)
 
-    tau_c = (3.0 * h_sd * 2.0 * 10.0**33 * sigma_d) / \
-            (4.0 * (3.1 * 10**18)**2 * mu_H)
+    #tau_c = (3.0 * h_sd * 2.0 * 10.0**33 * sigma_d) / \
+            #(4.0 * (3.1 * 10**18)**2 * mu_H)
 
-    # cloud optical depth, EQ 21
-    tau_c = 0.067 * Z * h_sd
+    # remove contribution from Helium by adding helium
+    if remove_helium:
+        h_sd *= 1.4
+
+    # cloud optical depth, EQ 21, include scaling of dust cross-section relative
+    # to solar
+    tau_c = 0.067 * Z * h_sd * sigma_d
 
     f_H2_sub1 = (3.0 * psi) / (4.0 * tau_c)
     f_H2_sub2 = (4.0 * a * psi * phi_mol) / ((4.0 * tau_c) + (3.0 * (phi_mol \
