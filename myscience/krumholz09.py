@@ -82,13 +82,13 @@ def calc_rh2(h_sd,
     #tau_c = (3.0 * h_sd * 2.0 * 10.0**33 * sigma_d) / \
             #(4.0 * (3.1 * 10**18)**2 * mu_H)
 
-    # remove contribution from Helium by adding helium
-    if remove_helium:
-        h_sd *= 1.4
-
     # cloud optical depth, EQ 21, include scaling of dust cross-section relative
     # to solar
     tau_c = 0.067 * Z * h_sd * sigma_d
+
+    # remove contribution from Helium?
+    if remove_helium:
+        tau_c *= 1.4
 
     f_H2_sub1 = (3.0 * psi) / (4.0 * tau_c)
     f_H2_sub2 = (4.0 * a * psi * phi_mol) / ((4.0 * tau_c) + (3.0 * (phi_mol \
