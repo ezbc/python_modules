@@ -55,32 +55,19 @@ def calc_rh2(h_sd,
 
     # Constants
     c = 3.0e10 # speed of light, cm/s
-
-    # solar values
     R_d_solar = 10**-16.5 # solar cloud radius, cm
-    E_0_solar = 7.5e-4 # Radiation field, erg/s
+    E_0_solar = 7.5e-4 # solar radiation field, erg/s
     mu_H = 2.34e-24, # molecular weight of H + He, g
 
-    # cloud values
-    #R_d = R_d_solar * Z # cloud radius, cm
+    # normalized values
+    R_d = R_d_solar / 10**-16.5 * Z # formation rate of H2 on dust, cm^3 / s
 
     # normalized radiation field strength, EQ 7
-    #chi = ((f_diss * (sigma_d / 10**-21) * c * E_0_solar) \
-            #* (1.0 + (3.1 * Z**0.365))) \
-            #/ (31.0 * phi_cnm * R_d_solar)
-
-    # normalized radiation field strength, EQ 7
-    #chi = 2.3 * (sigma_d / R_d_solar) * (1 + 3.1 * Z**0.365) / phi_cnm
-    chi = 2.3 * (1 + 3.1 * Z**0.365) / phi_cnm
+    chi = 2.3 * (sigma_d / R_d) * (1 + 3.1 * Z**0.365) / phi_cnm
+    #chi = 2.3 * (1 + 3.1 * Z**0.365) / phi_cnm
 
     # dust-adjusted radiation field, EQ 10
     psi = chi * (2.5 + chi) / (2.5 + (chi * np.e))
-
-    # cloud optical depth, EQ 21
-    #tau_c = (3.0 * h_sd * sigma_d) / (4.0 * (3.1 * Z**0.365) * mu_H)
-
-    #tau_c = (3.0 * h_sd * 2.0 * 10.0**33 * sigma_d) / \
-            #(4.0 * (3.1 * 10**18)**2 * mu_H)
 
     # cloud optical depth, EQ 21, include scaling of dust cross-section relative
     # to solar
@@ -90,10 +77,10 @@ def calc_rh2(h_sd,
     if remove_helium:
         tau_c *= 1.4
 
+    # calculate fractions, Equations 35 and 36
     f_H2_sub1 = (3.0 * psi) / (4.0 * tau_c)
     f_H2_sub2 = (4.0 * a * psi * phi_mol) / ((4.0 * tau_c) + (3.0 * (phi_mol \
             - 1.0) * psi))
-
     f_H2 = 1.0 - (f_H2_sub1 / (1.0 + f_H2_sub2))
     f_HI = 1.0 - f_H2
 
@@ -103,11 +90,7 @@ def calc_rh2(h_sd,
     f_H2[f_H2 > 1] = 1.0
     f_H2[f_H2 < 0] = 0.0
 
-    # ratio of molecular to atomic fraction, EQ 17 Lee et al. 2012
-    R_H2 = 4 * tau_c / (3 * psi) \
-            * (1+ 0.8 * psi * phi_mol \
-                / (4 * tau_c + 3 * (phi_mol - 1) * psi)) -1
-
+    # ratio of molecular to atomic fraction
     R_H2 = f_H2 / f_HI
 
     if not return_fractions:
