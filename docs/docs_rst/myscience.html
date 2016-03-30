@@ -1,0 +1,534 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>myscience package &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="next" title="myplotting module" href="myplotting.html" />
+    <link rel="prev" title="Welcome to custom_modules’s documentation!" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="myplotting.html" title="myplotting module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to custom_modules’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="myscience-package">
+<h1>myscience package<a class="headerlink" href="#myscience-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-myscience.bialy16">
+<span id="myscience-bialy16-module"></span><h2>myscience.bialy16 module<a class="headerlink" href="#module-myscience.bialy16" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="myscience.bialy16.calc_sf_threshold">
+<code class="descclassname">myscience.bialy16.</code><code class="descname">calc_sf_threshold</code><span class="sig-paren">(</span><em>alphaG</em>, <em>sigma_g=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/bialy16.html#calc_sf_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.bialy16.calc_sf_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates star formation threshold gas surface density from Bialy et
+al. (2016).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>alphaG</strong> : float</p>
+<blockquote>
+<div><p>alphaG parameter from Sternberg et al. (2014). Dimensionless.</p>
+</div></blockquote>
+<p><strong>sigma_g</strong> : float, optional</p>
+<blockquote>
+<div><p>Dust absorption cross section. Units relative to galactic value of 1.9 x
+10^-21 cm^-2.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>h_sd</strong> : float</p>
+<blockquote class="last">
+<div><p>Gas surface density threshold. Units of solar masses pc^-2.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-myscience.funcs">
+<span id="myscience-funcs-module"></span><h2>myscience.funcs module<a class="headerlink" href="#module-myscience.funcs" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="myscience.funcs.FWHM_to_std">
+<code class="descclassname">myscience.funcs.</code><code class="descname">FWHM_to_std</code><span class="sig-paren">(</span><em>FWHM</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/funcs.html#FWHM_to_std"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.funcs.FWHM_to_std" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="myscience.funcs.Tkin_to_FWHM">
+<code class="descclassname">myscience.funcs.</code><code class="descname">Tkin_to_FWHM</code><span class="sig-paren">(</span><em>Tkin</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/funcs.html#Tkin_to_FWHM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.funcs.Tkin_to_FWHM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tkin &lt;= m_H * FWHM^2 / (8 k_B * ln(2))
+FWHM = (Tkin * (8 k_B * ln(2)) / m_H)^2</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.funcs.calc_density">
+<code class="descclassname">myscience.funcs.</code><code class="descname">calc_density</code><span class="sig-paren">(</span><em>T_H=1.0</em>, <em>pressure=3800.0</em>, <em>pressure_error=(100</em>, <em>100)</em>, <em>T_H_error=0</em>, <em>calc_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/funcs.html#calc_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.funcs.calc_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates pressure of atomic hydrogen assuming thermal equilibrium.
+P/k = T_H * n &#8211;&gt; n = (P / k) / T_H</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>T_H</strong> : float</p>
+<blockquote>
+<div><p>Atomic hydrogen number density.</p>
+</div></blockquote>
+<p><strong>pressure</strong> : float</p>
+<blockquote>
+<div><p>P / k of atomic hydrogen in K / cm^3</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>n</strong> : float</p>
+<blockquote class="last">
+<div><p>Temperature of atomic hydrogen in K.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.funcs.calc_radiation_field">
+<code class="descclassname">myscience.funcs.</code><code class="descname">calc_radiation_field</code><span class="sig-paren">(</span><em>T_dust</em>, <em>a=100</em>, <em>T_dust_error=0.0</em>, <em>beta=2.0</em>, <em>beta_error=0.0</em>, <em>field_type='draine'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/funcs.html#calc_radiation_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.funcs.calc_radiation_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates ambient interstellar radiation field from dust temperature.
+Dust is assumed to be in thermal equilibrium and absorbs all incident
+radiation. See Equation 5 in Lee et al. (2012).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>T_dust</strong> : float</p>
+<blockquote>
+<div><p>Average dust temperature in K.</p>
+</div></blockquote>
+<p><strong>a</strong> : float</p>
+<blockquote>
+<div><p>Average dust grain radius in 100 nanometers. Typical radius = 100 nm</p>
+</div></blockquote>
+<p><strong>T_dust_error</strong> : float, optional</p>
+<blockquote>
+<div><p>Average dust temperature uncertainty in K.</p>
+</div></blockquote>
+<p><strong>beta</strong> : float, optional</p>
+<blockquote>
+<div><p>Slope of modified black body spectrum.</p>
+</div></blockquote>
+<p><strong>beta_error</strong> : float, optional</p>
+<blockquote>
+<div><p>Uncertainty of slope of modified black body spectrum.</p>
+</div></blockquote>
+<p><strong>field_type</strong> : str, optional</p>
+<blockquote>
+<div><p>Radiation field type. Options are &#8216;draine&#8217;, &#8216;mathis&#8217;, and &#8216;habing&#8217;.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>I_UV</strong> : float</p>
+<blockquote class="last">
+<div><p>Ambient FUV radiation field relative to Draine Field.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Min&#8217;s Description:</p>
+<p>In Lee+12, we used a modified black-body (emissivity spectral index beta of
+2) + IRAS 60/100 to derive the dust temperature.</p>
+<p>In this case, the ISRF heating dust grains (from <em>all directions</em>) can be
+actually easily calculated by</p>
+<p>U(M83) = (T_dust / T_norm K)^6</p>
+<p>&#8212; This relation is based on many observations showing that large
+interstellar silicates have an equilibrium temperature of T_norm K in the
+solar neighborhood.</p>
+<p>&#8212; Here U(M83) is the ISRF by Mathis+83 integrated from 0.09 micron to 8
+micron.</p>
+<p>To be specific, U(M83) = 4pi * int J(nu) d(nu) (0.09 micron ~ 8 micron)
+and U(M83) = 1 corresponds to 2.2e-5 W m-2.</p>
+<p>&#8212; For Perseus with T_dust ~ 17 K, U(M83) ~ 0.8.</p>
+<p>&#8212; But what we need to know is I_UV, the scaling factor for the Draine
+field.</p>
+<p>For the FUV range of 6 ~ 13.6 eV, the Draine field is a factor of ~1.5
+stronger than the Mathis field.  Based on all these estimates, I would
+expect I_UV ~ (1/1.5) * 0.8 ~ 0.5 for Perseus.</p>
+<p>&#8212; Another thing I want to mention is that the &#8220;empirical&#8221; relation I used
+above is independent from the dust (LW photon) absorption cross section.</p>
+<p>For more information visit:
+<a class="reference external" href="http://ezbc.me/research/2016/02/25/radiation-field/">http://ezbc.me/research/2016/02/25/radiation-field/</a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.funcs.calc_temperature">
+<code class="descclassname">myscience.funcs.</code><code class="descname">calc_temperature</code><span class="sig-paren">(</span><em>n_H=1.0</em>, <em>pressure=3800.0</em>, <em>pressure_error=(100</em>, <em>100)</em>, <em>n_H_error=0</em>, <em>calc_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/funcs.html#calc_temperature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.funcs.calc_temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates temperature of atomic hydrogen assuming thermal equilibrium.
+P/k = n_H * T &#8211;&gt; T = (P / k) / n_H</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>n_H</strong> : float</p>
+<blockquote>
+<div><p>Atomic hydrogen number density.</p>
+</div></blockquote>
+<p><strong>pressure</strong> : float</p>
+<blockquote>
+<div><p>P / k of atomic hydrogen in K / cm^3</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>T</strong> : float</p>
+<blockquote class="last">
+<div><p>Temperature of atomic hydrogen in K.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.funcs.gaussian">
+<code class="descclassname">myscience.funcs.</code><code class="descname">gaussian</code><span class="sig-paren">(</span><em>amp</em>, <em>fwhm</em>, <em>mean</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/funcs.html#gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.funcs.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="myscience.funcs.std_to_FWHM">
+<code class="descclassname">myscience.funcs.</code><code class="descname">std_to_FWHM</code><span class="sig-paren">(</span><em>std</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/funcs.html#std_to_FWHM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.funcs.std_to_FWHM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-myscience.krumholz09">
+<span id="myscience-krumholz09-module"></span><h2>myscience.krumholz09 module<a class="headerlink" href="#module-myscience.krumholz09" title="Permalink to this headline">¶</a></h2>
+<p>Module for using the model of Krumholz et al. (2009)</p>
+<dl class="function">
+<dt id="myscience.krumholz09.calc_T_cnm">
+<code class="descclassname">myscience.krumholz09.</code><code class="descname">calc_T_cnm</code><span class="sig-paren">(</span><em>phi_cnm</em>, <em>Z=1.0</em>, <em>phi_cnm_error=(0.0</em>, <em>0.0)</em>, <em>calc_error=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/krumholz09.html#calc_T_cnm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.krumholz09.calc_T_cnm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates T_cnm from equation 19 in Krumholz et al. (2009).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>phi_cnm</strong> : float, array-like</p>
+<blockquote>
+<div><p>Phi_cnm parameter, n_cnm = phi_cnm * n_cnm,min .</p>
+</div></blockquote>
+<p><strong>Z</strong> : float, array-like</p>
+<blockquote>
+<div><p>Metallicity normalized by solar value.</p>
+</div></blockquote>
+<p><strong>G0</strong> : float, array-like</p>
+<blockquote class="last">
+<div><p>FUV radiation field normalized by solar value.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.krumholz09.calc_n_cnm">
+<code class="descclassname">myscience.krumholz09.</code><code class="descname">calc_n_cnm</code><span class="sig-paren">(</span><em>G_0=1.0</em>, <em>T_cnm=70.0</em>, <em>Z=1.0</em>, <em>G_0_error=(0.0</em>, <em>0.0)</em>, <em>T_cnm_error=(0.0</em>, <em>0.0)</em>, <em>calc_error=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/krumholz09.html#calc_n_cnm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.krumholz09.calc_n_cnm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates volume density of CNM. See equation (18). Returns n_cnm in
+cm^-3.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>G_0</strong> : float, array-like</p>
+<blockquote>
+<div><p>Incident radiation field of FUV photons normalized to solar.</p>
+</div></blockquote>
+<p><strong>Z</strong> : float, array-like</p>
+<blockquote class="last">
+<div><p>Metallicity normalized to solar value.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.krumholz09.calc_n_min">
+<code class="descclassname">myscience.krumholz09.</code><code class="descname">calc_n_min</code><span class="sig-paren">(</span><em>G_0=1.0</em>, <em>G_0_error=(0.0</em>, <em>0.0)</em>, <em>Z=1.0</em>, <em>calc_error=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/krumholz09.html#calc_n_min"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.krumholz09.calc_n_min" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates minimum volume density of CNM to maintain pressure balance
+with the WNM. See equation (5). Returns n_min in cm^-3.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>G_0</strong> : float, array-like</p>
+<blockquote>
+<div><p>Incident radiation field of FUV photons normalized to solar.</p>
+</div></blockquote>
+<p><strong>Z</strong> : float, array-like</p>
+<blockquote class="last">
+<div><p>Metallicity normalized to solar value.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.krumholz09.calc_phi_cnm">
+<code class="descclassname">myscience.krumholz09.</code><code class="descname">calc_phi_cnm</code><span class="sig-paren">(</span><em>T_cnm</em>, <em>Z=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/krumholz09.html#calc_phi_cnm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.krumholz09.calc_phi_cnm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates phi_cnm from equation 19 in Krumholz et al. (2009).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>T_cnm</strong> : float, array-like</p>
+<blockquote>
+<div><p>Temperature of cold neutral medium in K.</p>
+</div></blockquote>
+<p><strong>Z</strong> : float, array-like</p>
+<blockquote class="last">
+<div><p>Metallicity normalized by solar value.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.krumholz09.calc_rh2">
+<code class="descclassname">myscience.krumholz09.</code><code class="descname">calc_rh2</code><span class="sig-paren">(</span><em>h_sd</em>, <em>phi_cnm=3.0</em>, <em>Z=1.0</em>, <em>a=0.2</em>, <em>f_diss=0.1</em>, <em>phi_mol=10.0</em>, <em>sigma_d=1.0</em>, <em>return_fractions=False</em>, <em>remove_helium=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/krumholz09.html#calc_rh2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.krumholz09.calc_rh2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates ratio of molecular hydrogen to atomic hydrogen surface
+density using the model from Krumholz et al. 2008 given a total hydrogen
+surface density.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>h_sd</strong> : array-like</p>
+<blockquote>
+<div><p>Hydrogen surface density in units of solar mass per parsec**2-</p>
+</div></blockquote>
+<p><strong>phi_cnm</strong> : float</p>
+<blockquote>
+<div><p>Ratio of CNM number density and minimum number density to maintain
+pressure balance with the WNM.</p>
+</div></blockquote>
+<p><strong>Z</strong> : float</p>
+<blockquote>
+<div><p>Gas-phase metallicity relative to solar.</p>
+</div></blockquote>
+<p><strong>a</strong> : float</p>
+<blockquote>
+<div><p>?</p>
+</div></blockquote>
+<p><strong>phi_mol</strong> : float</p>
+<blockquote>
+<div><p>Molecular gas fraction.</p>
+</div></blockquote>
+<p><strong>sigma_d</strong> : float</p>
+<blockquote>
+<div><p>Dust cross section in units of 10^-21 cm^-2 (solar).</p>
+</div></blockquote>
+<p><strong>return_fractions</strong> : bool</p>
+<blockquote>
+<div><p>Return f_H2 and f_HI?</p>
+</div></blockquote>
+<p><strong>remove_helium</strong> : bool</p>
+<blockquote>
+<div><p>Remove contribution from Helium to total gas surface density? If
+True, assumes h_sd does not include Helium.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>rh2_fit</strong> : array-like</p>
+<blockquote>
+<div><p>Model ratio between molecular and atomic hydrogen masses.</p>
+</div></blockquote>
+<p><strong>f_H2, f_HI</strong> : array-like, optional</p>
+<blockquote class="last">
+<div><p>If return_fractions=True then the following is returned:
+f_H2 = mass fraction of molecular hydrogen
+f_HI = mass fraction of atomic hydrogen</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-myscience.sternberg14">
+<span id="myscience-sternberg14-module"></span><h2>myscience.sternberg14 module<a class="headerlink" href="#module-myscience.sternberg14" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="myscience.sternberg14.calc_n_H">
+<code class="descclassname">myscience.sternberg14.</code><code class="descname">calc_n_H</code><span class="sig-paren">(</span><em>I_UV=1</em>, <em>alphaG=1</em>, <em>phi_g=1.0</em>, <em>Z_g=1.0</em>, <em>Z_CO=1.0</em>, <em>I_UV_error=0.0</em>, <em>alphaG_error=0.0</em>, <em>phi_g_error=0.0</em>, <em>Z_g_error=0.0</em>, <em>calc_errors=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/sternberg14.html#calc_n_H"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.sternberg14.calc_n_H" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equation 5 in Bialy et al. (2015)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myscience.sternberg14.calc_phi_cnm">
+<code class="descclassname">myscience.sternberg14.</code><code class="descname">calc_phi_cnm</code><span class="sig-paren">(</span><em>alphaG=1.0</em>, <em>Z_g=1.0</em>, <em>Z_CO=1.0</em>, <em>phi_g=1.0</em>, <em>alphaG_error=0.0</em>, <em>phi_g_error=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/sternberg14.html#calc_phi_cnm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.sternberg14.calc_phi_cnm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="myscience.sternberg14.calc_rh2">
+<code class="descclassname">myscience.sternberg14.</code><code class="descname">calc_rh2</code><span class="sig-paren">(</span><em>h_sd</em>, <em>alphaG=1.5</em>, <em>Z=1.0</em>, <em>phi_g=1.0</em>, <em>sigma_g21=1.9</em>, <em>radiation_type='isotropic'</em>, <em>return_fractions=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myscience/sternberg14.html#calc_rh2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myscience.sternberg14.calc_rh2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates ratio of molecular hydrogen to atomic hydrogen surface
+density using the model from Sternberg et al. (2014) given a total hydrogen
+surface density.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>h_sd</strong> : array-like</p>
+<blockquote>
+<div><p>Hydrogen surface density in units of solar mass per parsec**2-</p>
+</div></blockquote>
+<p><strong>return_fractions</strong> : bool</p>
+<blockquote>
+<div><p>Return f_H2 and f_HI?</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>rh2_fit</strong> : array-like</p>
+<blockquote>
+<div><p>Model ratio between molecular and atomic hydrogen masses.</p>
+</div></blockquote>
+<p><strong>f_H2, f_HI</strong> : array-like, optional</p>
+<blockquote class="last">
+<div><p>If return_fractions=True then the following is returned:
+f_H2 = mass fraction of molecular hydrogen
+f_HI = mass fraction of atomic hydrogen</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-myscience">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-myscience" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">myscience package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-myscience.bialy16">myscience.bialy16 module</a></li>
+<li><a class="reference internal" href="#module-myscience.funcs">myscience.funcs module</a></li>
+<li><a class="reference internal" href="#module-myscience.krumholz09">myscience.krumholz09 module</a></li>
+<li><a class="reference internal" href="#module-myscience.sternberg14">myscience.sternberg14 module</a></li>
+<li><a class="reference internal" href="#module-myscience">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">Welcome to custom_modules&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="myplotting.html"
+                        title="next chapter">myplotting module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/myscience.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="myplotting.html" title="myplotting module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to custom_modules’s documentation!"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

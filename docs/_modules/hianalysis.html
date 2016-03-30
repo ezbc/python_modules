@@ -1,0 +1,631 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hianalysis &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for hianalysis</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Author: Elijah Bernstein-Cooper; ezbc@astro.wisc.edu</span>
+
+<span class="sd">NAME</span>
+<span class="sd">    hianalyis</span>
+
+<span class="sd">FILE</span>
+<span class="sd">    /home/elijah/python/myModules/hianalysis.py</span>
+
+<span class="sd">DESCRIPTION</span>
+<span class="sd">    HIanalysis</span>
+<span class="sd">    ==========</span>
+
+<span class="sd">    Provides</span>
+<span class="sd">        1. Tool for blanking HI cubes by hand and creating moment maps.</span>
+
+<span class="sd">    Execute in the CASA environment.</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="addNoise2Cube"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.addNoise2Cube">[docs]</a><span class="k">def</span> <span class="nf">addNoise2Cube</span><span class="p">(</span><span class="n">cube</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">    Convolves random Gaussian noise with a psf. The convolved noise is then</span>
+<span class="sd">    added to the cube.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cube : array_like</span>
+<span class="sd">        3d array of data. Assumes first dimension is velocity axis</span>
+<span class="sd">    fwhm : float</span>
+<span class="sd">        FWHM (pixels) in each dimension.</span>
+<span class="sd">        Single number to make all the same.</span>
+<span class="sd">    std : float, optional</span>
+<span class="sd">        Standard deviation (STD) of Gaussian noise to add to cube. If no value</span>
+<span class="sd">        provided, STD will be calculated from the input cube.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : ndarray</span>
+<span class="sd">        Input cube with convolved Gaussian noise added.</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Import external moduls</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="c1"># Create PSF image of the cube</span>
+    <span class="n">psf</span> <span class="o">=</span> <span class="n">gauss2d</span><span class="p">(</span><span class="n">cube</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="c1"># Create cube of random noise</span>
+    <span class="k">if</span> <span class="n">std</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">cube</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">std</span><span class="p">,</span> <span class="n">cube</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="c1"># Convolve each plane of the noise cube with the psf</span>
+    <span class="n">convolNoise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">plane</span> <span class="o">=</span> <span class="n">noise</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span>
+        <span class="n">newPlane</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">plane</span><span class="p">,</span> <span class="n">psf</span><span class="p">)</span>
+        <span class="n">convolNoise</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">newPlane</span>
+        <span class="c1">#print convolNoise[i].max()</span>
+
+    <span class="c1"># Compute the final noise cube</span>
+    <span class="k">def</span> <span class="nf">rms</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">))</span>
+
+    <span class="n">cubeRms</span> <span class="o">=</span> <span class="n">rms</span><span class="p">(</span><span class="n">cube</span><span class="p">)</span>
+    <span class="n">noiseRms</span> <span class="o">=</span> <span class="n">rms</span><span class="p">(</span><span class="n">convolNoise</span><span class="p">)</span>
+    <span class="n">finalNoise</span> <span class="o">=</span> <span class="n">cubeRms</span> <span class="o">*</span> <span class="n">noise</span> <span class="o">/</span> <span class="n">noiseRms</span>
+
+    <span class="k">return</span> <span class="n">cube</span> <span class="o">+</span> <span class="n">finalNoise</span></div>
+
+<div class="viewcode-block" id="blankcube"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.blankcube">[docs]</a><span class="k">def</span> <span class="nf">blankcube</span><span class="p">(</span><span class="n">image</span><span class="p">,</span>
+              <span class="n">dummyMS</span><span class="p">,</span>
+              <span class="n">smooth</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+              <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+              <span class="n">region</span><span class="o">=</span><span class="s1">&#39;centerbox[[10h21m45s,18.05.14.9],[15arcmin,15arcmin]]&#39;</span><span class="p">,</span>
+              <span class="n">ruthless</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+              <span class="n">extension</span><span class="o">=</span><span class="s1">&#39;.image&#39;</span><span class="p">,</span>
+              <span class="n">beamround</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span>
+              <span class="n">blankThreshold</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span>
+              <span class="n">moments</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : string</span>
+<span class="sd">        Base name of image. If target image has extension other than &#39;.image&#39;,</span>
+<span class="sd">        change the extension keyword.</span>
+
+<span class="sd">    dummyMS : string</span>
+<span class="sd">        MS file required for blanking process in CASA</span>
+
+<span class="sd">    smooth : bool, optional</span>
+<span class="sd">        Smooth the image to a circular beam before blanking?</span>
+<span class="sd">        Default True</span>
+
+<span class="sd">    verbose : bool, optional</span>
+
+<span class="sd">    region : string, optional</span>
+<span class="sd">        region parameter featured in CASA</span>
+
+<span class="sd">    ruthless : bool, optional</span>
+<span class="sd">        Delete previous outputs from blankcube</span>
+
+<span class="sd">    extension : string, optional</span>
+<span class="sd">        Extension of the target image. Must include the &#39;.&#39;, e.g., &#39;.restored&#39;</span>
+<span class="sd">        Default &#39;.image&#39;</span>
+
+<span class="sd">    beamround : string,float</span>
+<span class="sd">        P</span>
+
+<span class="sd">    blankThreshold : float, optional</span>
+<span class="sd">        Initial blanking threshold of all pixels scaled by the standard</span>
+<span class="sd">        deviation times the blankingthreshold</span>
+<span class="sd">        Default = 2.5 (Walter et al. 2008)</span>
+
+<span class="sd">    moments : list, optional</span>
+<span class="sd">        Moments to calculate from cube. Options are 0,1,2.</span>
+<span class="sd">        Example: [0,1,2]</span>
+<span class="sd">        Default: [0]</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : null</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">immath</span><span class="p">,</span><span class="n">imsmooth</span><span class="p">,</span><span class="n">immoments</span>
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">image</span> <span class="k">as</span> <span class="n">ia</span>
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">imager</span> <span class="k">as</span> <span class="n">im</span>
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">quanta</span> <span class="k">as</span> <span class="n">qa</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="c1"># Delete files associated with previous runs</span>
+    <span class="k">if</span> <span class="n">ruthless</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;rm -rf &#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.blk.image&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;rm -rf &#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;rm -rf &#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.blk.image&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;rm -rf &#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span><span class="p">)</span>
+
+    <span class="n">imageDir</span> <span class="o">=</span> <span class="s1">&#39;./&#39;</span>
+
+    <span class="c1"># Create moment maps</span>
+    <span class="n">mom0</span><span class="p">,</span><span class="n">mom1</span><span class="p">,</span><span class="n">mom2</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span><span class="bp">False</span><span class="p">,</span><span class="bp">False</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">moments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">moment</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">moments</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">moment</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">mom0</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="n">moment</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">mom1</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="n">moment</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">mom2</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">if</span> <span class="n">mom1</span> <span class="o">==</span> <span class="bp">True</span> <span class="ow">or</span> <span class="n">mom2</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">beamScale</span> <span class="o">=</span> <span class="mf">1.01</span>
+    <span class="k">elif</span> <span class="n">mom0</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">beamScale</span> <span class="o">=</span> <span class="mf">2.</span>
+
+    <span class="c1"># determine beamsize of cube</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">imageDir</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="n">extension</span><span class="p">)</span>
+    <span class="n">beamsizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ia</span><span class="o">.</span><span class="n">shape</span><span class="p">()[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ia</span><span class="o">.</span><span class="n">shape</span><span class="p">()[</span><span class="mi">2</span><span class="p">]):</span>
+        <span class="n">beamsizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="n">i</span><span class="p">)[</span><span class="s1">&#39;major&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+    <span class="n">beamsizeUnit</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="n">i</span><span class="p">)[</span><span class="s1">&#39;major&#39;</span><span class="p">][</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+    <span class="n">beamsize</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">beamsizes</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="n">beamsizeUnit</span><span class="p">,</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">beamround</span><span class="p">)</span> <span class="o">==</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">beamsize_smooth</span> <span class="o">=</span> <span class="n">beamround</span><span class="o">*</span><span class="n">beamsize</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">beamsize_smooth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">beamsize</span><span class="p">)</span>   <span class="c1">#beamsize_smooth = 1.01 * beamsize</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s1">&#39;Max beamsize is &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">beamsize</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.blk.image&#39;</span><span class="p">):</span>
+        <span class="c1"># create cube for blanking</span>
+        <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span> <span class="c1"># smooth to a larger beam if the user desires</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s1">&#39;Convolving to &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">beamsize_smooth</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span>
+
+            <span class="n">imsmooth</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="n">extension</span><span class="p">,</span>
+                     <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.blk.image&#39;</span><span class="p">,</span>
+                     <span class="n">major</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">beamsize_smooth</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;arcsec&#39;</span><span class="p">,</span>
+                     <span class="n">minor</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">beamsize_smooth</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;arcsec&#39;</span><span class="p">,</span>
+                     <span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
+                     <span class="n">pa</span><span class="o">=</span><span class="s1">&#39;0deg&#39;</span><span class="p">,</span>
+                     <span class="n">targetres</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># do no smooth</span>
+            <span class="n">immath</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="n">extension</span><span class="p">,</span>
+               <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.blk.image&#39;</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;evalexpr&#39;</span><span class="p">,</span>
+                <span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
+                <span class="n">expr</span><span class="o">=</span><span class="s1">&#39;IM0&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image&#39;</span><span class="p">):</span>
+        <span class="c1"># convolve cube to 2X beam for blanking</span>
+        <span class="n">imsmooth</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="n">extension</span><span class="p">,</span>
+             <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image&#39;</span><span class="p">,</span>
+             <span class="n">major</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">beamsize</span><span class="o">*</span><span class="n">beamScale</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;arcsec&#39;</span><span class="p">,</span>
+             <span class="n">minor</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">beamsize</span><span class="o">*</span><span class="n">beamScale</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;arcsec&#39;</span><span class="p">,</span>
+             <span class="n">pa</span><span class="o">=</span><span class="s1">&#39;0deg&#39;</span><span class="p">,</span>
+             <span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">,</span>
+             <span class="n">targetres</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># determine threshold of cube</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image&#39;</span><span class="p">)</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">statistics</span><span class="p">()[</span><span class="s1">&#39;sigma&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">blankThreshold</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># blank the cube at threshold*sigma</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image&#39;</span><span class="p">)</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">calcmask</span><span class="p">(</span><span class="n">mask</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image &gt; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">threshold</span><span class="p">),</span>
+             <span class="n">name</span><span class="o">=</span><span class="s1">&#39;mask1&#39;</span><span class="p">)</span>
+    <span class="n">wait</span> <span class="o">=</span> <span class="s1">&#39;waits for calcmask to close&#39;</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># hand blank the cube</span>
+    <span class="n">im</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dummyMS</span><span class="p">)</span>
+    <span class="n">pause</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">while</span> <span class="n">pause</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">drawmask</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image&#39;</span><span class="p">,</span>
+                           <span class="n">mask</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span><span class="p">)</span>
+        <span class="n">pause</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">im</span><span class="o">.</span><span class="n">close</span>
+
+    <span class="c1"># mask contains values of 0 and 1, change to a mask with only values of 1</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span><span class="p">)</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">calcmask</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mask&#39;</span> <span class="o">+</span> <span class="s1">&#39;&gt;0.5&#39;</span><span class="p">)</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># apply mask on smoothed image</span>
+    <span class="n">immath</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.image&#39;</span><span class="p">,</span>
+       <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.blk.image&#39;</span><span class="p">,</span>
+       <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;evalexpr&#39;</span><span class="p">,</span>
+       <span class="n">mask</span><span class="o">=</span><span class="s1">&#39;mask(&#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mask)&#39;</span><span class="p">,</span>
+       <span class="n">expr</span><span class="o">=</span><span class="s1">&#39;IM0&#39;</span><span class="p">)</span>
+
+    <span class="c1"># apply mask on image</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">imageDir</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.blk.image&#39;</span><span class="p">)</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">maskhandler</span><span class="p">(</span><span class="s1">&#39;copy&#39;</span><span class="p">,[</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.smooth.blk.image:mask0&#39;</span><span class="p">,</span> <span class="s1">&#39;newmask&#39;</span><span class="p">])</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">maskhandler</span><span class="p">(</span><span class="s1">&#39;set&#39;</span><span class="p">,</span><span class="s1">&#39;newmask&#39;</span><span class="p">)</span>
+    <span class="n">ia</span><span class="o">.</span><span class="n">done</span><span class="p">()</span>
+
+    <span class="n">cube</span> <span class="o">=</span> <span class="s1">&#39;.blk.image&#39;</span> <span class="c1"># specify name of cube for moment calculation</span>
+
+
+    <span class="c1"># create moment 0 map</span>
+    <span class="k">if</span> <span class="n">mom0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ruthless</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;rm -rf &#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom0.image&#39;</span><span class="p">)</span>
+        <span class="n">immoments</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="n">cube</span><span class="p">,</span>
+                  <span class="n">moments</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                  <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;spectra&#39;</span><span class="p">,</span>
+                  <span class="n">chans</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                  <span class="n">mask</span><span class="o">=</span><span class="s1">&#39;mask(&#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="n">cube</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">,</span>
+                  <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom0.image&#39;</span><span class="p">)</span>
+
+    <span class="c1"># create moment 1 map</span>
+    <span class="k">if</span> <span class="n">mom1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ruthless</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;rm -rf &#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom1.image&#39;</span><span class="p">)</span>
+        <span class="n">immoments</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="n">cube</span><span class="p">,</span>
+                  <span class="n">moments</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;spectra&#39;</span><span class="p">,</span>
+                  <span class="n">chans</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                  <span class="n">mask</span><span class="o">=</span><span class="s1">&#39;mask(&#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="n">cube</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">,</span>
+                  <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom1.image&#39;</span><span class="p">)</span>
+
+    <span class="c1"># create moment 2 map</span>
+    <span class="k">if</span> <span class="n">mom2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ruthless</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;rm -rf &#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom2.image&#39;</span><span class="p">)</span>
+        <span class="n">immoments</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="n">cube</span><span class="p">,</span>
+                  <span class="n">moments</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                  <span class="n">axis</span><span class="o">=</span><span class="s1">&#39;spectra&#39;</span><span class="p">,</span>
+                  <span class="n">chans</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                  <span class="n">mask</span><span class="o">=</span><span class="s1">&#39;mask(&#39;</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="n">cube</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span><span class="p">,</span>
+                  <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom2.image&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">mom0</span><span class="p">:</span>
+	<span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">imstat</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="n">imstat</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom0.image&#39;</span><span class="p">)[</span><span class="s1">&#39;flux&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom0.image&#39;</span><span class="p">)</span>
+        <span class="n">beammaj</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;major&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="n">beammin</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;minor&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="n">beamsizeUnit</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;major&#39;</span><span class="p">][</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">ia</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s1">&#39;Moment Image: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.mom0.image&#39;</span>
+        <span class="k">print</span> <span class="s1">&#39;Beamsize: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">beammaj</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot; X &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">beammin</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span>
+        <span class="k">print</span> <span class="s1">&#39;Flux: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; Jy km/s&#39;</span></div>
+
+<div class="viewcode-block" id="convolve"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.convolve">[docs]</a><span class="k">def</span> <span class="nf">convolve</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">psf</span><span class="p">,</span> <span class="n">ft_psf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ft_image</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">no_ft</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+             <span class="n">correlate</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">auto_correlation</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    NAME:</span>
+<span class="sd">          CONVOLVE</span>
+<span class="sd">    PURPOSE:</span>
+<span class="sd">          Convolution of an image with a Point Spread Function (PSF)</span>
+<span class="sd">    EXPLANATION:</span>
+<span class="sd">          The default is to compute the convolution using a product of</span>
+<span class="sd">          Fourier transforms (for speed).</span>
+
+<span class="sd">    CALLING SEQUENCE:</span>
+
+<span class="sd">          imconv = convolve( image1, psf, FT_PSF = psf_FT )</span>
+<span class="sd">     or:</span>
+<span class="sd">          correl = convolve( image1, image2, /CORREL )</span>
+<span class="sd">     or:</span>
+<span class="sd">          correl = convolve( image, /AUTO )</span>
+
+<span class="sd">    INPUTS:</span>
+<span class="sd">          image = 2-D array (matrix) to be convolved with psf</span>
+<span class="sd">          psf = the Point Spread Function, (size &lt; or = to size of image).</span>
+
+<span class="sd">    OPTIONAL INPUT KEYWORDS:</span>
+
+<span class="sd">          FT_PSF = passes out/in the Fourier transform of the PSF,</span>
+<span class="sd">                  (so that it can be re-used the next time function is called).</span>
+<span class="sd">          FT_IMAGE = passes out/in the Fourier transform of image.</span>
+
+<span class="sd">          /CORRELATE uses the conjugate of the Fourier transform of PSF,</span>
+<span class="sd">                  to compute the cross-correlation of image and PSF,</span>
+<span class="sd">                  (equivalent to IDL function convol() with NO rotation of PSF)</span>
+
+<span class="sd">          /AUTO_CORR computes the auto-correlation function of image using FFT.</span>
+
+<span class="sd">          /NO_FT overrides the use of FFT, using IDL function convol() instead.</span>
+<span class="sd">                  (then PSF is rotated by 180 degrees to give same result)</span>
+<span class="sd">    METHOD:</span>
+<span class="sd">          When using FFT, PSF is centered &amp; expanded to size of image.</span>
+<span class="sd">    HISTORY:</span>
+<span class="sd">          written, Frank Varosi, NASA/GSFC 1992.</span>
+<span class="sd">          Appropriate precision type for result depending on input image</span>
+<span class="sd">                                  Markus Hundertmark February 2006</span>
+<span class="sd">          Fix the bug causing the recomputation of FFT(psf) and/or FFT(image)</span>
+<span class="sd">                                  Sergey Koposov     December 2006</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="o">*</span>
+    <span class="kn">from</span> <span class="nn">numpy.fft</span> <span class="kn">import</span> <span class="n">fft2</span><span class="p">,</span> <span class="n">ifft2</span>
+
+    <span class="c1"># begin</span>
+    <span class="n">n_params</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">psf_ft</span> <span class="o">=</span> <span class="n">ft_psf</span>
+    <span class="n">imft</span> <span class="o">=</span> <span class="n">ft_image</span>
+    <span class="n">noft</span> <span class="o">=</span> <span class="n">no_ft</span>
+    <span class="n">auto</span> <span class="o">=</span> <span class="n">auto_correlation</span>
+
+    <span class="n">sp</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="p">(</span><span class="n">psf_ft</span><span class="p">))</span>
+    <span class="n">sif</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="p">(</span><span class="n">imft</span><span class="p">))</span>
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="p">(</span><span class="n">image</span><span class="p">))</span>
+    <span class="n">sc</span> <span class="o">=</span> <span class="n">sim</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">npix</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">ndim</span><span class="o">!=</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">noft</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span>
+       <span class="k">if</span> <span class="p">(</span><span class="n">auto</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+          <span class="n">message</span><span class="p">(</span><span class="s2">&quot;auto-correlation only for images with FFT&quot;</span><span class="p">,</span> <span class="n">inf</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+          <span class="k">return</span> <span class="n">image</span>
+       <span class="k">else</span><span class="p">:</span>
+          <span class="k">if</span> <span class="p">(</span><span class="n">correlate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+             <span class="k">return</span> <span class="n">convol</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">psf</span><span class="p">)</span>
+          <span class="k">else</span><span class="p">:</span>
+             <span class="k">return</span> <span class="n">convol</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">rotate</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">imft</span><span class="o">==</span><span class="bp">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">imft</span><span class="o">.</span><span class="n">ndim</span><span class="o">!=</span><span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="n">imft</span><span class="o">.</span><span class="n">shape</span><span class="o">!=</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span> <span class="c1">#add the type check</span>
+       <span class="n">imft</span> <span class="o">=</span> <span class="n">ifft2</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">auto</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+       <span class="k">return</span> <span class="n">roll</span><span class="p">(</span><span class="n">roll</span><span class="p">(</span><span class="n">npix</span> <span class="o">*</span> <span class="n">real</span><span class="p">(</span><span class="n">fft2</span><span class="p">(</span><span class="n">imft</span> <span class="o">*</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">imft</span><span class="p">))),</span> <span class="n">sc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span><span class="n">sc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">ft_psf</span><span class="o">==</span><span class="bp">None</span> <span class="ow">or</span> <span class="n">ft_psf</span><span class="o">.</span><span class="n">ndim</span><span class="o">!=</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">ft_psf</span><span class="o">.</span><span class="n">shape</span><span class="o">!=</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span> <span class="ow">or</span>
+             <span class="n">ft_psf</span><span class="o">.</span><span class="n">dtype</span><span class="o">!=</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
+       <span class="n">sp</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="p">(</span><span class="n">psf</span><span class="p">))</span>
+
+       <span class="n">loc</span> <span class="o">=</span> <span class="n">maximum</span><span class="p">((</span><span class="n">sc</span> <span class="o">-</span> <span class="n">sp</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>         <span class="c1">#center PSF in new array,</span>
+       <span class="n">s</span> <span class="o">=</span> <span class="n">maximum</span><span class="p">((</span><span class="n">sp</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">sc</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>        <span class="c1">#handle all cases: smaller or bigger</span>
+       <span class="n">l</span> <span class="o">=</span> <span class="n">minimum</span><span class="p">((</span><span class="n">s</span> <span class="o">+</span> <span class="n">sim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">sp</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+       <span class="n">psf_ft</span> <span class="o">=</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="o">*</span> <span class="mi">0</span> <span class="c1">#initialise with correct size+type according</span>
+       <span class="c1">#to logic of conj and set values to 0 (type of ft_psf is conserved)</span>
+       <span class="n">psf_ft</span><span class="p">[</span><span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span><span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                      <span class="n">psf</span><span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]:(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]:(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+       <span class="n">psf_ft</span> <span class="o">=</span> <span class="n">ifft2</span><span class="p">(</span><span class="n">psf_ft</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">correlate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+       <span class="n">conv</span> <span class="o">=</span> <span class="n">npix</span> <span class="o">*</span> <span class="n">real</span><span class="p">(</span><span class="n">fft2</span><span class="p">(</span><span class="n">imft</span> <span class="o">*</span> <span class="n">conjugate</span><span class="p">(</span><span class="n">psf_ft</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+       <span class="n">conv</span> <span class="o">=</span> <span class="n">npix</span> <span class="o">*</span> <span class="n">real</span><span class="p">(</span><span class="n">fft2</span><span class="p">(</span><span class="n">imft</span> <span class="o">*</span> <span class="n">psf_ft</span><span class="p">))</span>
+
+    <span class="n">sc</span> <span class="o">=</span> <span class="n">sc</span> <span class="o">+</span> <span class="p">(</span><span class="n">sim</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span>   <span class="c1">#shift correction for odd size images.</span>
+
+    <span class="k">return</span> <span class="n">roll</span><span class="p">(</span><span class="n">roll</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="n">sc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">0</span><span class="p">),</span> <span class="n">sc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="gauss2d"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.gauss2d">[docs]</a><span class="k">def</span> <span class="nf">gauss2d</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Author: P. L. Lim, Space Telescope Science Institute, Baltimore MD</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : tuple, int</span>
+<span class="sd">        Number of pixels for first and second dimension.</span>
+<span class="sd">        Just one number to make all sizes equal.</span>
+
+<span class="sd">    fwhm : float</span>
+<span class="sd">        FWHM (pixels) in each dimension.</span>
+<span class="sd">        Single number to make all the same.</span>
+
+<span class="sd">    normalize : bool, optional</span>
+<span class="sd">        Normalized so total PSF is 1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    psf : array_like</span>
+<span class="sd">        Gaussian point spread function.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from psf_gaussian import gauss2d</span>
+<span class="sd">    &gt;&gt;&gt; import matplotlib.pyplot as plt</span>
+<span class="sd">    &gt;&gt;&gt; psf = gauss2d(50, 2.5)</span>
+<span class="sd">    &gt;&gt;&gt; plt.imshow(psf, cmap=plt.cm.gray)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">xSize</span><span class="p">,</span><span class="n">ySize</span> <span class="o">=</span> <span class="n">shape</span><span class="p">,</span><span class="n">shape</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xSize</span><span class="p">,</span><span class="n">ySize</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Initialize PSF params</span>
+    <span class="n">xCentroid</span><span class="p">,</span><span class="n">yCentroid</span> <span class="o">=</span> <span class="p">(</span><span class="n">xSize</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="p">(</span><span class="n">ySize</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span>
+    <span class="n">st_dev</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">fwhm</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Make PSF (Rene Breton 2011-10-20)</span>
+    <span class="c1"># https://groups.google.com/group/astropy-dev/browse_thread/thread/5ee6cd662236e382</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">([</span><span class="n">xSize</span><span class="p">,</span> <span class="n">ySize</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">xCentroid</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">([</span><span class="n">xSize</span><span class="p">,</span> <span class="n">ySize</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">yCentroid</span>
+    <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">st_dev</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># Normalize</span>
+    <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+        <span class="n">psf</span> <span class="o">/=</span> <span class="n">psf</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">psf</span></div>
+
+<div class="viewcode-block" id="flux2Mass"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.flux2Mass">[docs]</a><span class="k">def</span> <span class="nf">flux2Mass</span><span class="p">(</span><span class="n">distance</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">distanceErr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">arcsecPerPix</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">beamsize</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">flux</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">fluxErr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Distance in units of Mpc</span>
+<span class="sd">    flux in units of Jy/beam km/s</span>
+<span class="sd">    beamsize in units of &quot;</span>
+<span class="sd">    Returns mass in units of Msun</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="n">beamarea</span> <span class="o">=</span> <span class="mf">1.13</span><span class="o">*</span><span class="n">beamsize</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">arcsecPerPix</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">mass</span> <span class="o">=</span> <span class="mf">2.36e5</span> <span class="o">*</span> <span class="n">distance</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">flux</span> <span class="o">/</span> <span class="n">beamarea</span>
+    <span class="n">massErr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">mass</span> <span class="o">*</span> <span class="mi">2</span><span class="o">*</span><span class="n">distanceErr</span><span class="o">/</span><span class="n">distance</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">fluxErr</span><span class="o">/</span><span class="n">flux</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mass</span><span class="p">,</span> <span class="n">massErr</span></div>
+
+<div class="viewcode-block" id="mass2SB"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.mass2SB">[docs]</a><span class="k">def</span> <span class="nf">mass2SB</span><span class="p">(</span><span class="n">mass</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">massErr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">area</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">arcsecPerPix</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">distance</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    mass in units of Msun</span>
+<span class="sd">    massErr in units of Msun</span>
+<span class="sd">    area in units of pixels</span>
+<span class="sd">    arsecPerPix in units of &quot;/pixel</span>
+<span class="sd">    distance in units of Mpc</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">pcPerArcsec</span> <span class="o">=</span> <span class="n">distance</span> <span class="o">*</span><span class="mf">1e6</span> <span class="o">/</span> <span class="mf">206265.</span>
+    <span class="n">pcPerPixel</span> <span class="o">=</span> <span class="n">arcsecPerPix</span> <span class="o">*</span> <span class="n">pcPerArcsec</span>
+    <span class="n">pixSB</span> <span class="o">=</span> <span class="n">mass</span> <span class="o">/</span> <span class="n">area</span> <span class="c1"># units in Msun per pixel</span>
+    <span class="k">return</span> <span class="n">pixSB</span> <span class="o">/</span> <span class="n">pcPerPixel</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">massErr</span><span class="o">/</span><span class="n">area</span> <span class="o">/</span> <span class="n">pcPerPixel</span><span class="o">**</span><span class="mi">2</span></div>
+
+<div class="viewcode-block" id="make_SBimage"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.make_SBimage">[docs]</a><span class="k">def</span> <span class="nf">make_SBimage</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">cellsize</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">beamsize</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">distance</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">extension</span><span class="o">=</span><span class="s1">&#39;.image&#39;</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">immath</span><span class="p">,</span><span class="n">imhead</span>
+
+    <span class="n">beamarea</span> <span class="o">=</span> <span class="mf">1.13</span><span class="o">*</span><span class="n">beamsize</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">cellsize</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">massCoeff</span> <span class="o">=</span> <span class="mf">2.36e5</span> <span class="o">*</span> <span class="n">distance</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="n">beamarea</span>
+    <span class="n">pcPerArcsec</span> <span class="o">=</span> <span class="n">distance</span> <span class="o">*</span><span class="mf">1e6</span> <span class="o">/</span> <span class="mf">206265.</span>
+    <span class="n">pcPerPixel</span> <span class="o">=</span> <span class="n">cellsize</span> <span class="o">*</span> <span class="n">pcPerArcsec</span>
+    <span class="n">pixSB</span> <span class="o">=</span> <span class="n">massCoeff</span> <span class="o">/</span> <span class="n">pcPerPixel</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># units in Msun per pixel</span>
+
+    <span class="n">immath</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="n">extension</span><span class="p">,</span>
+       <span class="n">outfile</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.sb.image&#39;</span><span class="p">,</span>
+       <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;evalexpr&#39;</span><span class="p">,</span>
+       <span class="n">expr</span><span class="o">=</span><span class="s1">&#39;IM0*&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">pixSB</span><span class="p">))</span>
+    <span class="n">imhead</span><span class="p">(</span><span class="n">imagename</span><span class="o">=</span><span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.sb.image&#39;</span><span class="p">,</span>
+           <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;put&#39;</span><span class="p">,</span>
+           <span class="n">hdkey</span><span class="o">=</span><span class="s1">&#39;bunit&#39;</span><span class="p">,</span>
+           <span class="n">hdvalue</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+           <span class="n">hdcomment</span><span class="o">=</span><span class="s1">&#39;Units Msun/pc^-2&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="execute"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.execute">[docs]</a><span class="k">def</span> <span class="nf">execute</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">&#39;/d/bip3/ezbc/leop/data/hi/casa/images/gmrt/&#39;</span><span class="p">)</span>
+    <span class="n">dummyMS</span> <span class="o">=</span> <span class="s1">&#39;/d/bip3/ezbc/leop/data/hi/casa/uvdata/leopGMRT.contsub.ms&#39;</span>
+    <span class="n">blankcube</span><span class="p">(</span><span class="s1">&#39;./&#39;</span><span class="p">,</span><span class="s1">&#39;leop.gmrt.original.4arcsec&#39;</span><span class="p">,</span><span class="n">dummyMS</span><span class="o">=</span><span class="n">dummyMS</span><span class="p">,</span><span class="n">pbcor</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">ruthless</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">smooth</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="printProperties"><a class="viewcode-back" href="../docs_rst/hianalysis.html#hianalysis.printProperties">[docs]</a><span class="k">def</span> <span class="nf">printProperties</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
+
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">imstat</span>
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">image</span> <span class="k">as</span> <span class="n">ia</span>
+    <span class="kn">from</span> <span class="nn">casa</span> <span class="kn">import</span> <span class="n">imager</span> <span class="k">as</span> <span class="n">im</span>
+
+    <span class="n">imageDir</span> <span class="o">=</span> <span class="s1">&#39;./&#39;</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filenames</span><span class="p">):</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="n">imstat</span><span class="p">(</span><span class="n">imageDir</span> <span class="o">+</span> <span class="n">image</span><span class="o">+</span> <span class="s1">&#39;.mom0.blk.image&#39;</span><span class="p">)[</span><span class="s1">&#39;flux&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">imageDir</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.mom0.blk.image&#39;</span><span class="p">)</span>
+        <span class="n">beammaj</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;major&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="n">beammin</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;minor&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="n">beamsizeUnit</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">restoringbeam</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;major&#39;</span><span class="p">][</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">ia</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">ia</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">imageDir</span> <span class="o">+</span> <span class="n">image</span> <span class="o">+</span> <span class="s1">&#39;.image&#39;</span><span class="p">)</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">statistics</span><span class="p">()[</span><span class="s1">&#39;sigma&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ia</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">True</span><span class="p">:</span> <span class="n">mosaic</span><span class="p">,</span><span class="n">res</span> <span class="o">=</span> <span class="s1">&#39;Multiscale clean&#39;</span><span class="p">,</span> <span class="n">i</span>
+        <span class="c1">#else: mosaic,res = &#39;Mosaic&#39;, i*3 -3</span>
+        <span class="k">print</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Image: &#39;</span><span class="o">+</span><span class="n">mosaic</span><span class="o">+</span><span class="s1">&#39; resolution #&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">+</span> \
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Beamsize: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">beammaj</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot; X &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">beammin</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span> <span class="o">+</span> \
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Std: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">noise</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; Jy/Bm&#39;</span> <span class="o">+</span> \
+                <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Flux: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; Jy km/s&#39;</span></div>
+
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>constants &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for constants</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+
+<span class="c1"># constants</span>
+
+<div class="viewcode-block" id="cgs"><a class="viewcode-back" href="../docs_rst/constants.html#constants.cgs">[docs]</a><span class="k">class</span> <span class="nc">cgs</span><span class="p">():</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="mf">1.602e-10</span> <span class="c1"># esu                     Electron charge</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="mf">6.626e-27</span> <span class="c1"># erg s                   Planck constant</span>
+    <span class="n">hbar</span> <span class="o">=</span> <span class="mf">1.05457266e-27</span> <span class="c1"># erg s           Planck constant / 2pi</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">2.9979e10</span> <span class="c1"># cm/s                    Speed of light</span>
+    <span class="n">me</span> <span class="o">=</span> <span class="mf">9.109e-28</span> <span class="c1"># g                      Mass of election</span>
+    <span class="n">mp</span> <span class="o">=</span> <span class="mf">1.6726e-24</span> <span class="c1"># g                     Mass of proton</span>
+    <span class="n">mh</span> <span class="o">=</span> <span class="mf">1.6733e-24</span> <span class="c1"># g                     Mass of hydrogen</span>
+    <span class="n">mn</span> <span class="o">=</span> <span class="mf">1.6749286e-24</span> <span class="c1"># g                  Mass of neutron</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mf">1.38065e-16</span> <span class="c1"># erg/K                 Boltzmann constant</span>
+    <span class="n">AMU</span> <span class="o">=</span> <span class="mf">1.6605402e-24</span> <span class="c1"># g                 Atomic mass unit</span>
+    <span class="n">eV</span> <span class="o">=</span> <span class="mf">1.6021772e-12</span> <span class="c1"># erg                Electron volt</span>
+    <span class="n">SB</span> <span class="o">=</span> <span class="mf">5.67051e-5</span> <span class="c1"># erg cm^-2 K^-4 s^-1   Stefan-Boltzmann constant</span>
+    <span class="n">AU</span> <span class="o">=</span> <span class="mf">1.496e13</span> <span class="c1"># cm                      Astronomical unit</span>
+    <span class="n">pc</span> <span class="o">=</span> <span class="mf">3.086e18</span> <span class="c1"># cm                      Parsec</span>
+    <span class="n">ly</span> <span class="o">=</span> <span class="mf">9.463e17</span> <span class="c1"># cm                      Light-year</span>
+    <span class="n">Msun</span> <span class="o">=</span> <span class="mf">1.9891e33</span> <span class="c1"># g                    Solar mass</span>
+    <span class="n">Rsun</span> <span class="o">=</span> <span class="mi">69599000000</span> <span class="c1"># cm                 Solar radius</span>
+    <span class="n">Lsun</span> <span class="o">=</span> <span class="mf">3.9e33</span> <span class="c1"># erg/s                   Solar luminosity</span></div>
+
+<div class="viewcode-block" id="si"><a class="viewcode-back" href="../docs_rst/constants.html#constants.si">[docs]</a><span class="k">class</span> <span class="nc">si</span><span class="p">():</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="mf">0.</span></div>
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

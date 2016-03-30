@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>readsubfHDF5 &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for readsubfHDF5</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Python HDF5 subfind reader </span>
+<span class="c1"># (requires util/hdf5lib.py)</span>
+<span class="c1">#</span>
+<span class="c1"># import readsubfHDF5</span>
+<span class="c1"># cat = readsubfHDF5.subfind_catalog(&quot;./output/&quot;, 60)</span>
+<span class="c1"># print cat.SubhaloPos</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># Mark Vogelsberger (mvogelsb@cfa.harvard.edu)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">hdf5lib</span> 
+
+<span class="c1">####################</span>
+<span class="c1">#SUBHALO DATABLOCKS#</span>
+<span class="c1">####################</span>
+<span class="c1">#descriptions of subhalo datablocks -&gt; add new datablocks here!</span>
+<span class="c1">#format -&gt; &quot;HDF5_NAME&quot;:[&quot;DATATYPE&quot;, DIMENSION]</span>
+<span class="n">sub_datablocks</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;SubhaloLen&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloMass&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloMassinRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloPos&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloVel&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloLenType&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloMassType&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloCM&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloSpin&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloVelDisp&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloVmax&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloVmaxRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloHalfmassRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloHalfmassRadType&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloMassInRadType&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloMassInRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+	          <span class="s2">&quot;SubhaloMassInHalfRadType&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+		  <span class="s2">&quot;SubhaloMassInHalfRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloIDMostbound&quot;</span><span class="p">:[</span><span class="s2">&quot;ID&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloGrNr&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloParent&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		  <span class="s2">&quot;SubhaloSFR&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloSFRinRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloGasMetallicity&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloGasMetallicitySfr&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloStarMetallicity&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloGasMetalFractions&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloGasMetalFractionsSfr&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloGasMetalFractionsSfrWeighted&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloStarMetalFractions&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloStarMetallicityHalfRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloBHMass&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloBHMdot&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloStellarPhotometricsMassInRad&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;SubhaloStellarPhotometrics&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">]}</span>  <span class="c1">#band luminosities: U, B, V, K, g, r, i, z</span>
+
+<span class="c1">##################</span>
+<span class="c1">#GROUP DATABLOCKS#</span>
+<span class="c1">##################</span>
+<span class="c1">#descriptions of subhalo datablocks -&gt; add new datablocks here!</span>
+<span class="c1">#format -&gt; &quot;HDF5_NAME&quot;:[&quot;DATATYPE&quot;, DIMENSION]</span>
+<span class="n">grp_datablocks</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;GroupLen&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupMass&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupPos&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupVel&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupLenType&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupMassType&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_M_Mean200&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_R_Mean200&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_M_Crit200&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_R_Crit200&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_M_TopHat200&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_R_TopHat200&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_M_Crit500&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;Group_R_Crit500&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupNsubs&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupFirstSub&quot;</span><span class="p">:[</span><span class="s2">&quot;INT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupSFR&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupGasMetallicity&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupStarMetallicity&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupGasMetalFractions&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupStarMetalFractions&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupBHMass&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s2">&quot;GroupBHMdot&quot;</span><span class="p">:[</span><span class="s2">&quot;FLOAT&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> 
+		  <span class="s2">&quot;GroupFuzzOffsetType&quot;</span><span class="p">:[</span><span class="s2">&quot;INT64&quot;</span><span class="p">,</span><span class="mi">6</span><span class="p">]}</span>
+
+<div class="viewcode-block" id="subfind_catalog"><a class="viewcode-back" href="../docs_rst/readsubfHDF5.html#readsubfHDF5.subfind_catalog">[docs]</a><span class="k">class</span> <span class="nc">subfind_catalog</span><span class="p">:</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">basedir</span><span class="p">,</span> <span class="n">snapnum</span><span class="p">,</span> <span class="n">long_ids</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">double_output</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">grpcat</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">subcat</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;fof_subhalo_tab&quot;</span><span class="p">,</span> <span class="n">keysel</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">filebase</span> <span class="o">=</span> <span class="n">basedir</span> <span class="o">+</span> <span class="s2">&quot;/groups_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">snapnum</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">snapnum</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
+ 
+		<span class="k">if</span> <span class="n">long_ids</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint64</span>
+		<span class="k">else</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span>
+		<span class="k">if</span> <span class="n">double_output</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">double_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+		<span class="k">else</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">double_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+
+		<span class="n">filenum</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">doneflag</span> <span class="o">=</span> <span class="bp">False</span>
+		<span class="n">skip_gr</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">skip_sub</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="n">vardict</span> <span class="o">=</span> <span class="p">{}</span>
+
+		<span class="k">while</span> <span class="ow">not</span> <span class="n">doneflag</span><span class="p">:</span>
+			<span class="n">curfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filebase</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">filenum</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.hdf5&quot;</span>
+
+			<span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">curfile</span><span class="p">)):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">filebase</span> <span class="o">=</span> <span class="n">basedir</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">snapnum</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+				<span class="n">curfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filebase</span> <span class="o">+</span> <span class="s2">&quot;.hdf5&quot;</span>
+			<span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">curfile</span><span class="p">)):</span>
+				<span class="k">print</span> <span class="s2">&quot;file not found:&quot;</span><span class="p">,</span> <span class="n">curfile</span>
+				<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+			<span class="n">f</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">curfile</span><span class="p">)</span>     
+			<span class="n">ngroups</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Ngroups_ThisFile&quot;</span><span class="p">)</span> 
+			<span class="n">nsubs</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Nsubgroups_ThisFile&quot;</span><span class="p">)</span>
+			<span class="n">nfiles</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;NumFiles&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">filenum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Ngroups_Total&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">nids</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Nids_Total&quot;</span><span class="p">)</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Nsubgroups_Total&quot;</span><span class="p">)</span>
+				<span class="c1">#GROUPS</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">grpcat</span><span class="o">==</span><span class="bp">True</span><span class="p">):</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">keysel</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+					       	<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">grp_datablocks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+						                <span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        						        <span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+					                	<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">):</span>
+		        				                <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">double_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+			        			        <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT&#39;</span><span class="p">):</span>
+		                				        <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+					                        <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT64&#39;</span><span class="p">):</span>
+        		        			                <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+				        		        <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;ID&#39;</span><span class="p">):</span>
+                						        <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keysel</span><span class="p">:</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+								<span class="n">val</span> <span class="o">=</span> <span class="n">grp_datablocks</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+								<span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
+								<span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">double_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT64&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;ID&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ngroups</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+
+		
+				<span class="c1">#SUBHALOS</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">subcat</span><span class="o">==</span><span class="bp">True</span><span class="p">):</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">keysel</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+						<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">sub_datablocks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Subhalo&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+					                        <span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+				        	                <span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+							<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">):</span>
+								<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">double_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+							<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT&#39;</span><span class="p">):</span>
+			        		        	<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+			                	        <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT64&#39;</span><span class="p">):</span>
+			                        	        <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+					                <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;ID&#39;</span><span class="p">):</span>
+        					                <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+							<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keysel</span><span class="p">:</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Subhalo&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+								<span class="n">val</span> <span class="o">=</span> <span class="n">sub_datablocks</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+								<span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+								<span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">double_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;INT64&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="o">==</span><span class="s1">&#39;ID&#39;</span><span class="p">):</span>
+									<span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsubs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">id_type</span><span class="p">,</span><span class="n">dim</span><span class="p">)))</span>
+								<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+
+		      	<span class="c1">#GROUPS</span>
+      			<span class="k">if</span> <span class="p">(</span><span class="n">grpcat</span><span class="o">==</span><span class="bp">True</span><span class="p">):</span>
+				<span class="k">if</span> <span class="n">ngroups</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">keysel</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+			                	<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">grp_datablocks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+				                        	<span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	                				        <span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+								<span class="n">a</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Group/&quot;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
+                        				        <span class="k">if</span> <span class="n">dim</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+			                        	                <span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_gr</span><span class="p">:</span><span class="n">skip_gr</span> <span class="o">+</span> <span class="n">ngroups</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:]</span>
+			                                	<span class="k">else</span><span class="p">:</span>
+                        			                	<span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dim</span><span class="p">):</span>
+			                                                	<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_gr</span><span class="p">:</span><span class="n">skip_gr</span> <span class="o">+</span> <span class="n">ngroups</span><span class="p">,</span><span class="n">d</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:,</span><span class="n">d</span><span class="p">]</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keysel</span><span class="p">:</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Group&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+								<span class="n">val</span> <span class="o">=</span> <span class="n">grp_datablocks</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+								<span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+								<span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+								<span class="n">a</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Group/&quot;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
+								<span class="k">if</span> <span class="n">dim</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+									<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_gr</span><span class="p">:</span><span class="n">skip_gr</span> <span class="o">+</span> <span class="n">ngroups</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:]</span>
+								<span class="k">else</span><span class="p">:</span>
+									<span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dim</span><span class="p">):</span>
+										<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_gr</span><span class="p">:</span><span class="n">skip_gr</span> <span class="o">+</span> <span class="n">ngroups</span><span class="p">,</span><span class="n">d</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:,</span><span class="n">d</span><span class="p">]</span>
+							
+					<span class="n">skip_gr</span> <span class="o">+=</span> <span class="n">ngroups</span>
+			<span class="c1">#SUBHALOS </span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">subcat</span><span class="o">==</span><span class="bp">True</span><span class="p">):</span> 
+				<span class="k">if</span> <span class="n">nsubs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">keysel</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+						<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">sub_datablocks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Subhalo&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+								<span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+								<span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+								<span class="n">a</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Subhalo/&quot;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
+								<span class="k">if</span> <span class="n">dim</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+									<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_sub</span><span class="p">:</span><span class="n">skip_sub</span> <span class="o">+</span> <span class="n">nsubs</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:]</span>
+								<span class="k">else</span><span class="p">:</span>
+									<span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dim</span><span class="p">):</span>
+										<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_sub</span><span class="p">:</span><span class="n">skip_sub</span> <span class="o">+</span> <span class="n">nsubs</span><span class="p">,</span><span class="n">d</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:,</span><span class="n">d</span><span class="p">]</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keysel</span><span class="p">:</span>
+							<span class="k">if</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Subhalo&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+								<span class="n">val</span> <span class="o">=</span> <span class="n">sub_datablocks</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+								<span class="nb">type</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+								<span class="n">dim</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+								<span class="n">a</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Subhalo/&quot;</span><span class="o">+</span><span class="n">key</span><span class="p">)</span>
+								<span class="k">if</span> <span class="n">dim</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+									<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_sub</span><span class="p">:</span><span class="n">skip_sub</span> <span class="o">+</span> <span class="n">nsubs</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:]</span>
+								<span class="k">else</span><span class="p">:</span>
+									<span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dim</span><span class="p">):</span>
+										<span class="n">vardict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">skip_sub</span><span class="p">:</span><span class="n">skip_sub</span> <span class="o">+</span> <span class="n">nsubs</span><span class="p">,</span><span class="n">d</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[:,</span><span class="n">d</span><span class="p">]</span>
+
+					<span class="n">skip_sub</span> <span class="o">+=</span> <span class="n">nsubs</span>      
+
+			<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+			<span class="n">filenum</span> <span class="o">+=</span> <span class="mi">1</span>
+			<span class="k">if</span> <span class="n">filenum</span> <span class="o">==</span> <span class="n">nfiles</span><span class="p">:</span> <span class="n">doneflag</span> <span class="o">=</span> <span class="bp">True</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

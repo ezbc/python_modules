@@ -1,0 +1,725 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>snapHDF5 &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for snapHDF5</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Python HDF5 snapshot reader/writer for AREPO/GADGET</span>
+<span class="c1"># (requires util/hdf5lib.py)</span>
+<span class="c1">#</span>
+<span class="c1"># import snapHDF5 as snap </span>
+<span class="c1"># header = snap.snapshot_header(&quot;snap_063&quot;) </span>
+<span class="c1"># mass = snap.read_block(&quot;snap_063&quot;, &quot;MASS&quot;, parttype=5)</span>
+<span class="c1"># pos = snap.read_block(&quot;snap_063&quot;, &quot;POS &quot;, parttype=1) </span>
+<span class="c1"># print pos</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># Mark Vogelsberger (mvogelsb@cfa.harvard.edu)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">hdf5lib</span>
+
+<span class="c1">############ </span>
+<span class="c1">#DATABLOCKS#</span>
+<span class="c1">############</span>
+<span class="c1">#descriptions of all datablocks -&gt; add new datablocks here!</span>
+<span class="c1">#format -&gt; TAG:[HDF5_NAME, DIMENSION]</span>
+<span class="n">datablocks</span> <span class="o">=</span> <span class="p">{</span> 	<span class="s2">&quot;POS &quot;</span><span class="p">:[</span><span class="s2">&quot;Coordinates&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> 
+		<span class="s2">&quot;VEL &quot;</span><span class="p">:[</span><span class="s2">&quot;Velocities&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+		<span class="s2">&quot;ID  &quot;</span><span class="p">:[</span><span class="s2">&quot;ParticleIDs&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;MASS&quot;</span><span class="p">:[</span><span class="s2">&quot;Masses&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;U   &quot;</span><span class="p">:[</span><span class="s2">&quot;InternalEnergy&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;RHO &quot;</span><span class="p">:[</span><span class="s2">&quot;Density&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;VOL &quot;</span><span class="p">:[</span><span class="s2">&quot;Volume&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;CMCE&quot;</span><span class="p">:[</span><span class="s2">&quot;Center-of-Mass&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+		<span class="s2">&quot;AREA&quot;</span><span class="p">:[</span><span class="s2">&quot;Surface Area&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;NFAC&quot;</span><span class="p">:[</span><span class="s2">&quot;Number of faces of cell&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;NE  &quot;</span><span class="p">:[</span><span class="s2">&quot;ElectronAbundance&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;NH  &quot;</span><span class="p">:[</span><span class="s2">&quot;NeutralHydrogenAbundance&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;HSML&quot;</span><span class="p">:[</span><span class="s2">&quot;SmoothingLength&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SFR &quot;</span><span class="p">:[</span><span class="s2">&quot;StarFormationRate&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;AGE &quot;</span><span class="p">:[</span><span class="s2">&quot;StellarFormationTime&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;Z   &quot;</span><span class="p">:[</span><span class="s2">&quot;Metallicity&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;ACCE&quot;</span><span class="p">:[</span><span class="s2">&quot;Acceleration&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+		<span class="s2">&quot;VEVE&quot;</span><span class="p">:[</span><span class="s2">&quot;VertexVelocity&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span>
+		<span class="s2">&quot;FACA&quot;</span><span class="p">:[</span><span class="s2">&quot;MaxFaceAngle&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>              
+		<span class="s2">&quot;COOR&quot;</span><span class="p">:[</span><span class="s2">&quot;CoolingRate&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;POT &quot;</span><span class="p">:[</span><span class="s2">&quot;Potential&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;MACH&quot;</span><span class="p">:[</span><span class="s2">&quot;MachNumber&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;DMHS&quot;</span><span class="p">:[</span><span class="s2">&quot;DM Hsml&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;DMDE&quot;</span><span class="p">:[</span><span class="s2">&quot;DM Density&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;PHKE&quot;</span><span class="p">:[</span><span class="s2">&quot;PHKey&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;GROU&quot;</span><span class="p">:[</span><span class="s2">&quot;GroupNr&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="c1">#SIDM (GADGET)</span>
+		<span class="s2">&quot;PTSU&quot;</span><span class="p">:[</span><span class="s2">&quot;PSum&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;DMNB&quot;</span><span class="p">:[</span><span class="s2">&quot;DMNumNgb&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;NTSC&quot;</span><span class="p">:[</span><span class="s2">&quot;NumTotalScatter&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SHSM&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDMHsml&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SRHO&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDMRho&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SVEL&quot;</span><span class="p">:[</span><span class="s2">&quot;SVelDisp&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="c1">#SIDM (AREPO)</span>
+		<span class="s2">&quot;PTSU&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDM_Psum&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;DMNB&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDM_NumNgb&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;NTSC&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDM_NumTotalScatter&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SHSM&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDM_Hsml&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SRHO&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDM_Density&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SVEL&quot;</span><span class="p">:[</span><span class="s2">&quot;SIDM_VelDisp&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="c1">#TRACER</span>
+		<span class="s2">&quot;TRFQ&quot;</span><span class="p">:[</span><span class="s2">&quot;FluidQuantities&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+		<span class="s2">&quot;TRNT&quot;</span><span class="p">:[</span><span class="s2">&quot;NumTracers&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;TRCE&quot;</span><span class="p">:[</span><span class="s2">&quot;TracerField&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="c1">#GFM </span>
+		<span class="s2">&quot;GAGE&quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_StellarFormationTime&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;GIMA&quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_InitialMass&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;GZ  &quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_Metallicity&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;GMET&quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_Metals&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+		<span class="s2">&quot;GWHV&quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_WindHostVal&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;GCOL&quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_CoolingRate&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;GSPH&quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_StellarPhotometrics&quot;</span><span class="p">,</span><span class="mi">8</span><span class="p">],</span> <span class="c1">#band luminosities: U, B, V, K, g, r, i, z</span>
+		<span class="s2">&quot;AGNR&quot;</span><span class="p">:[</span><span class="s2">&quot;GFM_AGNRadiation&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="c1">#GDE</span>
+		<span class="s2">&quot;CACO&quot;</span><span class="p">:[</span><span class="s2">&quot;CausticCounter&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;STDE&quot;</span><span class="p">:[</span><span class="s2">&quot;StreamDensity&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;PSDE&quot;</span><span class="p">:[</span><span class="s2">&quot;PhaseSpaceDensity&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;FLDE&quot;</span><span class="p">:[</span><span class="s2">&quot;FlowDeterminant&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;TIPS&quot;</span><span class="p">:[</span><span class="s2">&quot;TidalTensorPS&quot;</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
+		<span class="s2">&quot;DIPS&quot;</span><span class="p">:[</span><span class="s2">&quot;DistortionTensorPS&quot;</span><span class="p">,</span><span class="mi">36</span><span class="p">],</span>
+		<span class="s2">&quot;SHOR&quot;</span><span class="p">:[</span><span class="s2">&quot;SheetOrientation&quot;</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+		<span class="s2">&quot;INDE&quot;</span><span class="p">:[</span><span class="s2">&quot;InitDensity&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+		<span class="c1">#ISM</span>
+		<span class="s2">&quot;BRD &quot;</span><span class="p">:[</span><span class="s2">&quot;BlastRadius&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;CSO &quot;</span><span class="p">:[</span><span class="s2">&quot;CoolShutoffTime&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;RadP&quot;</span><span class="p">:[</span><span class="s2">&quot;RadiationPressureMoment&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> 
+		<span class="c1">#SUBFIND</span>
+		<span class="s2">&quot;SFDE&quot;</span><span class="p">:[</span><span class="s2">&quot;SubfindDensity&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SFHS&quot;</span><span class="p">:[</span><span class="s2">&quot;SubfindHsml&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;SFVD&quot;</span><span class="p">:[</span><span class="s2">&quot;SubfindVelDisp&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="c1">#BHs</span>
+		<span class="s2">&quot;BHMD&quot;</span><span class="p">:[</span><span class="s2">&quot;BH_Mdot&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;BHHS&quot;</span><span class="p">:[</span><span class="s2">&quot;BH_Hsml&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;BHMA&quot;</span><span class="p">:[</span><span class="s2">&quot;BH_Mass&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;REBH&quot;</span><span class="p">:[</span><span class="s2">&quot;RefBHCounter&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;BHHG&quot;</span><span class="p">:[</span><span class="s2">&quot;BH_HaloGasMass&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;BHCL&quot;</span><span class="p">:[</span><span class="s2">&quot;BH_CoolingLuminosity&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+		<span class="s2">&quot;BHMR&quot;</span><span class="p">:[</span><span class="s2">&quot;BH_Mdot_Radio&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> 
+		<span class="s2">&quot;BHPR&quot;</span><span class="p">:[</span><span class="s2">&quot;BH_Progs&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+             <span class="p">}</span>
+		
+
+<span class="c1">#####################################################################################################################</span>
+<span class="c1">#                                                    READING ROUTINES			                            #</span>
+<span class="c1">#####################################################################################################################</span>
+
+
+<span class="c1">########################### </span>
+<span class="c1">#CLASS FOR SNAPSHOT HEADER#</span>
+<span class="c1">###########################  </span>
+<div class="viewcode-block" id="snapshot_header"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.snapshot_header">[docs]</a><span class="k">class</span> <span class="nc">snapshot_header</span><span class="p">:</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+			<span class="n">filename</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+			<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+				<span class="n">curfilename</span><span class="o">=</span><span class="n">filename</span>
+			<span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.hdf5&quot;</span><span class="p">):</span>
+				<span class="n">curfilename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.hdf5&quot;</span>
+			<span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.0.hdf5&quot;</span><span class="p">):</span> 
+				<span class="n">curfilename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.0.hdf5&quot;</span>
+			<span class="k">else</span><span class="p">:</span>	
+				<span class="k">print</span> <span class="s2">&quot;[error] file not found : &quot;</span><span class="p">,</span> <span class="n">filename</span>
+				<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+				<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+			<span class="n">f</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">curfilename</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">npart</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;NumPart_ThisFile&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">nall</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;NumPart_Total&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nall_highword</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;NumPart_Total_HighWord&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">massarr</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;MassTable&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">redshift</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Redshift&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">boxsize</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;BoxSize&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">filenum</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;NumFilesPerSnapshot&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">omega0</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Omega0&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">omegaL</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;OmegaLambda&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">hubble</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;HubbleParam&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">sfr</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Flag_Sfr&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">cooling</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Flag_Cooling&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">stellar_age</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Flag_StellarAge&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">metals</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Flag_Metals&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">feedback</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Flag_Feedback&quot;</span><span class="p">)</span> 
+			<span class="bp">self</span><span class="o">.</span><span class="n">double</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">,</span> <span class="s2">&quot;Flag_DoublePrecision&quot;</span><span class="p">)</span> <span class="c1">#GADGET-2 change</span>
+			<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1">#read arguments</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">npart</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;npart&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nall</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nall&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">nall_highword</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nall_highword&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">massarr</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;massarr&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">redshift</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;redshift&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">boxsize</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;boxsize&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">filenum</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;filenum&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">omega0</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;omega0&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">omegaL</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;omegaL&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">hubble</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hubble&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">sfr</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sfr&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">cooling</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cooling&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">stellar_age</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stellar_age&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">metals</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metals&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">feedback</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;feedback&quot;</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">double</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;double&quot;</span><span class="p">)</span>
+
+			<span class="c1">#set default values</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npart</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">npart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nall</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>				
+				<span class="bp">self</span><span class="o">.</span><span class="n">nall</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nall_highword</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>				
+				<span class="bp">self</span><span class="o">.</span><span class="n">nall_highword</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">massarr</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">massarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>				
+				<span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">redshift</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>				
+				<span class="bp">self</span><span class="o">.</span><span class="n">redshift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boxsize</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>				
+				<span class="bp">self</span><span class="o">.</span><span class="n">boxsize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filenum</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">filenum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">omega0</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">omega0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">omegaL</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">omegaL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hubble</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">hubble</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sfr</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>	
+				<span class="bp">self</span><span class="o">.</span><span class="n">sfr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>            
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cooling</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>	
+				<span class="bp">self</span><span class="o">.</span><span class="n">cooling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stellar_age</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>	
+				<span class="bp">self</span><span class="o">.</span><span class="n">stellar_age</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metals</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>	
+				<span class="bp">self</span><span class="o">.</span><span class="n">metals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feedback</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>	
+				<span class="bp">self</span><span class="o">.</span><span class="n">feedback</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">double</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">double</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span></div>
+
+
+
+
+<span class="c1">##############################</span>
+<span class="c1">#READ ROUTINE FOR SINGLE FILE#</span>
+<span class="c1">############################## </span>
+<div class="viewcode-block" id="read_block_single_file"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.read_block_single_file">[docs]</a><span class="k">def</span> <span class="nf">read_block_single_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">block_name</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">parttype</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">no_mass_replicate</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fill_block_name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">slab_start</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">slab_len</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+		<span class="k">print</span> <span class="s2">&quot;[single] reading file           : &quot;</span><span class="p">,</span> <span class="n">filename</span>   	
+		<span class="k">print</span> <span class="s2">&quot;[single] reading                : &quot;</span><span class="p">,</span> <span class="n">block_name</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+	<span class="n">head</span> <span class="o">=</span> <span class="n">snapshot_header</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+	<span class="n">npart</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">npart</span>
+	<span class="n">massarr</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">massarr</span>
+	<span class="n">nall</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">nall</span>
+	<span class="n">filenum</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">filenum</span>
+	<span class="n">doubleflag</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">double</span> <span class="c1">#GADGET-2 change</span>
+	<span class="c1">#doubleflag = 0          #GADGET-2 change</span>
+
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">parttype</span><span class="o">!=-</span><span class="mi">1</span><span class="p">):</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">head</span><span class="o">.</span><span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+			<span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">False</span><span class="p">]</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">head</span><span class="o">.</span><span class="n">npart</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+			<span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">False</span><span class="p">]</span>
+	<span class="k">del</span> <span class="n">head</span>
+
+
+	<span class="c1">#construct indices for partial access</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">slab_start</span><span class="o">!=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">slab_len</span><span class="o">!=-</span><span class="mi">1</span><span class="p">):</span>
+		<span class="n">data_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">slab_start</span><span class="p">,</span> <span class="p">(</span><span class="n">slab_start</span><span class="o">+</span><span class="n">slab_len</span><span class="p">))</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">data_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+		<span class="k">print</span> <span class="s2">&quot;[single] data slice: &quot;</span><span class="p">,</span> <span class="n">data_slice</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> 
+
+	<span class="n">f</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+
+	<span class="c1">#read specific particle type (parttype&gt;=0, non-default)</span>
+	<span class="k">if</span> <span class="n">parttype</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">:</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+			<span class="k">print</span> <span class="s2">&quot;[single] parttype               : &quot;</span><span class="p">,</span> <span class="n">parttype</span> 
+			<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+		<span class="k">if</span> <span class="p">((</span><span class="n">block_name</span><span class="o">==</span><span class="s2">&quot;Masses&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">massarr</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)):</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+				<span class="k">print</span> <span class="s2">&quot;[single] replicate mass block&quot;</span>
+				<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>	
+			<span class="n">ret_val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">massarr</span><span class="p">[</span><span class="n">parttype</span><span class="p">],</span> <span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">])[</span><span class="n">data_slice</span><span class="p">]</span>
+		<span class="k">else</span><span class="p">:</span>		
+			<span class="n">part_name</span><span class="o">=</span><span class="s1">&#39;PartType&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">parttype</span><span class="p">)</span>
+			<span class="n">ret_val</span> <span class="o">=</span> <span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">part_name</span><span class="o">+</span><span class="s2">&quot;/&quot;</span><span class="o">+</span><span class="n">block_name</span><span class="p">)[</span><span class="n">data_slice</span><span class="p">]</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+			<span class="k">print</span> <span class="s2">&quot;[single] read particles (total) : &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">dim2</span>
+			<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+	<span class="c1">#read all particle types (parttype=-1, default)</span>
+	<span class="k">if</span> <span class="n">parttype</span><span class="o">==-</span><span class="mi">1</span><span class="p">:</span>
+		<span class="n">first</span><span class="o">=</span><span class="bp">True</span>
+		<span class="n">dim1</span><span class="o">=</span><span class="nb">long</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">parttype</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">6</span><span class="p">):</span>
+			<span class="n">part_name</span><span class="o">=</span><span class="s1">&#39;PartType&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">parttype</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">part_name</span><span class="p">)):</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+					<span class="k">print</span> <span class="s2">&quot;[single] parttype               : &quot;</span><span class="p">,</span> <span class="n">parttype</span>
+					<span class="k">print</span> <span class="s2">&quot;[single] massarr                : &quot;</span><span class="p">,</span> <span class="n">massarr</span>
+					<span class="k">print</span> <span class="s2">&quot;[single] npart                  : &quot;</span><span class="p">,</span> <span class="n">npart</span>
+					<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+				<span class="c1">#replicate mass block per default (unless no_mass_replicate is set)</span>
+				<span class="k">if</span> <span class="p">((</span><span class="n">block_name</span><span class="o">==</span><span class="s2">&quot;Masses&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">massarr</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">no_mass_replicate</span><span class="o">==</span><span class="bp">False</span><span class="p">)):</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+						<span class="k">print</span> <span class="s2">&quot;[single] replicate mass block&quot;</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">first</span><span class="p">):</span>
+						<span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">massarr</span><span class="p">[</span><span class="n">parttype</span><span class="p">],</span> <span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">])</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">data</span>
+						<span class="n">first</span><span class="o">=</span><span class="bp">False</span>
+					<span class="k">else</span><span class="p">:</span>	
+						<span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">massarr</span><span class="p">[</span><span class="n">parttype</span><span class="p">],</span> <span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">])</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ret_val</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+						<span class="k">print</span> <span class="s2">&quot;[single] read particles (total) : &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">dim2</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">doubleflag</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">ret_val</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+
+
+				<span class="c1">#fill fill_block_name with zeros if fill_block_name is set and particle type is present and fill_block_name not already stored in file for that particle type</span>
+				<span class="k">if</span> <span class="p">((</span><span class="n">block_name</span><span class="o">==</span><span class="n">fill_block_name</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">block_name</span><span class="o">!=</span><span class="s2">&quot;Masses&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">part_name</span><span class="p">,</span> <span class="n">block_name</span><span class="p">)</span><span class="o">==</span><span class="bp">False</span><span class="p">)):</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+						<span class="k">print</span> <span class="s2">&quot;[single] replicate block name&quot;</span><span class="p">,</span> <span class="n">fill_block_name</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">first</span><span class="p">):</span>
+						<span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">*</span><span class="n">dim2</span><span class="p">)</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">data</span>
+						<span class="n">first</span><span class="o">=</span><span class="bp">False</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span><span class="o">*</span><span class="n">dim2</span><span class="p">)</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ret_val</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+						<span class="k">print</span> <span class="s2">&quot;[single] read particles (total) : &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">dim2</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">doubleflag</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">ret_val</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+
+				<span class="c1">#default: just read the block</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">part_name</span><span class="p">,</span><span class="n">block_name</span><span class="p">)):</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">first</span><span class="p">):</span>
+						<span class="n">data</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">part_name</span><span class="o">+</span><span class="s2">&quot;/&quot;</span><span class="o">+</span><span class="n">block_name</span><span class="p">)[:]</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">data</span>
+						<span class="n">first</span><span class="o">=</span><span class="bp">False</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">data</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">part_name</span><span class="o">+</span><span class="s2">&quot;/&quot;</span><span class="o">+</span><span class="n">block_name</span><span class="p">)[:]</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ret_val</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+						<span class="k">print</span> <span class="s2">&quot;[single] read particles (total) : &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">dim2</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+		<span class="k">if</span> <span class="p">((</span><span class="n">dim1</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dim2</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">)):</span>
+			<span class="n">ret_val</span><span class="o">=</span><span class="n">ret_val</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span><span class="n">dim2</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+				<span class="k">print</span> <span class="s2">&quot;[single] reshape done: &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span>
+				<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+
+	<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+	<span class="k">return</span> <span class="p">[</span><span class="n">ret_val</span><span class="p">,</span> <span class="bp">True</span><span class="p">]</span></div>
+
+<span class="c1">##############</span>
+<span class="c1">#READ ROUTINE#</span>
+<span class="c1">##############</span>
+<div class="viewcode-block" id="read_block"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.read_block">[docs]</a><span class="k">def</span> <span class="nf">read_block</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">parttype</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">no_mass_replicate</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">fill_block</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">slab_start</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">slab_len</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+		<span class="k">print</span> <span class="s2">&quot;reading block          : &quot;</span><span class="p">,</span> <span class="n">block</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>	
+
+	<span class="k">if</span> <span class="n">parttype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">]:</span>
+		<span class="k">print</span> <span class="s2">&quot;[error] wrong parttype given&quot;</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+	<span class="n">curfilename</span><span class="o">=</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.hdf5&quot;</span>
+
+	<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">curfilename</span><span class="p">):</span>
+		<span class="n">multiple_files</span><span class="o">=</span><span class="bp">False</span>
+	<span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.0&quot;</span><span class="o">+</span><span class="s2">&quot;.hdf5&quot;</span><span class="p">):</span>
+		<span class="n">curfilename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.0&quot;</span><span class="o">+</span><span class="s2">&quot;.hdf5&quot;</span>
+		<span class="n">multiple_files</span><span class="o">=</span><span class="bp">True</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">print</span> <span class="s2">&quot;[error] file not found : &quot;</span><span class="p">,</span> <span class="n">filename</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+	<span class="n">slabflag</span><span class="o">=</span><span class="bp">False</span>
+	<span class="k">if</span> <span class="p">((</span><span class="n">slab_start</span><span class="o">!=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">slab_len</span><span class="o">!=-</span><span class="mi">1</span><span class="p">)):</span>
+		<span class="n">slabflag</span><span class="o">=</span><span class="bp">True</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">parttype</span><span class="o">==-</span><span class="mi">1</span><span class="p">):</span>
+			<span class="k">print</span> <span class="s2">&quot;[error] slabs only supported for specific parttype&quot;</span>
+			<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+			<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+	<span class="n">head</span> <span class="o">=</span> <span class="n">snapshot_header</span><span class="p">(</span><span class="n">curfilename</span><span class="p">)</span>
+	<span class="n">filenum</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">filenum</span>
+	<span class="k">del</span> <span class="n">head</span>
+
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">datablocks</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">block</span><span class="p">)):</span>
+		<span class="n">block_name</span><span class="o">=</span><span class="n">datablocks</span><span class="p">[</span><span class="n">block</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+		<span class="n">dim2</span><span class="o">=</span><span class="n">datablocks</span><span class="p">[</span><span class="n">block</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+		<span class="n">first</span><span class="o">=</span><span class="bp">True</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+			<span class="k">print</span> <span class="s2">&quot;Reading HDF5           : &quot;</span><span class="p">,</span> <span class="n">block_name</span>
+			<span class="k">print</span> <span class="s2">&quot;Data dimension         : &quot;</span><span class="p">,</span> <span class="n">dim2</span>
+			<span class="k">print</span> <span class="s2">&quot;Multiple file          : &quot;</span><span class="p">,</span> <span class="n">multiple_files</span>
+			<span class="k">print</span> <span class="s2">&quot;Slab data              : &quot;</span><span class="p">,</span> <span class="n">slabflag</span>
+			<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">print</span> <span class="s2">&quot;[error] Block type &quot;</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="s2">&quot;not known!&quot;</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+	<span class="n">fill_block_name</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">fill_block</span><span class="o">!=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">datablocks</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">fill_block</span><span class="p">)):</span>
+			<span class="n">fill_block_name</span><span class="o">=</span><span class="n">datablocks</span><span class="p">[</span><span class="n">fill_block</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+			<span class="n">dim2</span><span class="o">=</span><span class="n">datablocks</span><span class="p">[</span><span class="n">fill_block</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+				<span class="k">print</span> <span class="s2">&quot;Block filling active   : &quot;</span><span class="p">,</span> <span class="n">fill_block_name</span>
+				<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">multiple_files</span><span class="p">):</span>	
+		<span class="k">if</span> <span class="p">(</span><span class="n">slabflag</span><span class="o">==</span><span class="bp">False</span><span class="p">):</span>
+			<span class="n">first</span><span class="o">=</span><span class="bp">True</span>
+			<span class="n">dim1</span><span class="o">=</span><span class="nb">long</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">filenum</span><span class="p">):</span>
+				<span class="n">curfilename</span><span class="o">=</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;.hdf5&quot;</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+					<span class="k">print</span> <span class="s2">&quot;Reading file           : &quot;</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">curfilename</span>
+					<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> 
+				<span class="k">if</span> <span class="p">(</span><span class="n">first</span><span class="p">):</span>
+					<span class="n">data</span><span class="p">,</span> <span class="n">succ</span> <span class="o">=</span> <span class="n">read_block_single_file</span><span class="p">(</span><span class="n">curfilename</span><span class="p">,</span> <span class="n">block_name</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">parttype</span><span class="p">,</span> <span class="n">no_mass_replicate</span><span class="p">,</span> <span class="n">fill_block_name</span><span class="p">,</span> <span class="n">slab_start</span><span class="p">,</span> <span class="n">slab_len</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">succ</span> <span class="o">==</span> <span class="bp">True</span><span class="p">):</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span> <span class="o">=</span> <span class="n">data</span>
+						<span class="n">first</span> <span class="o">=</span> <span class="bp">False</span> 
+				<span class="k">else</span><span class="p">:</span>	 
+					<span class="n">data</span><span class="p">,</span> <span class="n">succ</span> <span class="o">=</span> <span class="n">read_block_single_file</span><span class="p">(</span><span class="n">curfilename</span><span class="p">,</span> <span class="n">block_name</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">parttype</span><span class="p">,</span> <span class="n">no_mass_replicate</span><span class="p">,</span> <span class="n">fill_block_name</span><span class="p">,</span> <span class="n">slab_start</span><span class="p">,</span> <span class="n">slab_len</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">succ</span> <span class="o">==</span> <span class="bp">True</span><span class="p">):</span>
+						<span class="n">dim1</span><span class="o">+=</span><span class="nb">long</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+						<span class="n">ret_val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ret_val</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">succ</span><span class="p">):</span>
+						<span class="k">print</span> <span class="s2">&quot;Read particles (total) : &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">dim2</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="k">print</span> <span class="s2">&quot;Read particles (total) : none&quot;</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">slabflag</span><span class="o">==</span><span class="bp">True</span><span class="p">):</span>
+			<span class="n">off</span><span class="o">=</span><span class="n">slab_start</span>
+			<span class="n">left</span><span class="o">=</span><span class="n">slab_len</span>
+			<span class="n">first</span><span class="o">=</span><span class="bp">True</span>
+			<span class="n">dim1</span><span class="o">=</span><span class="nb">long</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+			<span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">filenum</span><span class="p">):</span>
+				<span class="n">curfilename</span><span class="o">=</span><span class="n">filename</span><span class="o">+</span><span class="s2">&quot;.&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;.hdf5&quot;</span>
+				<span class="n">head</span> <span class="o">=</span> <span class="n">snapshot_header</span><span class="p">(</span><span class="n">curfilename</span><span class="p">)</span>
+				<span class="n">nloc</span><span class="o">=</span><span class="n">head</span><span class="o">.</span><span class="n">npart</span><span class="p">[</span><span class="n">parttype</span><span class="p">]</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">nloc</span> <span class="o">&gt;</span> <span class="n">off</span><span class="p">):</span>
+					<span class="n">start</span> <span class="o">=</span> <span class="n">off</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">nloc</span> <span class="o">-</span> <span class="n">off</span> <span class="o">&gt;</span> <span class="n">left</span><span class="p">):</span>
+						<span class="n">count</span> <span class="o">=</span> <span class="n">left</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">count</span> <span class="o">=</span> <span class="n">nloc</span> <span class="o">-</span> <span class="n">off</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+						<span class="k">print</span> <span class="s2">&quot;Reading file           : &quot;</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">curfilename</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">count</span>
+						<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">first</span><span class="p">):</span>
+						<span class="n">data</span><span class="p">,</span> <span class="n">succ</span> <span class="o">=</span> <span class="n">read_block_single_file</span><span class="p">(</span><span class="n">curfilename</span><span class="p">,</span> <span class="n">block_name</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">parttype</span><span class="p">,</span> <span class="n">no_mass_replicate</span><span class="p">,</span> <span class="n">fill_block_name</span><span class="p">,</span> <span class="n">slab_start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">slab_len</span><span class="o">=</span><span class="n">count</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+						<span class="k">if</span> <span class="p">(</span><span class="n">succ</span> <span class="o">==</span> <span class="bp">True</span><span class="p">):</span>
+							<span class="n">dim1</span><span class="o">+=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+							<span class="n">ret_val</span> <span class="o">=</span> <span class="n">data</span>
+							<span class="n">first</span> <span class="o">=</span> <span class="bp">False</span>
+					<span class="k">else</span><span class="p">:</span>
+						<span class="n">data</span><span class="p">,</span> <span class="n">succ</span> <span class="o">=</span> <span class="n">read_block_single_file</span><span class="p">(</span><span class="n">curfilename</span><span class="p">,</span> <span class="n">block_name</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">parttype</span><span class="p">,</span> <span class="n">no_mass_replicate</span><span class="p">,</span> <span class="n">fill_block_name</span><span class="p">,</span> <span class="n">slab_start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">slab_len</span><span class="o">=</span><span class="n">count</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+						<span class="k">if</span> <span class="p">(</span><span class="n">succ</span> <span class="o">==</span> <span class="bp">True</span><span class="p">):</span>
+							<span class="n">dim1</span><span class="o">+=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+							<span class="n">ret_val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ret_val</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+					<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+						<span class="k">if</span> <span class="p">(</span><span class="n">succ</span><span class="p">):</span>
+							<span class="k">print</span> <span class="s2">&quot;Read particles (total) : &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">dim2</span>
+							<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+						<span class="k">else</span><span class="p">:</span>
+							<span class="k">print</span> <span class="s2">&quot;Read particles (total) : none&quot;</span>
+							<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+					<span class="n">left</span> <span class="o">-=</span> <span class="n">count</span>
+					<span class="n">off</span> <span class="o">+=</span> <span class="n">count</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">left</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+					<span class="k">break</span>
+				<span class="n">off</span> <span class="o">-=</span> <span class="n">nloc</span>
+
+
+
+		<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+			<span class="k">print</span> <span class="s2">&quot;all partial files read in&quot;</span>
+			<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+		<span class="k">if</span> <span class="p">((</span><span class="n">dim1</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dim2</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">)):</span>
+			<span class="n">ret_val</span><span class="o">=</span><span class="n">ret_val</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dim1</span><span class="p">,</span><span class="n">dim2</span><span class="p">)</span>
+			<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+				<span class="k">print</span> <span class="s2">&quot;Reshape done (total): &quot;</span><span class="p">,</span> <span class="n">ret_val</span><span class="o">.</span><span class="n">shape</span>
+				<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+
+	<span class="k">else</span><span class="p">:</span>	
+		<span class="n">ret_val</span><span class="p">,</span> <span class="n">succ</span> <span class="o">=</span> <span class="n">read_block_single_file</span><span class="p">(</span><span class="n">curfilename</span><span class="p">,</span> <span class="n">block_name</span><span class="p">,</span> <span class="n">dim2</span><span class="p">,</span> <span class="n">parttype</span><span class="p">,</span> <span class="n">no_mass_replicate</span><span class="p">,</span> <span class="n">fill_block_name</span><span class="p">,</span> <span class="n">slab_start</span><span class="p">,</span> <span class="n">slab_len</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">ret_val</span></div>
+
+
+<span class="c1">#############</span>
+<span class="c1">#LIST BLOCKS#</span>
+<span class="c1">#############</span>
+<div class="viewcode-block" id="list_blocks"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.list_blocks">[docs]</a><span class="k">def</span> <span class="nf">list_blocks</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">parttype</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+
+	<span class="n">f</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">parttype</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">6</span><span class="p">):</span>
+		<span class="n">part_name</span><span class="o">=</span><span class="s1">&#39;PartType&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">parttype</span><span class="p">)</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">part_name_</span><span class="p">)):</span>
+			<span class="k">print</span> <span class="s2">&quot;Parttype contains : &quot;</span><span class="p">,</span> <span class="n">parttype</span>
+			<span class="k">print</span> <span class="s2">&quot;-------------------&quot;</span>
+			<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+			<span class="nb">iter</span> <span class="o">=</span> <span class="n">it</span><span class="o">=</span><span class="n">datablocks</span><span class="o">.</span><span class="n">__iter__</span><span class="p">()</span>
+			<span class="nb">next</span> <span class="o">=</span> <span class="nb">iter</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+			<span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+					<span class="k">print</span> <span class="s2">&quot;check &quot;</span><span class="p">,</span> <span class="nb">next</span><span class="p">,</span> <span class="n">datablocks</span><span class="p">[</span><span class="nb">next</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+					<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">part_name</span><span class="p">,</span><span class="n">datablocks</span><span class="p">[</span><span class="nb">next</span><span class="p">][</span><span class="mi">0</span><span class="p">])):</span>
+					<span class="k">print</span> <span class="nb">next</span><span class="p">,</span> <span class="n">datablocks</span><span class="p">[</span><span class="nb">next</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+					<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+				<span class="k">try</span><span class="p">:</span>
+					<span class="nb">next</span><span class="o">=</span><span class="nb">iter</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+				<span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+					<span class="k">break</span>	
+	<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> </div>
+
+<span class="c1">#################</span>
+<span class="c1">#CONTAINS BLOCKS#</span>
+<span class="c1">#################</span>
+<div class="viewcode-block" id="contains_block"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.contains_block">[docs]</a><span class="k">def</span> <span class="nf">contains_block</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">parttype</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+
+	<span class="n">contains_flag</span><span class="o">=</span><span class="bp">False</span>
+	<span class="n">f</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">parttype</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">6</span><span class="p">):</span>
+		<span class="n">part_name</span><span class="o">=</span><span class="s1">&#39;PartType&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">parttype</span><span class="p">)</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">part_name</span><span class="p">)):</span>
+			<span class="nb">iter</span> <span class="o">=</span> <span class="n">it</span><span class="o">=</span><span class="n">datablocks</span><span class="o">.</span><span class="n">__iter__</span><span class="p">()</span>
+			<span class="nb">next</span> <span class="o">=</span> <span class="nb">iter</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+			<span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">verbose</span><span class="p">):</span>
+					<span class="k">print</span> <span class="s2">&quot;check &quot;</span><span class="p">,</span> <span class="nb">next</span><span class="p">,</span> <span class="n">datablocks</span><span class="p">[</span><span class="nb">next</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+					<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+				<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">part_name</span><span class="p">,</span><span class="n">datablocks</span><span class="p">[</span><span class="nb">next</span><span class="p">][</span><span class="mi">0</span><span class="p">])):</span>
+					<span class="k">if</span> <span class="p">(</span><span class="nb">next</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span><span class="o">&gt;-</span><span class="mi">1</span><span class="p">):</span>
+						<span class="n">contains_flag</span><span class="o">=</span><span class="bp">True</span>	
+				<span class="k">try</span><span class="p">:</span>
+					<span class="nb">next</span><span class="o">=</span><span class="nb">iter</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+				<span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+					<span class="k">break</span>
+	<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> 
+	<span class="k">return</span> <span class="n">contains_flag</span></div>
+
+<span class="c1">############</span>
+<span class="c1">#CHECK FILE#</span>
+<span class="c1">############</span>
+<div class="viewcode-block" id="check_file"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.check_file">[docs]</a><span class="k">def</span> <span class="nf">check_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+	<span class="n">f</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+	<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+		  
+
+
+
+
+
+
+<span class="c1">#####################################################################################################################</span>
+<span class="c1">#                                                    WRITING ROUTINES    		                            #</span>
+<span class="c1">#####################################################################################################################</span>
+
+
+<span class="c1">#######################</span>
+<span class="c1">#OPEN FILE FOR WRITING#</span>
+<span class="c1">#######################</span>
+<div class="viewcode-block" id="openfile"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.openfile">[docs]</a><span class="k">def</span> <span class="nf">openfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">):</span>
+	<span class="n">f</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span><span class="p">)</span>	 
+	<span class="k">return</span> <span class="n">f</span></div>
+
+<span class="c1">############</span>
+<span class="c1">#CLOSE FILE#</span>
+<span class="c1">############</span>
+<div class="viewcode-block" id="closefile"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.closefile">[docs]</a><span class="k">def</span> <span class="nf">closefile</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+	<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<span class="c1">##############################</span>
+<span class="c1">#WRITE SNAPSHOT HEADER OBJECT#</span>
+<span class="c1">##############################</span>
+<div class="viewcode-block" id="writeheader"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.writeheader">[docs]</a><span class="k">def</span> <span class="nf">writeheader</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>	
+	<span class="n">group_header</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">CreateGroup</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;Header&quot;</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;NumPart_ThisFile&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">npart</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;NumPart_Total&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">nall</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;NumPart_Total_HighWord&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">nall_highword</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;MassTable&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">massarr</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Time&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Redshift&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">redshift</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;BoxSize&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">boxsize</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;NumFilesPerSnapshot&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">filenum</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Omega0&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">omega0</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;OmegaLambda&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">omegaL</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;HubbleParam&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">hubble</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Flag_Sfr&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">sfr</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Flag_Cooling&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">cooling</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Flag_StellarAge&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">stellar_age</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Flag_Metals&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">metals</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Flag_Feedback&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">feedback</span><span class="p">)</span>
+	<span class="n">hdf5lib</span><span class="o">.</span><span class="n">SetAttr</span><span class="p">(</span><span class="n">group_header</span><span class="p">,</span> <span class="s2">&quot;Flag_DoublePrecision&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">double</span><span class="p">)</span></div>
+
+<span class="c1">###############</span>
+<span class="c1">#WRITE ROUTINE#</span>
+<span class="c1">###############</span>
+<div class="viewcode-block" id="write_block"><a class="viewcode-back" href="../docs_rst/snapHDF5.html#snapHDF5.write_block">[docs]</a><span class="k">def</span> <span class="nf">write_block</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">parttype</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+	<span class="n">part_name</span><span class="o">=</span><span class="s2">&quot;PartType&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">parttype</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">part_name</span><span class="p">)</span><span class="o">==</span><span class="bp">False</span><span class="p">):</span>
+		<span class="n">group</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">CreateGroup</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">part_name</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">group</span><span class="o">=</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">GetGroup</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">part_name</span><span class="p">)</span>	
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">datablocks</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">block</span><span class="p">)):</span>
+		<span class="n">block_name</span><span class="o">=</span><span class="n">datablocks</span><span class="p">[</span><span class="n">block</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+		<span class="n">dim2</span><span class="o">=</span><span class="n">datablocks</span><span class="p">[</span><span class="n">block</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>		
+		<span class="k">if</span> <span class="p">(</span><span class="n">hdf5lib</span><span class="o">.</span><span class="n">ContainsGroup</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">block_name</span><span class="p">)</span><span class="o">==</span><span class="bp">False</span><span class="p">):</span>
+			<span class="n">hdf5lib</span><span class="o">.</span><span class="n">CreateArray</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">block_name</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">print</span> <span class="s2">&quot;I/O block already written&quot;</span>
+			<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">print</span> <span class="s2">&quot;Unknown I/O block&quot;</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>		</div>
+
+
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

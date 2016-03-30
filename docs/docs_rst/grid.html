@@ -1,0 +1,839 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>grid module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-grid">
+<span id="grid-module"></span><h1>grid module<a class="headerlink" href="#module-grid" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="grid.SpectralGrid">
+<em class="property">class </em><code class="descclassname">grid.</code><code class="descname">SpectralGrid</code><span class="sig-paren">(</span><em>fitsfile</em>, <em>box=None</em>, <em>noiseScale=1.0</em>, <em>basesubtract=False</em>, <em>noiseRange=None</em>, <em>Tsys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>A class for decomposing a cube into Gaussians. :-)</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="57%" />
+<col width="43%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>cube</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>decAxis</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>header</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>raAxis</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>spectral_axis</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="grid.SpectralGrid.at_boundary">
+<code class="descname">at_boundary</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>direction</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.at_boundary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.at_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True boundary exists in the direction specified.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x</strong> : int</p>
+<blockquote>
+<div><p>Tile x position</p>
+</div></blockquote>
+<p><strong>y</strong> : int</p>
+<blockquote>
+<div><p>Tile y position</p>
+</div></blockquote>
+<p><strong>direction</strong> : str</p>
+<blockquote class="last">
+<div><p>Direction to check boundary. Options are:
+&#8216;north&#8217;,&#8217;south&#8217;,&#8217;east&#8217;, or &#8216;west&#8217;</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.calculate_profileNoises">
+<code class="descname">calculate_profileNoises</code><span class="sig-paren">(</span><em>velMin</em>, <em>velMax</em>, <em>noiseScale=None</em>, <em>Tsys=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.calculate_profileNoises"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.calculate_profileNoises" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calcuates noise envelopes for each pixel.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.check_residuals">
+<code class="descname">check_residuals</code><span class="sig-paren">(</span><em>tile</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.check_residuals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.check_residuals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks tile at x,y, to find any significant peaks in the
+residuals that should be fitted. Threshold is in units of standard
+deviations.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.cube">
+<code class="descname">cube</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralGrid.cube" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.decAxis">
+<code class="descname">decAxis</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralGrid.decAxis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.fit_profile">
+<code class="descname">fit_profile</code><span class="sig-paren">(</span><em>guesses</em>, <em>ncomp</em>, <em>x</em>, <em>y</em>, <em>coords='grid'</em>, <em>co_cube=None</em>, <em>co_width_scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.fit_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.fit_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits gaussians to a pixel in the cube.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.fit_profiles">
+<code class="descname">fit_profiles</code><span class="sig-paren">(</span><em>guesses=[]</em>, <em>ncomp=1</em>, <em>grow_pos=(0</em>, <em>0)</em>, <em>coords='grid'</em>, <em>alpha=0.05</em>, <em>filename=None</em>, <em>tile_save_freq=100</em>, <em>threshold=1</em>, <em>number_of_fits=None</em>, <em>verbose=True</em>, <em>outputFilename=None</em>, <em>co_cube=None</em>, <em>co_width_scale=1.0</em>, <em>veryverbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.fit_profiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.fit_profiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits spectral axis for each pixel in the cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>guesses</strong> : list</p>
+<blockquote>
+<div><p>Default = [0,0,0]
+1D List of length ncomp * 3
+Contains initial guesses for the gaussian fits.
+Format: [shift,amplitude,width,shift,amplitude,width]</p>
+</div></blockquote>
+<p><strong>ncomp</strong> : int</p>
+<blockquote>
+<div><p>Default = 1
+Number of gaussian components to fit.</p>
+</div></blockquote>
+<p><strong>grow_pos</strong> : tuple</p>
+<blockquote>
+<div><p>2D tuple consisting of (x,y) positions for grow method to begin
+fitting</p>
+</div></blockquote>
+<p><strong>coords</strong> : string, optional</p>
+<blockquote>
+<div><p>Default = &#8216;grid&#8217;
+Either &#8216;grid&#8217; or &#8216;image&#8217; coordinates.</p>
+</div></blockquote>
+<p><strong>alpha</strong> : float, optional</p>
+<blockquote>
+<div><p>Default = 0.05
+1 - alpha = confidence for F-test
+Rather, p-values below alpha are considered significant</p>
+</div></blockquote>
+<p><strong>filename</strong> : string, optional</p>
+<blockquote>
+<div><p>Name of file to save SpectralGrid instance to.</p>
+</div></blockquote>
+<p><strong>tile_save_freq</strong> : int, optional</p>
+<blockquote>
+<div><p>After tile_save_freq number of tiles fit, the SpectralGrid instance
+will
+be saved to filename.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : float, optional</p>
+<blockquote>
+<div><p>Default = 1
+When fitting additional components, only allow residuals to be
+considered significant if amplitude &gt; threshold * noise in channel.</p>
+</div></blockquote>
+<p><strong>verbose</strong> : boolean, optional</p>
+<blockquote>
+<div><p>Default = True</p>
+</div></blockquote>
+<p><strong>outputFilename</strong> : string, optional</p>
+<blockquote>
+<div><p>Default is no output file will be written.</p>
+</div></blockquote>
+<p><strong>co_cube</strong> : SpectralGrid</p>
+<blockquote>
+<div><p>SpectralGrid instance of a CO on the same spatial grid as the input
+HI cube. Fitted profiles in the CO cube will be used to guesses
+where HI absorption is present in the HI cube. Channels in the HI
+cube with HI absorption will be excluded from a profile fit.</p>
+</div></blockquote>
+<p><strong>co_width_scale</strong> : float</p>
+<blockquote class="last">
+<div><p>Scalar of the CO velocity width.</p>
+<p># Fitting begins:
+# Steps to take:
+# Perform fit with previous pixel&#8217;s parameters as initial guesses
+# Perform fit with same parameters -</p>
+<blockquote>
+<div><p># parameters for smallest gaussian
+# Calculate p-value between 1st and 2nd fits</p>
+</div></blockquote>
+<dl class="docutils">
+<dt># Perform fit with previous pixels&#8217;s parameters as intial guesses +</dt>
+<dd><p class="first last"># guess from highest residual
+# Calculate p-value betwen 1st and 3rd fits</p>
+</dd>
+</dl>
+<p># If p-value is signifcant, choose fit with smaller p-value
+# Continue performing f-test with</p>
+<blockquote>
+<div><p># either fewer components or more components
+# until p-value is insignificant.</p>
+</div></blockquote>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.gaussAreaList">
+<code class="descname">gaussAreaList</code><em class="property"> = []</em><a class="headerlink" href="#grid.SpectralGrid.gaussAreaList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_component">
+<code class="descname">get_component</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>compNumber</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_component"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a gaussian component from a fit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_imagexsize">
+<code class="descname">get_imagexsize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_imagexsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_imagexsize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_imageysize">
+<code class="descname">get_imageysize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_imageysize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_imageysize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_neighbor">
+<code class="descname">get_neighbor</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>direction</em>, <em>coords='grid'</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_neighbor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_neighbor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a neighboring tile East, West, North, or South of the
+reference tile. The North-West corner of the grid has coordinates
+(x,y) = (0,0).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_spectral_axis">
+<code class="descname">get_spectral_axis</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_spectral_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_spectral_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the spectral axis of the cube.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_tile">
+<code class="descname">get_tile</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>coords=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_tile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_tile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tile at position x,y.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x,y</strong> : int</p>
+<blockquote>
+<div><p>Positions</p>
+</div></blockquote>
+<p><strong>coords</strong> : string</p>
+<blockquote class="last">
+<div><p>Default = &#8216;grid&#8217;
+Either &#8216;grid&#8217; or &#8216;image&#8217; coordinates.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_xsize">
+<code class="descname">get_xsize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_xsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_xsize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.get_ysize">
+<code class="descname">get_ysize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.get_ysize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.get_ysize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.grid">
+<code class="descname">grid</code><em class="property"> = &lt;module 'grid' from '/home/ezbc/research/python_modules/grid.py'&gt;</em><a class="headerlink" href="#grid.SpectralGrid.grid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.grid2image">
+<code class="descname">grid2image</code><span class="sig-paren">(</span><em>gridXPos</em>, <em>gridYPos</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.grid2image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.grid2image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts grid positions to image pixel positions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.grid_list">
+<code class="descname">grid_list</code><em class="property"> = []</em><a class="headerlink" href="#grid.SpectralGrid.grid_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.guess_width">
+<code class="descname">guess_width</code><span class="sig-paren">(</span><em>tile=None</em>, <em>peak=None</em>, <em>spectral_axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.guess_width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.guess_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Guesses the width of a residual peak.
+maxpos : int</p>
+<blockquote>
+<div>In velocity units.</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.header">
+<code class="descname">header</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralGrid.header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.image2grid">
+<code class="descname">image2grid</code><span class="sig-paren">(</span><em>imageXPos</em>, <em>imageYPos</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.image2grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.image2grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts image positions to grid pixel positions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralGrid.pix2image">
+<code class="descname">pix2image</code><span class="sig-paren">(</span><em>pixXPos</em>, <em>pixYPos</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralGrid.pix2image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralGrid.pix2image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts grid positions to image pixel positions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.queue">
+<code class="descname">queue</code><em class="property"> = &lt;module 'Queue' from '/usr/lib64/python2.7/Queue.pyc'&gt;</em><a class="headerlink" href="#grid.SpectralGrid.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.raAxis">
+<code class="descname">raAxis</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralGrid.raAxis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.region">
+<code class="descname">region</code><em class="property"> = []</em><a class="headerlink" href="#grid.SpectralGrid.region" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.spectral_axis">
+<code class="descname">spectral_axis</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralGrid.spectral_axis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralGrid.threshold">
+<code class="descname">threshold</code><em class="property"> = 0</em><a class="headerlink" href="#grid.SpectralGrid.threshold" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grid.SpectralTile">
+<em class="property">class </em><code class="descclassname">grid.</code><code class="descname">SpectralTile</code><span class="sig-paren">(</span><em>gridXPos=None</em>, <em>gridYPos=None</em>, <em>imageXPos=None</em>, <em>imageYPos=None</em>, <em>profile=None</em>, <em>tile=None</em>, <em>box=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Subclass of Tile.</p>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="57%" />
+<col width="43%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>coVelocities</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>fit_chi2</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>gridXPos</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>gridYPos</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>guesses</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>imageXPos</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>imageYPos</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>ncomps</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>noise</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>noiseProfile</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>params</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>profile</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>residuals</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>spectral_axis</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>xOffset</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>yOffset</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="grid.SpectralTile.calculate_compArea">
+<code class="descname">calculate_compArea</code><span class="sig-paren">(</span><em>compNumber</em>, <em>spectral_axis</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.calculate_compArea"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.calculate_compArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caclutes area under gaussian.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.calculate_compAreaList">
+<code class="descname">calculate_compAreaList</code><span class="sig-paren">(</span><em>spectral_axis</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.calculate_compAreaList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.calculate_compAreaList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates areas of gaussian components in profile fit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.calculate_noise">
+<code class="descname">calculate_noise</code><span class="sig-paren">(</span><em>xarr</em>, <em>lowrange</em>, <em>highrange</em>, <em>noiseScale=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.calculate_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.calculate_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates rms noise of Tile profile given velocity ranges.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.calculate_noiseScale">
+<code class="descname">calculate_noiseScale</code><span class="sig-paren">(</span><em>Tsys</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.calculate_noiseScale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.calculate_noiseScale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an array for scaling the noise by (Tsys + Tb) / Tsys</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.coVelocities">
+<code class="descname">coVelocities</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.coVelocities" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.compAreaList">
+<code class="descname">compAreaList</code><em class="property"> = []</em><a class="headerlink" href="#grid.SpectralTile.compAreaList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.fValueMinusList">
+<code class="descname">fValueMinusList</code><em class="property"> = []</em><a class="headerlink" href="#grid.SpectralTile.fValueMinusList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.fValuePlusList">
+<code class="descname">fValuePlusList</code><em class="property"> = []</em><a class="headerlink" href="#grid.SpectralTile.fValuePlusList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.fitSuccess">
+<code class="descname">fitSuccess</code><em class="property"> = False</em><a class="headerlink" href="#grid.SpectralTile.fitSuccess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.fit_chi2">
+<code class="descname">fit_chi2</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.fit_chi2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.fit_profile">
+<code class="descname">fit_profile</code><span class="sig-paren">(</span><em>spectral_axis</em>, <em>guesses=None</em>, <em>ncomp=None</em>, <em>co_tile=None</em>, <em>co_width_scale=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.fit_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.fit_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a gaussian decomposition on the profile.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.gaussian">
+<code class="descname">gaussian</code><span class="sig-paren">(</span><em>x</em>, <em>amp</em>, <em>shift</em>, <em>width</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns gaussian with amp, shift, width, at position x.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_chi2">
+<code class="descname">get_chi2</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_chi2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_chi2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_compAreaList">
+<code class="descname">get_compAreaList</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_compAreaList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_compAreaList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_compParams">
+<code class="descname">get_compParams</code><span class="sig-paren">(</span><em>compNumber</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_compParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_compParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts parameters of fit from compNumber.
+Parameters are returned as a list in the format:
+[amplitude,shift,width]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_componentVelocities">
+<code class="descname">get_componentVelocities</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_componentVelocities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_componentVelocities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns velocities of components.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_guesses">
+<code class="descname">get_guesses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_guesses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_guesses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_ncomps">
+<code class="descname">get_ncomps</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_ncomps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_ncomps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns number of components in a fit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_noise">
+<code class="descname">get_noise</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_noise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_noiseProfile">
+<code class="descname">get_noiseProfile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_noiseProfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_noiseProfile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_params">
+<code class="descname">get_params</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_position">
+<code class="descname">get_position</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tuple of the x and y position of the Tile.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_profile">
+<code class="descname">get_profile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_profile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.get_residuals">
+<code class="descname">get_residuals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.get_residuals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.get_residuals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns residuals.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.gridXPos">
+<code class="descname">gridXPos</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.gridXPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.gridYPos">
+<code class="descname">gridYPos</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.gridYPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.guesses">
+<code class="descname">guesses</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.guesses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.has_validProfile">
+<code class="descname">has_validProfile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.has_validProfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.has_validProfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines whether a profile exists for the tile.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.imageXPos">
+<code class="descname">imageXPos</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.imageXPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.imageYPos">
+<code class="descname">imageYPos</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.imageYPos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.is_fitSuccessful">
+<code class="descname">is_fitSuccessful</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.is_fitSuccessful"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.is_fitSuccessful" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether the tile profile fit was successful.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.is_visited">
+<code class="descname">is_visited</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.is_visited"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.is_visited" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a gaussian has been fit to the tile profile.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.make_component">
+<code class="descname">make_component</code><span class="sig-paren">(</span><em>compNumber</em>, <em>spectral_axis</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.make_component"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.make_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a component using fit parameters.
+Returns a 1D numpy array.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.make_gaussian">
+<code class="descname">make_gaussian</code><span class="sig-paren">(</span><em>xarr</em>, <em>amp</em>, <em>shift</em>, <em>width</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.make_gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.make_gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a gaussian shape over across an axis using gaussian
+parameters.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.ncomps">
+<code class="descname">ncomps</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.ncomps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.noise">
+<code class="descname">noise</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.noise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.noiseProfile">
+<code class="descname">noiseProfile</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.noiseProfile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.params">
+<code class="descname">params</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.profile">
+<code class="descname">profile</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.profile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.residuals">
+<code class="descname">residuals</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.residuals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.set_noise">
+<code class="descname">set_noise</code><span class="sig-paren">(</span><em>noise</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.set_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.set_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets noise of profile.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.set_visited">
+<code class="descname">set_visited</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.set_visited"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.set_visited" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the Tile as visited.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.spectral_axis">
+<code class="descname">spectral_axis</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.spectral_axis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="grid.SpectralTile.subtract_baseline">
+<code class="descname">subtract_baseline</code><span class="sig-paren">(</span><em>xarr</em>, <em>lowrange</em>, <em>highrange</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#SpectralTile.subtract_baseline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.SpectralTile.subtract_baseline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subtracts a first-degree polynomial baseline from the profile.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.visited">
+<code class="descname">visited</code><em class="property"> = False</em><a class="headerlink" href="#grid.SpectralTile.visited" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.xOffset">
+<code class="descname">xOffset</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.xOffset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="grid.SpectralTile.yOffset">
+<code class="descname">yOffset</code><em class="property"> = None</em><a class="headerlink" href="#grid.SpectralTile.yOffset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.compare_grids">
+<code class="descclassname">grid.</code><code class="descname">compare_grids</code><span class="sig-paren">(</span><em>grid0</em>, <em>grid1</em>, <em>velocityrange=[]</em>, <em>plotallpixels=False</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#compare_grids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.compare_grids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots heat map of N(HI) residuals between SpectralGrid instances
+between grid0 and grid1. The two SpectralGrids must be on the same
+coordinate grid.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.display_image">
+<code class="descclassname">grid.</code><code class="descname">display_image</code><span class="sig-paren">(</span><em>grid</em>, <em>plotallpixels=False</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#display_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.display_image" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="grid.guess_width">
+<code class="descclassname">grid.</code><code class="descname">guess_width</code><span class="sig-paren">(</span><em>tile=None</em>, <em>peak=None</em>, <em>spectral_axis=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#guess_width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.guess_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Guesses the width of a residual peak.
+maxpos : int</p>
+<blockquote>
+<div>In velocity units.</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.load_grid">
+<code class="descclassname">grid.</code><code class="descname">load_grid</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#load_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.load_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads saved SpectralGrid instance.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.make_radecAxes">
+<code class="descclassname">grid.</code><code class="descname">make_radecAxes</code><span class="sig-paren">(</span><em>h</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#make_radecAxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.make_radecAxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the RA and Dec axis given a header.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.make_velocityAxis">
+<code class="descclassname">grid.</code><code class="descname">make_velocityAxis</code><span class="sig-paren">(</span><em>h</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#make_velocityAxis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.make_velocityAxis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the velocity axis given a header.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_NHI">
+<code class="descclassname">grid.</code><code class="descname">plot_NHI</code><span class="sig-paren">(</span><em>grid</em>, <em>velocityrange=[]</em>, <em>plotallpixels=False</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em>, <em>returnimage=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_NHI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_NHI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_componentPV">
+<code class="descclassname">grid.</code><code class="descname">plot_componentPV</code><span class="sig-paren">(</span><em>SpectralGrid</em>, <em>xslice=None</em>, <em>yslice=None</em>, <em>width=None</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_componentPV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_componentPV" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_fit">
+<code class="descclassname">grid.</code><code class="descname">plot_fit</code><span class="sig-paren">(</span><em>grid</em>, <em>x</em>, <em>y</em>, <em>coords=None</em>, <em>coRegion=True</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the components of a gaussian fit.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_fits">
+<code class="descclassname">grid.</code><code class="descname">plot_fits</code><span class="sig-paren">(</span><em>grid</em>, <em>xlist</em>, <em>ylist</em>, <em>coords=None</em>, <em>legend=False</em>, <em>coRegion=True</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_fits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the components of a gaussian fit.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_ncompImage">
+<code class="descclassname">grid.</code><code class="descname">plot_ncompImage</code><span class="sig-paren">(</span><em>grid</em>, <em>plotallpixels=False</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_ncompImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_ncompImage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_residualsImage">
+<code class="descclassname">grid.</code><code class="descname">plot_residualsImage</code><span class="sig-paren">(</span><em>grid</em>, <em>plotallpixels=False</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_residualsImage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_residualsImage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_spectrum">
+<code class="descclassname">grid.</code><code class="descname">plot_spectrum</code><span class="sig-paren">(</span><em>grid</em>, <em>x</em>, <em>y</em>, <em>coords=None</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the components of a gaussian fit.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.plot_velocityHistograms">
+<code class="descclassname">grid.</code><code class="descname">plot_velocityHistograms</code><span class="sig-paren">(</span><em>grid</em>, <em>savedir='./'</em>, <em>filename=None</em>, <em>show=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#plot_velocityHistograms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.plot_velocityHistograms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="grid.write_fits_NHI">
+<code class="descclassname">grid.</code><code class="descname">write_fits_NHI</code><span class="sig-paren">(</span><em>SpectralGrid</em>, <em>filename</em>, <em>velocityrange=[]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#write_fits_NHI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.write_fits_NHI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the column density of the SpectralGrid model profiles and
+writes as a fits file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grid.write_grid">
+<code class="descclassname">grid.</code><code class="descname">write_grid</code><span class="sig-paren">(</span><em>SpectralGrid</em>, <em>filename</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/grid.html#write_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grid.write_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes grid_list to file.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/grid.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

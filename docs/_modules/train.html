@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>train &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for train</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+
+<span class="kn">import</span> <span class="nn">constants</span>
+<span class="kn">from</span> <span class="nn">myscience</span> <span class="kn">import</span> <span class="n">funcs</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="create_train_data"><a class="viewcode-back" href="../docs_rst/train.html#train.create_train_data">[docs]</a><span class="k">def</span> <span class="nf">create_train_data</span><span class="p">(</span><span class="n">velocity_axis</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">velocity_range</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">nchannels</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">width_range</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span>
+                      <span class="n">temp_range</span><span class="o">=</span><span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">8000</span><span class="p">],</span>
+                      <span class="n">amp_range</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">mean_range</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">ncomponents</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                      <span class="n">nspectra</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    velocity_axis : array-like</span>
+<span class="sd">        Array of velocity value at each channel. Units of km/s.</span>
+<span class="sd">    velocity_range : array-like</span>
+<span class="sd">        Used if velocity_axis is None. Lower and upper limit to velocity range.</span>
+<span class="sd">        Paired with nchannels. Units of km/s.</span>
+<span class="sd">    nchannels : int, optional</span>
+<span class="sd">        Used if velocity_axis is None. Number of channels in spectra. Paired</span>
+<span class="sd">        with velocity_range.</span>
+<span class="sd">    width_range : array-like</span>
+<span class="sd">        Lower and upper limit to standard deviation of Gaussians expected in</span>
+<span class="sd">        spectra. Units of km/s.</span>
+<span class="sd">    temp_range : array-like</span>
+<span class="sd">        Lower and upper limit to kinetic temperatures of gas, e.g. CNM and WNM</span>
+<span class="sd">        temperatures. Temperatures converted to be width_range. Units of K.</span>
+<span class="sd">    amp_range : array-like</span>
+<span class="sd">        Lower and upper limit to amplitudes of Gaussian components in K.</span>
+<span class="sd">    mean_range : array-like</span>
+<span class="sd">        Lower and upper limit to centers of Gaussian components in km/s.</span>
+<span class="sd">        Default is (0.25 and 0.75 of (maximum velocity - minimum velocity)) +</span>
+<span class="sd">        minimum velocity.</span>
+<span class="sd">    RMS : float</span>
+<span class="sd">        RMS of spectra. Units of K / (km / s)</span>
+<span class="sd">    ncomponents : int</span>
+<span class="sd">        Number of Gaussian components in spectra.</span>
+<span class="sd">    nspectra : int</span>
+<span class="sd">        Number of spectra to generate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    agd_train : dict</span>
+<span class="sd">        AGD training data set to be used as input for gausspy.gp.train function.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Get FHWM range</span>
+    <span class="c1"># --------------</span>
+    <span class="k">if</span> <span class="n">temp_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">FWHM_range</span> <span class="o">=</span> <span class="n">funcs</span><span class="o">.</span><span class="n">Tkin_to_FWHM</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temp_range</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">width_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">FWHM_range</span> <span class="o">=</span> <span class="n">funcs</span><span class="o">.</span><span class="n">std_to_FWHM</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">width_range</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">temp_range</span> <span class="o">=</span> <span class="p">[</span><span class="mi">40</span><span class="p">,</span> <span class="mi">8000</span><span class="p">]</span>
+        <span class="n">FWHM_range</span> <span class="o">=</span> <span class="n">funcs</span><span class="o">.</span><span class="n">Tkin_to_FWHM</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">temp_range</span><span class="p">))</span>
+
+    <span class="c1"># Check velocity axis</span>
+    <span class="c1"># -------------------</span>
+    <span class="k">if</span> <span class="n">velocity_axis</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">velocity_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">velocity_axis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">velocity_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                    <span class="n">velocity_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                    <span class="n">nchannels</span><span class="p">)</span>
+
+    <span class="c1"># Gaussian mean range</span>
+    <span class="k">if</span> <span class="n">mean_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">velocity_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">velocity_axis</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">velocity_axis</span><span class="p">)</span>
+        <span class="n">mean_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">velocity_diff</span><span class="p">,</span> <span class="mf">0.75</span> <span class="o">*</span> <span class="n">velocity_diff</span><span class="p">))</span>
+        <span class="n">mean_range</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">velocity_axis</span><span class="p">)</span>
+
+    <span class="n">agd_data</span> <span class="o">=</span> <span class="n">format_train_data</span><span class="p">(</span><span class="n">RMS</span><span class="o">=</span><span class="n">RMS</span><span class="p">,</span>
+                                 <span class="n">NCOMPS</span><span class="o">=</span><span class="n">ncomponents</span><span class="p">,</span>
+                                 <span class="n">NCHANNELS</span><span class="o">=</span><span class="n">nchannels</span><span class="p">,</span>
+                                 <span class="n">NSPECTRA</span><span class="o">=</span><span class="n">nspectra</span><span class="p">,</span>
+                                 <span class="n">AMP_lims</span><span class="o">=</span><span class="n">amp_range</span><span class="p">,</span>
+                                 <span class="n">FWHM_lims</span><span class="o">=</span><span class="n">FWHM_range</span><span class="p">,</span>
+                                 <span class="n">MEAN_lims</span><span class="o">=</span><span class="n">mean_range</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="format_train_data"><a class="viewcode-back" href="../docs_rst/train.html#train.format_train_data">[docs]</a><span class="k">def</span> <span class="nf">format_train_data</span><span class="p">(</span><span class="n">RMS</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">NCOMPS</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">NCHANNELS</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">NSPECTRA</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">AMP_lims</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">FWHM_lims</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">MEAN_lims</span><span class="o">=</span><span class="bp">None</span><span class="p">,):</span>
+
+    <span class="c1"># Data properties</span>
+    <span class="n">RMS</span> <span class="o">=</span> <span class="mf">0.05</span>
+    <span class="n">NCOMPS</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">NCHANNELS</span> <span class="o">=</span> <span class="mi">512</span>
+    <span class="n">NSPECTRA</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="c1">#TRAINING_SET = False</span>
+    <span class="n">TRAINING_SET</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">if</span> <span class="n">TRAINING_SET</span><span class="p">:</span>
+        <span class="n">FILENAME</span> <span class="o">=</span> <span class="s1">&#39;agd_data.pickle&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">FILENAME</span> <span class="o">=</span> <span class="s1">&#39;agd_data_science.pickle&#39;</span>
+
+    <span class="c1"># Component properties</span>
+    <span class="n">AMP_lims</span> <span class="o">=</span> <span class="p">[</span><span class="n">RMS</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="n">RMS</span> <span class="o">*</span> <span class="mi">25</span><span class="p">]</span>
+    <span class="n">FWHM_lims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">35</span><span class="p">]</span> <span class="c1"># channels</span>
+    <span class="n">MEAN_lims</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">NCHANNELS</span><span class="p">,</span> <span class="mf">0.75</span> <span class="o">*</span> <span class="n">NCHANNELS</span><span class="p">]</span>
+
+    <span class="c1"># Initialize</span>
+    <span class="n">agd_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">chan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">NCHANNELS</span><span class="p">)</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">chan</span> <span class="o">*</span> <span class="mf">0.</span> <span class="o">+</span> <span class="n">RMS</span> <span class="c1"># Constant noise for all spectra</span>
+
+    <span class="c1"># Begin populating data</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">NSPECTRA</span><span class="p">):</span>
+        <span class="n">spectrum_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">NCHANNELS</span><span class="p">)</span> <span class="o">*</span> <span class="n">RMS</span>
+
+        <span class="c1"># Sample random components:</span>
+        <span class="n">amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">NCOMPS</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">AMP_lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">AMP_lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> \
+                    <span class="n">AMP_lims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fwhms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">NCOMPS</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">FWHM_lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">FWHM_lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> \
+                    <span class="n">FWHM_lims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">NCOMPS</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">MEAN_lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">MEAN_lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> \
+                    <span class="n">MEAN_lims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Create spectrum</span>
+        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">amps</span><span class="p">,</span> <span class="n">fwhms</span><span class="p">,</span> <span class="n">means</span><span class="p">):</span>
+            <span class="n">spectrum_i</span> <span class="o">+=</span> <span class="n">funcs</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">m</span><span class="p">)(</span><span class="n">chan</span><span class="p">)</span>
+
+        <span class="c1"># Enter results into AGD dataset</span>
+        <span class="n">agd_data</span><span class="p">[</span><span class="s1">&#39;data_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agd_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data_list&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">spectrum_i</span><span class="p">]</span>
+        <span class="n">agd_data</span><span class="p">[</span><span class="s1">&#39;x_values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agd_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x_values&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">chan</span><span class="p">]</span>
+        <span class="n">agd_data</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agd_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">errors</span><span class="p">]</span>
+
+        <span class="c1"># If training data, keep answers</span>
+        <span class="k">if</span> <span class="n">TRAINING_SET</span><span class="p">:</span>
+            <span class="n">agd_data</span><span class="p">[</span><span class="s1">&#39;amplitudes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agd_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;amplitudes&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">amps</span><span class="p">]</span>
+            <span class="n">agd_data</span><span class="p">[</span><span class="s1">&#39;fwhms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agd_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fwhms&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">fwhms</span><span class="p">]</span>
+            <span class="n">agd_data</span><span class="p">[</span><span class="s1">&#39;means&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">agd_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;means&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span><span class="n">means</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">agd_data</span></div>
+
+
+
+
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

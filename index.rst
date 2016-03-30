@@ -11,13 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 3
 
-   code.rst
-
-.. toctree::
-   :maxdepth: 2
-
-   myplotting
-
+   docs_rst/myscience.rst
+   docs_rst/myplotting.rst
+   docs_rst/mystats.rst
+   docs_rst/mycoords.rst
+   docs_rst/myimage_analysis.rst
+   docs_rst/mygeometry.rst
 
 .. 
     Indices and tables

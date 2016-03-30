@@ -1,0 +1,349 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hianalysis module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-hianalysis">
+<span id="hianalysis-module"></span><h1>hianalysis module<a class="headerlink" href="#module-hianalysis" title="Permalink to this headline">¶</a></h1>
+<p>Author: Elijah Bernstein-Cooper; <a class="reference external" href="mailto:ezbc&#37;&#52;&#48;astro&#46;wisc&#46;edu">ezbc<span>&#64;</span>astro<span>&#46;</span>wisc<span>&#46;</span>edu</a></p>
+<dl class="docutils">
+<dt>NAME</dt>
+<dd>hianalyis</dd>
+<dt>FILE</dt>
+<dd>/home/elijah/python/myModules/hianalysis.py</dd>
+<dt>DESCRIPTION</dt>
+<dd><dl class="first docutils">
+<dt>Provides</dt>
+<dd><ol class="first last arabic simple">
+<li>Tool for blanking HI cubes by hand and creating moment maps.</li>
+</ol>
+</dd>
+</dl>
+<p class="last">Execute in the CASA environment.</p>
+</dd>
+</dl>
+<dl class="function">
+<dt id="hianalysis.addNoise2Cube">
+<code class="descclassname">hianalysis.</code><code class="descname">addNoise2Cube</code><span class="sig-paren">(</span><em>cube</em>, <em>fwhm</em>, <em>std=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#addNoise2Cube"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.addNoise2Cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convolves random Gaussian noise with a psf. The convolved noise is then
+added to the cube.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cube</strong> : array_like</p>
+<blockquote>
+<div><p>3d array of data. Assumes first dimension is velocity axis</p>
+</div></blockquote>
+<p><strong>fwhm</strong> : float</p>
+<blockquote>
+<div><p>FWHM (pixels) in each dimension.
+Single number to make all the same.</p>
+</div></blockquote>
+<p><strong>std</strong> : float, optional</p>
+<blockquote>
+<div><p>Standard deviation (STD) of Gaussian noise to add to cube. If no value
+provided, STD will be calculated from the input cube.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>out</strong> : ndarray</p>
+<blockquote>
+<div><p>Input cube with convolved Gaussian noise added.</p>
+</div></blockquote>
+<p class="last">Examples</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.blankcube">
+<code class="descclassname">hianalysis.</code><code class="descname">blankcube</code><span class="sig-paren">(</span><em>image, dummyMS, smooth=True, verbose=True, region='centerbox[[10h21m45s,18.05.14.9],[15arcmin,15arcmin]]', ruthless=False, extension='.image', beamround='int', blankThreshold=2.5, moments=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#blankcube"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.blankcube" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image</strong> : string</p>
+<blockquote>
+<div><p>Base name of image. If target image has extension other than &#8216;.image&#8217;,
+change the extension keyword.</p>
+</div></blockquote>
+<p><strong>dummyMS</strong> : string</p>
+<blockquote>
+<div><p>MS file required for blanking process in CASA</p>
+</div></blockquote>
+<p><strong>smooth</strong> : bool, optional</p>
+<blockquote>
+<div><p>Smooth the image to a circular beam before blanking?
+Default True</p>
+</div></blockquote>
+<p><strong>verbose</strong> : bool, optional</p>
+<p><strong>region</strong> : string, optional</p>
+<blockquote>
+<div><p>region parameter featured in CASA</p>
+</div></blockquote>
+<p><strong>ruthless</strong> : bool, optional</p>
+<blockquote>
+<div><p>Delete previous outputs from blankcube</p>
+</div></blockquote>
+<p><strong>extension</strong> : string, optional</p>
+<blockquote>
+<div><p>Extension of the target image. Must include the &#8216;.&#8217;, e.g., &#8216;.restored&#8217;
+Default &#8216;.image&#8217;</p>
+</div></blockquote>
+<p><strong>beamround</strong> : string,float</p>
+<blockquote>
+<div><p>P</p>
+</div></blockquote>
+<p><strong>blankThreshold</strong> : float, optional</p>
+<blockquote>
+<div><p>Initial blanking threshold of all pixels scaled by the standard
+deviation times the blankingthreshold
+Default = 2.5 (Walter et al. 2008)</p>
+</div></blockquote>
+<p><strong>moments</strong> : list, optional</p>
+<blockquote>
+<div><p>Moments to calculate from cube. Options are 0,1,2.
+Example: [0,1,2]
+Default: [0]</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>out</strong> : null</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.convolve">
+<code class="descclassname">hianalysis.</code><code class="descname">convolve</code><span class="sig-paren">(</span><em>image</em>, <em>psf</em>, <em>ft_psf=None</em>, <em>ft_image=None</em>, <em>no_ft=None</em>, <em>correlate=None</em>, <em>auto_correlation=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#convolve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.convolve" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>NAME:</dt>
+<dd>CONVOLVE</dd>
+<dt>PURPOSE:</dt>
+<dd>Convolution of an image with a Point Spread Function (PSF)</dd>
+<dt>EXPLANATION:</dt>
+<dd>The default is to compute the convolution using a product of
+Fourier transforms (for speed).</dd>
+</dl>
+<p>CALLING SEQUENCE:</p>
+<blockquote>
+<div><blockquote>
+<div>imconv = convolve( image1, psf, FT_PSF = psf_FT )</div></blockquote>
+<dl class="docutils">
+<dt>or:</dt>
+<dd>correl = convolve( image1, image2, /CORREL )</dd>
+<dt>or:</dt>
+<dd>correl = convolve( image, /AUTO )</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>INPUTS:</dt>
+<dd>image = 2-D array (matrix) to be convolved with psf
+psf = the Point Spread Function, (size &lt; or = to size of image).</dd>
+</dl>
+<p>OPTIONAL INPUT KEYWORDS:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>FT_PSF = passes out/in the Fourier transform of the PSF,</dt>
+<dd>(so that it can be re-used the next time function is called).</dd>
+</dl>
+<p>FT_IMAGE = passes out/in the Fourier transform of image.</p>
+<dl class="docutils">
+<dt>/CORRELATE uses the conjugate of the Fourier transform of PSF,</dt>
+<dd>to compute the cross-correlation of image and PSF,
+(equivalent to IDL function convol() with NO rotation of PSF)</dd>
+</dl>
+<p>/AUTO_CORR computes the auto-correlation function of image using FFT.</p>
+<dl class="docutils">
+<dt>/NO_FT overrides the use of FFT, using IDL function convol() instead.</dt>
+<dd>(then PSF is rotated by 180 degrees to give same result)</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>METHOD:</dt>
+<dd>When using FFT, PSF is centered &amp; expanded to size of image.</dd>
+<dt>HISTORY:</dt>
+<dd><p class="first">written, Frank Varosi, NASA/GSFC 1992.
+Appropriate precision type for result depending on input image</p>
+<blockquote>
+<div>Markus Hundertmark February 2006</div></blockquote>
+<dl class="last docutils">
+<dt>Fix the bug causing the recomputation of FFT(psf) and/or FFT(image)</dt>
+<dd>Sergey Koposov     December 2006</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.execute">
+<code class="descclassname">hianalysis.</code><code class="descname">execute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.flux2Mass">
+<code class="descclassname">hianalysis.</code><code class="descname">flux2Mass</code><span class="sig-paren">(</span><em>distance=None</em>, <em>distanceErr=None</em>, <em>arcsecPerPix=None</em>, <em>beamsize=None</em>, <em>flux=None</em>, <em>fluxErr=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#flux2Mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.flux2Mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distance in units of Mpc
+flux in units of Jy/beam km/s
+beamsize in units of &#8221;
+Returns mass in units of Msun</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.gauss2d">
+<code class="descclassname">hianalysis.</code><code class="descname">gauss2d</code><span class="sig-paren">(</span><em>shape</em>, <em>fwhm</em>, <em>normalize=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#gauss2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.gauss2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author: P. L. Lim, Space Telescope Science Institute, Baltimore MD</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>shape</strong> : tuple, int</p>
+<blockquote>
+<div><p>Number of pixels for first and second dimension.
+Just one number to make all sizes equal.</p>
+</div></blockquote>
+<p><strong>fwhm</strong> : float</p>
+<blockquote>
+<div><p>FWHM (pixels) in each dimension.
+Single number to make all the same.</p>
+</div></blockquote>
+<p><strong>normalize</strong> : bool, optional</p>
+<blockquote>
+<div><p>Normalized so total PSF is 1.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psf</strong> : array_like</p>
+<blockquote class="last">
+<div><p>Gaussian point spread function.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">psf_gaussian</span> <span class="kn">import</span> <span class="n">gauss2d</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">psf</span> <span class="o">=</span> <span class="n">gauss2d</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">psf</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">gray</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.make_SBimage">
+<code class="descclassname">hianalysis.</code><code class="descname">make_SBimage</code><span class="sig-paren">(</span><em>image=''</em>, <em>cellsize=None</em>, <em>beamsize=None</em>, <em>distance=None</em>, <em>extension='.image'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#make_SBimage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.make_SBimage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.mass2SB">
+<code class="descclassname">hianalysis.</code><code class="descname">mass2SB</code><span class="sig-paren">(</span><em>mass=None</em>, <em>massErr=None</em>, <em>area=None</em>, <em>arcsecPerPix=None</em>, <em>distance=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#mass2SB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.mass2SB" title="Permalink to this definition">¶</a></dt>
+<dd><p>mass in units of Msun
+massErr in units of Msun
+area in units of pixels
+arsecPerPix in units of &#8220;/pixel
+distance in units of Mpc</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="hianalysis.printProperties">
+<code class="descclassname">hianalysis.</code><code class="descname">printProperties</code><span class="sig-paren">(</span><em>filenames</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hianalysis.html#printProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hianalysis.printProperties" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/hianalysis.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

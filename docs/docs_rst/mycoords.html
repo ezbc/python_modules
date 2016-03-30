@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mycoords module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="next" title="myimage_analysis module" href="myimage_analysis.html" />
+    <link rel="prev" title="mystats module" href="mystats.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="myimage_analysis.html" title="myimage_analysis module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mystats.html" title="mystats module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mycoords">
+<span id="mycoords-module"></span><h1>mycoords module<a class="headerlink" href="#module-mycoords" title="Permalink to this headline">¶</a></h1>
+<p>Module for basic coordinate creation.</p>
+<dl class="function">
+<dt id="mycoords.calc_image_origin">
+<code class="descclassname">mycoords.</code><code class="descname">calc_image_origin</code><span class="sig-paren">(</span><em>x_limits=None</em>, <em>y_limits=None</em>, <em>delta_x=0.01</em>, <em>delta_y=0.01</em>, <em>coord_type='equatorial'</em>, <em>ref_wcs=(0.0</em>, <em>0.0)</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mycoords.html#calc_image_origin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mycoords.calc_image_origin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates pixel coordinates of an image at x-coord, y-coord = (0.0,
+0.0) degrees in either equatorial or galactic coordinates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x_limits</strong> : tuple</p>
+<blockquote>
+<div><p>Upper and lower limits of x-coord in degrees.</p>
+</div></blockquote>
+<p><strong>y_limits</strong> : tuple</p>
+<blockquote>
+<div><p>Upper and lower limits of y-coord in degrees.&#8217;</p>
+</div></blockquote>
+<p><strong>delta_x</strong> : float</p>
+<blockquote>
+<div><p>Arclength of x-coord in degrees.</p>
+</div></blockquote>
+<p><strong>delta_y</strong> : float</p>
+<blockquote>
+<div><p>Arclength of y-coord in degrees.</p>
+</div></blockquote>
+<p><strong>coord_type</strong> : str, optional</p>
+<blockquote>
+<div><p>&#8216;equatorial&#8217; or &#8216;galactic&#8217;</p>
+</div></blockquote>
+<p><strong>ref_wcs</strong> : tuple, optional</p>
+<blockquote>
+<div><p>Reference x and y coordinates in degrees. Default is (0.0, 0.0), which
+is needed to be read by unsophisticated programs like Kvis.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>ref_pixel</strong> : tuple</p>
+<blockquote>
+<div><p>Reference right ascension and declination in pixels for reference
+coordinates.</p>
+</div></blockquote>
+<p><strong>npix</strong> : tuple</p>
+<blockquote class="last">
+<div><p>Number of pixels along right ascension and declinations axes.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mycoords.convert_limit_coordinates">
+<code class="descclassname">mycoords.</code><code class="descname">convert_limit_coordinates</code><span class="sig-paren">(</span><em>prop_dict</em>, <em>coords=('region_limit'</em>, <em>'co_noise_limits'</em>, <em>'plot_limit')</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mycoords.html#convert_limit_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mycoords.convert_limit_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mycoords.get_pix_coords">
+<code class="descclassname">mycoords.</code><code class="descname">get_pix_coords</code><span class="sig-paren">(</span><em>ra=None</em>, <em>dec=None</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mycoords.html#get_pix_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mycoords.get_pix_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ra and dec in (hrs,min,sec) and (deg,arcmin,arcsec), or Ra in degrees
+and dec in degrees.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mycoords.hrs2degs">
+<code class="descclassname">mycoords.</code><code class="descname">hrs2degs</code><span class="sig-paren">(</span><em>ra=None</em>, <em>dec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mycoords.html#hrs2degs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mycoords.hrs2degs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ra and dec tuples in hrs min sec and deg arcmin arcsec.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mycoords.load_ds9_region">
+<code class="descclassname">mycoords.</code><code class="descname">load_ds9_region</code><span class="sig-paren">(</span><em>props</em>, <em>filename=None</em>, <em>header=None</em>, <em>key='regions'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mycoords.html#load_ds9_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mycoords.load_ds9_region" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mycoords.make_velocity_axis">
+<code class="descclassname">mycoords.</code><code class="descname">make_velocity_axis</code><span class="sig-paren">(</span><em>h</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mycoords.html#make_velocity_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mycoords.make_velocity_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the velocity axis given a pyfits header. Assumes the third
+axis is the velocity axis in km/s using the radio definition.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mystats.html"
+                        title="previous chapter">mystats module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="myimage_analysis.html"
+                        title="next chapter">myimage_analysis module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/mycoords.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="myimage_analysis.html" title="myimage_analysis module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mystats.html" title="mystats module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

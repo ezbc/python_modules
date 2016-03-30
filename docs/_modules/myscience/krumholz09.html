@@ -1,0 +1,345 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>myscience.krumholz09 &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for myscience.krumholz09</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Module for using the model of Krumholz et al. (2009)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="calc_rh2"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.krumholz09.calc_rh2">[docs]</a><span class="k">def</span> <span class="nf">calc_rh2</span><span class="p">(</span><span class="n">h_sd</span><span class="p">,</span>
+        <span class="n">phi_cnm</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="c1"># metallicity</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="c1"># ?</span>
+        <span class="n">f_diss</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="c1"># fraction of absorbing H2 which disociates</span>
+        <span class="n">phi_mol</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="c1"># molecular gas fraction</span>
+        <span class="n">sigma_d</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">return_fractions</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">remove_helium</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calculates ratio of molecular hydrogen to atomic hydrogen surface</span>
+<span class="sd">    density using the model from Krumholz et al. 2008 given a total hydrogen</span>
+<span class="sd">    surface density.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h_sd : array-like</span>
+<span class="sd">        Hydrogen surface density in units of solar mass per parsec**2-</span>
+<span class="sd">    phi_cnm : float</span>
+<span class="sd">        Ratio of CNM number density and minimum number density to maintain</span>
+<span class="sd">        pressure balance with the WNM.</span>
+<span class="sd">    Z : float</span>
+<span class="sd">        Gas-phase metallicity relative to solar.</span>
+<span class="sd">    a : float</span>
+<span class="sd">        ?</span>
+<span class="sd">    phi_mol : float</span>
+<span class="sd">        Molecular gas fraction.</span>
+<span class="sd">    sigma_d : float</span>
+<span class="sd">        Dust cross section in units of 10^-21 cm^-2 (solar).</span>
+<span class="sd">    return_fractions : bool</span>
+<span class="sd">        Return f_H2 and f_HI?</span>
+<span class="sd">    remove_helium : bool</span>
+<span class="sd">        Remove contribution from Helium to total gas surface density? If</span>
+<span class="sd">        True, assumes h_sd does not include Helium.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rh2_fit : array-like</span>
+<span class="sd">        Model ratio between molecular and atomic hydrogen masses.</span>
+<span class="sd">    f_H2, f_HI : array-like, optional</span>
+<span class="sd">        If return_fractions=True then the following is returned:</span>
+<span class="sd">        f_H2 = mass fraction of molecular hydrogen</span>
+<span class="sd">        f_HI = mass fraction of atomic hydrogen</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="c1"># Constants</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">3.0e10</span> <span class="c1"># speed of light, cm/s</span>
+    <span class="n">R_d_solar</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**-</span><span class="mf">16.5</span> <span class="c1"># solar cloud radius, cm</span>
+    <span class="n">E_0_solar</span> <span class="o">=</span> <span class="mf">7.5e-4</span> <span class="c1"># solar radiation field, erg/s</span>
+    <span class="n">mu_H</span> <span class="o">=</span> <span class="mf">2.34e-24</span><span class="p">,</span> <span class="c1"># molecular weight of H + He, g</span>
+
+    <span class="c1"># normalized values</span>
+    <span class="n">R_d</span> <span class="o">=</span> <span class="n">R_d_solar</span> <span class="o">/</span> <span class="mi">10</span><span class="o">**-</span><span class="mf">16.5</span> <span class="o">*</span> <span class="n">Z</span> <span class="c1"># formation rate of H2 on dust, cm^3 / s</span>
+
+    <span class="c1"># normalized radiation field strength, EQ 7</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="mf">2.3</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma_d</span> <span class="o">/</span> <span class="n">R_d</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">3.1</span> <span class="o">*</span> <span class="n">Z</span><span class="o">**</span><span class="mf">0.365</span><span class="p">)</span> <span class="o">/</span> <span class="n">phi_cnm</span>
+    <span class="c1">#chi = 2.3 * (1 + 3.1 * Z**0.365) / phi_cnm</span>
+
+    <span class="c1"># dust-adjusted radiation field, EQ 10</span>
+    <span class="n">psi</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.5</span> <span class="o">+</span> <span class="n">chi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">chi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span><span class="p">))</span>
+
+    <span class="c1"># cloud optical depth, EQ 21, include scaling of dust cross-section relative</span>
+    <span class="c1"># to solar</span>
+    <span class="n">tau_c</span> <span class="o">=</span> <span class="mf">0.067</span> <span class="o">*</span> <span class="n">Z</span> <span class="o">*</span> <span class="n">h_sd</span> <span class="o">*</span> <span class="n">sigma_d</span>
+
+    <span class="c1"># remove contribution from Helium?</span>
+    <span class="k">if</span> <span class="n">remove_helium</span><span class="p">:</span>
+        <span class="n">tau_c</span> <span class="o">*=</span> <span class="mf">1.4</span>
+
+    <span class="c1"># calculate fractions, Equations 35 and 36</span>
+    <span class="n">f_H2_sub1</span> <span class="o">=</span> <span class="p">(</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">psi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">tau_c</span><span class="p">)</span>
+    <span class="n">f_H2_sub2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">psi</span> <span class="o">*</span> <span class="n">phi_mol</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">tau_c</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">3.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">phi_mol</span> \
+            <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">psi</span><span class="p">))</span>
+    <span class="n">f_H2</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">f_H2_sub1</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">f_H2_sub2</span><span class="p">))</span>
+    <span class="n">f_HI</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">f_H2</span>
+
+    <span class="c1"># Keep fractions within real fractional value range</span>
+    <span class="n">f_HI</span><span class="p">[</span><span class="n">f_HI</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">f_HI</span><span class="p">[</span><span class="n">f_HI</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">f_H2</span><span class="p">[</span><span class="n">f_H2</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">f_H2</span><span class="p">[</span><span class="n">f_H2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># ratio of molecular to atomic fraction</span>
+    <span class="n">R_H2</span> <span class="o">=</span> <span class="n">f_H2</span> <span class="o">/</span> <span class="n">f_HI</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">return_fractions</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">R_H2</span>
+    <span class="k">elif</span> <span class="n">return_fractions</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">R_H2</span><span class="p">,</span> <span class="n">f_H2</span><span class="p">,</span> <span class="n">f_HI</span></div>
+
+<div class="viewcode-block" id="calc_phi_cnm"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.krumholz09.calc_phi_cnm">[docs]</a><span class="k">def</span> <span class="nf">calc_phi_cnm</span><span class="p">(</span><span class="n">T_cnm</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Calculates phi_cnm from equation 19 in Krumholz et al. (2009).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    T_cnm : float, array-like</span>
+<span class="sd">        Temperature of cold neutral medium in K.</span>
+<span class="sd">    Z : float, array-like</span>
+<span class="sd">        Metallicity normalized by solar value.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="n">T_cnm2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">T_cnm</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+
+    <span class="n">numerator</span> <span class="o">=</span> <span class="mf">20.0</span> <span class="o">*</span> <span class="n">T_cnm2</span><span class="o">**-</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">/</span> <span class="n">T_cnm2</span><span class="p">)</span> <span class="o">*</span> \
+                <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">3.1</span> <span class="o">*</span> <span class="n">Z</span><span class="o">**</span><span class="mf">0.365</span><span class="p">)</span>
+
+    <span class="n">denominator</span> <span class="o">=</span> <span class="mf">31.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">2.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.365</span><span class="p">)</span>
+
+    <span class="n">phi_cnm</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+
+    <span class="k">return</span> <span class="n">phi_cnm</span></div>
+
+<div class="viewcode-block" id="calc_T_cnm"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.krumholz09.calc_T_cnm">[docs]</a><span class="k">def</span> <span class="nf">calc_T_cnm</span><span class="p">(</span><span class="n">phi_cnm</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">phi_cnm_error</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">calc_error</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Calculates T_cnm from equation 19 in Krumholz et al. (2009).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    phi_cnm : float, array-like</span>
+<span class="sd">        Phi_cnm parameter, n_cnm = phi_cnm * n_cnm,min .</span>
+<span class="sd">    Z : float, array-like</span>
+<span class="sd">        Metallicity normalized by solar value.</span>
+<span class="sd">    G0 : float, array-like</span>
+<span class="sd">        FUV radiation field normalized by solar value.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="n">T_cnm2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+
+    <span class="n">numerator</span> <span class="o">=</span> <span class="mf">20.0</span> <span class="o">*</span> <span class="n">T_cnm2</span><span class="o">**-</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">/</span> <span class="n">T_cnm2</span><span class="p">)</span> <span class="o">*</span> \
+                <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">3.1</span> <span class="o">*</span> <span class="n">Z</span><span class="o">**</span><span class="mf">0.365</span><span class="p">)</span>
+
+    <span class="n">denominator</span> <span class="o">=</span> <span class="mf">31.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">2.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.365</span><span class="p">)</span>
+
+    <span class="n">phi_cnm_interp</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+
+    <span class="n">T_cnm2_interp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">phi_cnm</span><span class="p">,</span>
+                       <span class="n">phi_cnm_interp</span><span class="p">,</span>
+                       <span class="n">T_cnm2</span>
+                       <span class="p">)</span>
+
+    <span class="n">T_cnm2_interp</span> <span class="o">=</span> <span class="n">T_cnm2</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">phi_cnm_interp</span> <span class="o">-</span> <span class="n">phi_cnm</span><span class="p">))]</span>
+
+    <span class="n">T_cnm</span> <span class="o">=</span> <span class="n">T_cnm2_interp</span> <span class="o">*</span> <span class="mf">100.0</span>
+
+    <span class="k">if</span> <span class="n">calc_error</span> <span class="o">!=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+
+        <span class="n">phi_cnm_low</span> <span class="o">=</span> <span class="n">phi_cnm</span> <span class="o">-</span> <span class="n">phi_cnm_error</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">phi_cnm_hi</span> <span class="o">=</span> <span class="n">phi_cnm</span> <span class="o">+</span> <span class="n">phi_cnm_error</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">T_cnm2_low</span> <span class="o">=</span> <span class="n">T_cnm2</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">phi_cnm_interp</span> <span class="o">-</span> <span class="n">phi_cnm_low</span><span class="p">))]</span>
+
+        <span class="n">T_cnm2_hi</span> <span class="o">=</span> <span class="n">T_cnm2</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">phi_cnm_interp</span> <span class="o">-</span> <span class="n">phi_cnm_hi</span><span class="p">))]</span>
+
+        <span class="n">T_cnm2_error_low</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">T_cnm2_interp</span> <span class="o">-</span> <span class="n">T_cnm2_low</span><span class="p">)</span> <span class="o">/</span> \
+                               <span class="p">(</span><span class="n">phi_cnm</span> <span class="o">-</span> <span class="n">phi_cnm_low</span><span class="p">))</span>  <span class="o">*</span> <span class="n">phi_cnm_error</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">T_cnm2_error_hi</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">T_cnm2_hi</span> <span class="o">-</span> <span class="n">T_cnm2_interp</span><span class="p">)</span> <span class="o">/</span> \
+                              <span class="p">(</span><span class="n">phi_cnm_hi</span> <span class="o">-</span> <span class="n">phi_cnm</span><span class="p">))</span> <span class="o">*</span> <span class="n">phi_cnm_error</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">T_cnm_error</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">T_cnm2_error_low</span><span class="p">,</span> <span class="n">T_cnm2_error_hi</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">T_cnm</span><span class="p">,</span> <span class="n">T_cnm_error</span>
+
+    <span class="n">T_cnm</span> <span class="o">=</span> <span class="n">T_cnm2_interp</span> <span class="o">*</span> <span class="mf">100.0</span>
+
+    <span class="k">return</span> <span class="n">T_cnm</span></div>
+
+<div class="viewcode-block" id="calc_n_min"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.krumholz09.calc_n_min">[docs]</a><span class="k">def</span> <span class="nf">calc_n_min</span><span class="p">(</span><span class="n">G_0</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">G_0_error</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">Z</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">calc_error</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Calculates minimum volume density of CNM to maintain pressure balance</span>
+<span class="sd">    with the WNM. See equation (5). Returns n_min in cm^-3.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G_0 : float, array-like</span>
+<span class="sd">        Incident radiation field of FUV photons normalized to solar.</span>
+<span class="sd">    Z : float, array-like</span>
+<span class="sd">        Metallicity normalized to solar value.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">n_min</span> <span class="o">=</span> <span class="mf">31.0</span> <span class="o">*</span> <span class="n">G_0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">3.1</span> <span class="o">*</span> <span class="n">Z</span><span class="o">**</span><span class="p">(</span><span class="mf">0.365</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">calc_error</span><span class="p">:</span>
+        <span class="n">n_min_error</span> <span class="o">=</span> <span class="mf">31.0</span> <span class="o">*</span> <span class="n">G_0_error</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">3.1</span> <span class="o">*</span> <span class="n">Z</span><span class="o">**</span><span class="p">(</span><span class="mf">0.365</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">n_min</span><span class="p">,</span> <span class="n">n_min_error</span>
+
+    <span class="k">return</span> <span class="n">n_min</span></div>
+
+<div class="viewcode-block" id="calc_n_cnm"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.krumholz09.calc_n_cnm">[docs]</a><span class="k">def</span> <span class="nf">calc_n_cnm</span><span class="p">(</span><span class="n">G_0</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">T_cnm</span><span class="o">=</span><span class="mf">70.0</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">G_0_error</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span>
+        <span class="n">T_cnm_error</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">calc_error</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Calculates volume density of CNM. See equation (18). Returns n_cnm in</span>
+<span class="sd">    cm^-3.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G_0 : float, array-like</span>
+<span class="sd">        Incident radiation field of FUV photons normalized to solar.</span>
+<span class="sd">    Z : float, array-like</span>
+<span class="sd">        Metallicity normalized to solar value.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="n">T_cnm2</span> <span class="o">=</span> <span class="n">T_cnm</span> <span class="o">/</span> <span class="mf">100.0</span>
+
+    <span class="n">numerator</span> <span class="o">=</span> <span class="mf">20.0</span> <span class="o">*</span> <span class="n">G_0</span> <span class="o">*</span> <span class="n">T_cnm2</span><span class="o">**-</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">/</span> <span class="n">T_cnm2</span><span class="p">)</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mf">2.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.365</span>
+
+    <span class="n">n_cnm</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+
+    <span class="k">if</span> <span class="n">calc_error</span><span class="p">:</span>
+        <span class="n">T_cnm_comp</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">9.49</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">/</span> <span class="n">T_cnm2</span><span class="p">)</span> <span class="o">*</span> <span class="n">G_0</span> <span class="o">*</span> <span class="n">Z</span> <span class="o">/</span> \
+                     <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.7</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.635</span> <span class="o">*</span> \
+                        <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">2.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.365</span> <span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> \
+                     <span class="mf">30.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">/</span> <span class="n">T_cnm2</span><span class="p">)</span> <span class="o">*</span> <span class="n">G_0</span> <span class="o">/</span> \
+                     <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">2.2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">2.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.365</span> <span class="p">))</span> <span class="o">-</span> \
+                     <span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">/</span> <span class="n">T_cnm2</span><span class="p">)</span> <span class="o">*</span> <span class="n">G_0</span> <span class="o">/</span> \
+                     <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">1.2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">2.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.365</span> <span class="p">))</span>
+
+        <span class="n">G_0_comp</span> <span class="o">=</span> <span class="mf">20.0</span> <span class="o">*</span> <span class="n">T_cnm2</span><span class="o">**-</span><span class="mf">0.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">/</span> <span class="n">T_cnm2</span><span class="p">)</span> <span class="o">/</span> \
+                    <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">2.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Z</span><span class="p">)</span><span class="o">**</span><span class="mf">0.365</span><span class="p">)</span>
+
+        <span class="n">n_cnm_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">T_cnm_comp</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_cnm_error</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> \
+                               <span class="n">G_0_comp</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">G_0_error</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">n_cnm</span><span class="p">,</span> <span class="n">n_cnm_error</span>
+
+    <span class="k">return</span> <span class="n">n_cnm</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

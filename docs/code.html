@@ -49,9 +49,9 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-myplotting">
-<span id="documentation-for-collection-of-python-modules"></span><h1>Documentation for Collection of Python Modules<a class="headerlink" href="#module-myplotting" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
+  <div class="section" id="module-myscience">
+<span id="documentation-for-collection-of-python-modules"></span><h1>Documentation for Collection of Python Modules<a class="headerlink" href="#module-myscience" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-myplotting"></span><dl class="function">
 <dt id="myplotting.check_overlaps">
 <code class="descclassname">myplotting.</code><code class="descname">check_overlaps</code><span class="sig-paren">(</span><em>bbox1</em>, <em>bbox2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myplotting.html#check_overlaps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.check_overlaps" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if this bounding box overlaps with the given
@@ -372,7 +372,7 @@ data of length num_samples, representing each simulation.</p>
 <p>-&gt; arrays can be initialized with numpy.empty
 -&gt; random samples can be retrieved from an array with random.sample</p>
 <p class="rubric">Examples</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">scipy</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">scipy</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">shape</span>
@@ -438,7 +438,7 @@ standard deviations from the mean.</p>
 
 <dl class="function">
 <dt id="mystats.bootstrap_residuals">
-<code class="descclassname">mystats.</code><code class="descname">bootstrap_residuals</code><span class="sig-paren">(</span><em>data</em>, <em>model</em>, <em>num_samples=100</em>, <em>statistic=&lt;function mean at 0x2eb52a8&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#bootstrap_residuals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.bootstrap_residuals" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">mystats.</code><code class="descname">bootstrap_residuals</code><span class="sig-paren">(</span><em>data</em>, <em>model</em>, <em>num_samples=100</em>, <em>statistic=&lt;function mean&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#bootstrap_residuals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.bootstrap_residuals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bootstraps data with models a given number of times and calculates the
 Goodness of fit for each run. The standard deviation of the Goodness-of-fit
 values is then used to estimate the confidence interval.</p>
@@ -519,20 +519,55 @@ confidence of the data.</p>
 <p>-&gt; To find the index in an array closest to a given value, use the
 numpy.argmin function to find the index of the minimum value in an array.
 For example to find the value closest to 11.1 in an array of 10, 11, and 12:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="mf">11.1</span><span class="p">)))</span>
 <span class="go">1</span>
 </pre></div>
 </div>
 <p class="rubric">Examples</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">scipy</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">scipy</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">samples</span> <span class="o">=</span> <span class="n">bootstrap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">errors</span> <span class="o">=</span> <span class="n">calc_bootstrap_error</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.calc_chisq">
+<code class="descclassname">mystats.</code><code class="descname">calc_chisq</code><span class="sig-paren">(</span><em>model</em>, <em>data</em>, <em>uncertainty</em>, <em>reduced=True</em>, <em>dof=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#calc_chisq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.calc_chisq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates chi squared statistic given a model, data, and associated
+uncertainty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>model</strong> : array-like</p>
+<blockquote>
+<div><p>Model of data.</p>
+</div></blockquote>
+<p><strong>data</strong> : array-like</p>
+<blockquote>
+<div><p>Observed data same shape as model.</p>
+</div></blockquote>
+<p><strong>uncertainty</strong> : float, array-like</p>
+<blockquote>
+<div><p>Uncertainty on data.</p>
+</div></blockquote>
+<p><strong>reduced</strong> : bool</p>
+<blockquote>
+<div><p>Calculate reduced chi squared?</p>
+</div></blockquote>
+<p><strong>dof</strong> : int</p>
+<blockquote class="last">
+<div><p>Degrees of freedom.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -696,7 +731,7 @@ likelihoods are divided by the minimum non-zero likelihood otherwise.</p>
 <p class="rubric">Methods</p>
 <dl class="attribute">
 <dt id="mystats.rv2d_discrete.np">
-<code class="descname">np</code><em class="property"> = &lt;module 'numpy' from '/usr/local/lib64/python2.7/site-packages/numpy/__init__.pyc'&gt;</em><a class="headerlink" href="#mystats.rv2d_discrete.np" title="Permalink to this definition">¶</a></dt>
+<code class="descname">np</code><em class="property"> = &lt;module 'numpy' from '/usr/lib64/python2.7/site-packages/numpy/__init__.pyc'&gt;</em><a class="headerlink" href="#mystats.rv2d_discrete.np" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -743,7 +778,7 @@ likelihoods are divided by the minimum non-zero likelihood otherwise.</p>
 <p class="rubric">Methods</p>
 <dl class="attribute">
 <dt id="mystats.rv3d_discrete.np">
-<code class="descname">np</code><em class="property"> = &lt;module 'numpy' from '/usr/local/lib64/python2.7/site-packages/numpy/__init__.pyc'&gt;</em><a class="headerlink" href="#mystats.rv3d_discrete.np" title="Permalink to this definition">¶</a></dt>
+<code class="descname">np</code><em class="property"> = &lt;module 'numpy' from '/usr/lib64/python2.7/site-packages/numpy/__init__.pyc'&gt;</em><a class="headerlink" href="#mystats.rv3d_discrete.np" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -752,6 +787,12 @@ likelihoods are divided by the minimum non-zero likelihood otherwise.</p>
 <dd><p>Returns parameters random sample from the pdf.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="mystats.sigfig">
+<code class="descclassname">mystats.</code><code class="descname">sigfig</code><span class="sig-paren">(</span><em>value</em>, <em>sig_digits=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mystats.html#sigfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mystats.sigfig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts number to have the significant digits.</p>
 </dd></dl>
 
 <dl class="function">
@@ -789,10 +830,6 @@ likelihoods are divided by the minimum non-zero likelihood otherwise.</p>
 <blockquote>
 <div><p>x and y pixel coordinates of core</p>
 </div></blockquote>
-<p><strong>width</strong> : int, float</p>
-<blockquote>
-<div><p>Width of box along x axis.</p>
-</div></blockquote>
 <p><strong>height</strong> : int, float</p>
 <blockquote>
 <div><p>Height of box along y axis.</p>
@@ -801,6 +838,10 @@ likelihoods are divided by the minimum non-zero likelihood otherwise.</p>
 <blockquote>
 <div><p>Core position in box along y-axis as a fraction of the height with the
 origin in the south.</p>
+</div></blockquote>
+<p><strong>width</strong> : int, float</p>
+<blockquote>
+<div><p>Width of box along x axis.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -823,9 +864,18 @@ clockwise.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image</strong> : array-like</p>
+<blockquote>
+<div><p>N x M array.</p>
+</div></blockquote>
 <p><strong>polygon</strong> : array-like</p>
+<blockquote>
+<div><p>K x 2 array of vertices.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mask</strong> : array-like</p>
 <blockquote class="last">
-<div><p>N x 2 array of vertices</p>
+<div><p>N x M boolean array. True for any point inside of polygon.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -905,6 +955,34 @@ clockwise.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="mygeometry.point_in_polygon">
+<code class="descclassname">mygeometry.</code><code class="descname">point_in_polygon</code><span class="sig-paren">(</span><em>xy</em>, <em>poly</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mygeometry.html#point_in_polygon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.point_in_polygon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests whether a point is in a polygon.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>xy</strong> : tuple</p>
+<blockquote>
+<div><p>(x,y) positions of point to test in polygon.</p>
+</div></blockquote>
+<p><strong>poly</strong> : list</p>
+<blockquote>
+<div><p>List of tuples comprising the polygon.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>inside</strong> : bool</p>
+<blockquote class="last">
+<div><p>Whether or not the point is inside the polygon.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="mygeometry.rotate_polygon">
 <code class="descclassname">mygeometry.</code><code class="descname">rotate_polygon</code><span class="sig-paren">(</span><em>polygon</em>, <em>anchor</em>, <em>angle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mygeometry.html#rotate_polygon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.rotate_polygon" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
@@ -914,15 +992,21 @@ clockwise.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>polygon</strong> : array-like</p>
 <blockquote>
 <div><p>N x 2 array with x coordinates in column 0 and y coordinates in
-column 1</p>
+column 1.</p>
 </div></blockquote>
 <p><strong>anchor</strong> : tuple</p>
 <blockquote>
 <div><p>x and y coordinates of pivot point.</p>
 </div></blockquote>
 <p><strong>angle</strong> : float</p>
-<blockquote class="last">
+<blockquote>
 <div><p>Angle to rotate polygon clockwise from North.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>polygon_translate</strong> : array-like</p>
+<blockquote class="last">
+<div><p>N x 2 array of rotated x and y coordinates.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -1037,7 +1121,7 @@ axis is the velocity axis in km/s using the radio definition.</p>
 <span class="target" id="module-myimage_analysis"></span><p>Module for image analysis in astro applications.</p>
 <dl class="function">
 <dt id="myimage_analysis.bin_image">
-<code class="descclassname">myimage_analysis.</code><code class="descname">bin_image</code><span class="sig-paren">(</span><em>ndarray</em>, <em>binsize=(1</em>, <em>1)</em>, <em>header=None</em>, <em>origin='lower left'</em>, <em>statistic=&lt;function nansum at 0x2f647d0&gt;</em>, <em>return_weights=False</em>, <em>weights=None</em>, <em>quick_bin=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#bin_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.bin_image" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">myimage_analysis.</code><code class="descname">bin_image</code><span class="sig-paren">(</span><em>ndarray</em>, <em>binsize=(1</em>, <em>1)</em>, <em>header=None</em>, <em>origin='lower left'</em>, <em>statistic=&lt;function nansum&gt;</em>, <em>return_weights=False</em>, <em>weights=None</em>, <em>quick_bin=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#bin_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.bin_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bins an image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1098,7 +1182,7 @@ used to create a binned pixel?</p>
 
 <dl class="function">
 <dt id="myimage_analysis.calc_spectrum">
-<code class="descclassname">myimage_analysis.</code><code class="descname">calc_spectrum</code><span class="sig-paren">(</span><em>cube</em>, <em>statistic=&lt;function nanmedian at 0x5ffa398&gt;</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#calc_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calc_spectrum" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">myimage_analysis.</code><code class="descname">calc_spectrum</code><span class="sig-paren">(</span><em>cube</em>, <em>statistic=&lt;function nanmedian&gt;</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/myimage_analysis.html#calc_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calc_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the spectrum of a cube. Assumes velocity axis is 0th
 dimension of cube.</p>
 </dd></dl>
@@ -1271,7 +1355,7 @@ box(4:17:04.740,+29:20:31.32,5854.33&#8221;,11972.7&#8221;,130) # text={test}</d
 coordinates of the image or DS9 regions.</p>
 </dd></dl>
 
-<span class="target" id="module-myscience"></span></div>
+</div>
 
 
           </div>
@@ -1323,7 +1407,7 @@ coordinates of the image or DS9 regions.</p>
     </div>
     <div class="footer" role="contentinfo">
         &copy; Copyright 2016, Elijah Bernstein-Cooper.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4a0+.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>

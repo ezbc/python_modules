@@ -1,0 +1,366 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>myimage_analysis module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="next" title="mygeometry module" href="mygeometry.html" />
+    <link rel="prev" title="mycoords module" href="mycoords.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mygeometry.html" title="mygeometry module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mycoords.html" title="mycoords module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-myimage_analysis">
+<span id="myimage-analysis-module"></span><h1>myimage_analysis module<a class="headerlink" href="#module-myimage_analysis" title="Permalink to this headline">¶</a></h1>
+<p>Module for image analysis in astro applications.</p>
+<dl class="function">
+<dt id="myimage_analysis.bin_image">
+<code class="descclassname">myimage_analysis.</code><code class="descname">bin_image</code><span class="sig-paren">(</span><em>ndarray</em>, <em>binsize=(1</em>, <em>1)</em>, <em>header=None</em>, <em>origin='lower left'</em>, <em>statistic=&lt;function nansum&gt;</em>, <em>return_weights=False</em>, <em>weights=None</em>, <em>quick_bin=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#bin_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.bin_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bins an image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image</strong> : array-like</p>
+<blockquote>
+<div><p>2D image or 3D to be binned. First two axes will be binned.</p>
+</div></blockquote>
+<p><strong>binsize</strong> : tuple</p>
+<blockquote>
+<div><p>Integer number of pixels to bin in x,y directions</p>
+</div></blockquote>
+<p><strong>header</strong> : astropy.io.Header, optional</p>
+<blockquote>
+<div><p>Header</p>
+</div></blockquote>
+<p><strong>origin</strong> : string</p>
+<blockquote>
+<div><p>Location to begin binning.</p>
+</div></blockquote>
+<p><strong>statistic</strong> : function</p>
+<blockquote>
+<div><p>Function with which to operate on the pixels being binned.</p>
+</div></blockquote>
+<p><strong>weights</strong> : array-like, optional</p>
+<blockquote>
+<div><p>Weights to be used in the statistic. The statistic must have an
+argument &#8216;weights&#8217; if this argument is used.</p>
+</div></blockquote>
+<p><strong>return_weights</strong> : bool, optional</p>
+<blockquote>
+<div><p>Return weights for image corresponding to the number of valid pixels
+used to create a binned pixel?</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>image_binned</strong> : array-like</p>
+<blockquote>
+<div><p>Binned image.</p>
+</div></blockquote>
+<p><strong>header_binned</strong> : astropy.io.Header, optional</p>
+<blockquote>
+<div><p>If header is provided, edited header is returned.</p>
+</div></blockquote>
+<p class="last"><a class="reference external" href="http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-numpy-2d-array">http://stackoverflow.com/questions/8090229/resize-with-averaging-or-rebin-a-numpy-2d-array</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calc_region_mask">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calc_region_mask</code><span class="sig-paren">(</span><em>filename</em>, <em>data</em>, <em>header</em>, <em>region_name=''</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calc_region_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calc_region_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Masks all pixels which are not within the region.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calc_spectrum">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calc_spectrum</code><span class="sig-paren">(</span><em>cube</em>, <em>statistic=&lt;function nanmedian&gt;</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calc_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calc_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the spectrum of a cube. Assumes velocity axis is 0th
+dimension of cube.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_moment">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_moment</code><span class="sig-paren">(</span><em>data</em>, <em>moment=0</em>, <em>weights=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_moment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_moment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates moment of data. Weights needed for moment of 1 or 2.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_nh2">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_nh2</code><span class="sig-paren">(</span><em>nhi_image=None</em>, <em>av_image=None</em>, <em>dgr=0.11</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_nh2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_nh2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total gas column density given N(HI), A_v and a
+dust-to-gas ratio.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_nh2_error">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_nh2_error</code><span class="sig-paren">(</span><em>nhi_image_error=None</em>, <em>av_image_error=None</em>, <em>dgr=0.11</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_nh2_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_nh2_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total gas column density given N(HI), A_v and a
+dust-to-gas ratio.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_nhi">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_nhi</code><span class="sig-paren">(</span><em>cube=None, velocity_axis=None, velocity_range=None, return_nhi_error=False, noise_cube=None, velocity_noise_range=[90, 100], Tsys=30.0, header=None, fits_filename=None, fits_error_filename=None, verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_nhi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_nhi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates an N(HI) image given a velocity range within which to
+include a SpectralGrid&#8217;s components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cube</strong> : array-like, optional</p>
+<blockquote>
+<div><p>Three dimensional array with velocity axis as 0th axis. Must specify
+a velocity_axis if cube is used. If the cube is two dimensional,
+assumes the spatial dimension has been raveled into the 1st axis.</p>
+</div></blockquote>
+<p><strong>velocity_axis</strong> : array-like, optional</p>
+<blockquote>
+<div><p>One dimensional array containing velocities corresponding to</p>
+</div></blockquote>
+<p><strong>fits_filename</strong> : str</p>
+<blockquote>
+<div><p>If specified, and a header is provided, the N(HI) image will be written
+as a fits file.</p>
+</div></blockquote>
+<p><strong>header</strong> : pyfits.Header</p>
+<blockquote>
+<div><p>Header from cube.</p>
+</div></blockquote>
+<p><strong>velocity_range</strong> : tuple, ndarray</p>
+<blockquote>
+<div><p>If velocity range is a tuple including images of the same
+shape as the spatial dimensions of the cube, then each velocity range
+will be applied to individual pixels</p>
+</div></blockquote>
+<p><strong>velocity_noise_range</strong> : tuple</p>
+<blockquote>
+<div><p>Lower and upper velocities which do not have emission. Used to
+calculate the N(HI) noise map.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>nhi_image</strong> : array-like</p>
+<blockquote>
+<div><p>N(HI) in units of 10^20 cm^-2</p>
+</div></blockquote>
+<p><strong>nhi_image_error</strong> : array-like, optional</p>
+<blockquote class="last">
+<div><p>N(HI) error in units of 10^20 cm^-2</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_noise">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_noise</code><span class="sig-paren">(</span><em>profile</em>, <em>velocity_axis</em>, <em>velocity_range</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates rms noise of Tile profile given velocity ranges.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_noise_cube">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_noise_cube</code><span class="sig-paren">(</span><em>cube=None, velocity_axis=None, velocity_noise_range=[-110, -90, 90, 110], header=None, Tsys=30.0, filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_noise_cube"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_noise_cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calcuates noise envelopes for each pixel in a cube</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_noise_scale">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_noise_scale</code><span class="sig-paren">(</span><em>Tsys</em>, <em>profile</em>, <em>noise=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_noise_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_noise_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an array for scaling the noise by (Tsys + Tb) / Tsys</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.calculate_sd">
+<code class="descclassname">myimage_analysis.</code><code class="descname">calculate_sd</code><span class="sig-paren">(</span><em>image</em>, <em>sd_factor=0.8</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#calculate_sd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.calculate_sd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates a surface density image given a velocity range within which
+to include a SpectralGrid&#8217;s components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cube</strong> : array-like, optional</p>
+<blockquote>
+<div><p>Three dimensional array with velocity axis as 0th axis. Must specify
+a velocity_axis if cube is used.</p>
+</div></blockquote>
+<p><strong>velocity_axis</strong> : array-like, optional</p>
+<blockquote class="last">
+<div><p>One dimensional array containing velocities corresponding to</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.crop_cube">
+<code class="descclassname">myimage_analysis.</code><code class="descname">crop_cube</code><span class="sig-paren">(</span><em>cube</em>, <em>vel_axis</em>, <em>vel_range</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#crop_cube"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.crop_cube" title="Permalink to this definition">¶</a></dt>
+<dd><p>Crops a cube to include only velocities within vel_range.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.fit_background">
+<code class="descclassname">myimage_analysis.</code><code class="descname">fit_background</code><span class="sig-paren">(</span><em>av_data</em>, <em>background_mask=None</em>, <em>background_dim=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#fit_background"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.fit_background" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.get_pix_coords">
+<code class="descclassname">myimage_analysis.</code><code class="descname">get_pix_coords</code><span class="sig-paren">(</span><em>ra=None</em>, <em>dec=None</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#get_pix_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.get_pix_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ra and dec in (hrs,min,sec) and (deg,arcmin,arcsec).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.get_radial_profile">
+<code class="descclassname">myimage_analysis.</code><code class="descname">get_radial_profile</code><span class="sig-paren">(</span><em>image</em>, <em>center=None</em>, <em>stddev=False</em>, <em>binsize=1</em>, <em>mask=None</em>, <em>weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#get_radial_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.get_radial_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates radial profiles of an image at the center.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.hrs2degs">
+<code class="descclassname">myimage_analysis.</code><code class="descname">hrs2degs</code><span class="sig-paren">(</span><em>ra=None</em>, <em>dec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#hrs2degs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.hrs2degs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ra and dec tuples in hrs min sec and deg arcmin arcsec.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.load_ds9_region">
+<code class="descclassname">myimage_analysis.</code><code class="descname">load_ds9_region</code><span class="sig-paren">(</span><em>filename</em>, <em>header=None</em>, <em>region_name=''</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#load_ds9_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.load_ds9_region" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.read_ds9_region">
+<code class="descclassname">myimage_analysis.</code><code class="descname">read_ds9_region</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#read_ds9_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.read_ds9_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts DS9 region file into format for plotting region.</p>
+<dl class="docutils">
+<dt>Need the following format:</dt>
+<dd>angle : degrees
+xy : pixels
+width : pixels
+height : pixels</dd>
+<dt>Region file provides following format:</dt>
+<dd># Region file format: DS9 version 4.1
+global color=green dashlist=8 3 width=1 font=&#8221;helvetica 10 normal roman&#8221; select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1
+fk5
+box(4:17:04.740,+29:20:31.32,5854.33&#8221;,11972.7&#8221;,130) # text={test}</dd>
+</dl>
+<p>pyregion module reads DS9 regions:
+<a class="reference external" href="http://leejjoon.github.io/pyregion/users/overview.html">http://leejjoon.github.io/pyregion/users/overview.html</a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myimage_analysis.subtract_background">
+<code class="descclassname">myimage_analysis.</code><code class="descname">subtract_background</code><span class="sig-paren">(</span><em>image</em>, <em>degree=1</em>, <em>fit_regions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myimage_analysis.html#subtract_background"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myimage_analysis.subtract_background" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subtracts a background from an image. Can supply either pixel
+coordinates of the image or DS9 regions.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mycoords.html"
+                        title="previous chapter">mycoords module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mygeometry.html"
+                        title="next chapter">mygeometry module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/myimage_analysis.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mygeometry.html" title="mygeometry module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mycoords.html" title="mycoords module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

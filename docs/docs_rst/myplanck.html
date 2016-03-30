@@ -1,0 +1,355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>myplanck module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-myplanck">
+<span id="myplanck-module"></span><h1>myplanck module<a class="headerlink" href="#module-myplanck" title="Permalink to this headline">¶</a></h1>
+<p>Extracts a region from the Planck data in HEALPix format, and converts to
+cartesian or similar projection.</p>
+<p>Original Author: Dr. Bob Benjamin.</p>
+<dl class="function">
+<dt id="myplanck.build_header">
+<code class="descclassname">myplanck.</code><code class="descname">build_header</code><span class="sig-paren">(</span><em>header=None</em>, <em>axes=None</em>, <em>reverse_xaxis=True</em>, <em>field=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplanck.html#build_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplanck.build_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a header for the extracted Planck image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>header</strong> : pyfits.Header instance</p>
+<blockquote>
+<div><p>Header from Planck data as a pyfits.Header object instance.</p>
+</div></blockquote>
+<p><strong>axes</strong> : tuple, array-like</p>
+<blockquote>
+<div><p>Tuple of axis grids.</p>
+</div></blockquote>
+<p><strong>reverse_xaxis</strong> : bool</p>
+<blockquote>
+<div><p>x-axis maximum at the origin?</p>
+</div></blockquote>
+<p><strong>field</strong> : int</p>
+<blockquote>
+<div><p>Column to extract from Planck data.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>header_new</strong> : pyfits.Header instance</p>
+<blockquote class="last">
+<div><p>Header for extracted region from Planck data as a pyfits.Header object
+instance.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplanck.get_data">
+<code class="descclassname">myplanck.</code><code class="descname">get_data</code><span class="sig-paren">(</span><em>data_location='./'</em>, <em>data_type=None</em>, <em>longitude_range=(0</em>, <em>360)</em>, <em>latitude_range=(-90</em>, <em>90)</em>, <em>field=0</em>, <em>resolution=0.1</em>, <em>cut_last_pixel=False</em>, <em>verbose=True</em>, <em>return_header=True</em>, <em>reverse_xaxis=True</em>, <em>dr_version=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplanck.html#get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplanck.get_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts region from Planck data set. Region will be in galactic
+coordinates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data_location</strong> : str</p>
+<blockquote>
+<div><p>Filepath to location of Planck data. Default is current directory.</p>
+</div></blockquote>
+<p><strong>data_type</strong> : str</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Data type to choose from. Options are:</dt>
+<dd><dl class="first last docutils">
+<dt>Narrow-band: [&#8216;CO-Type1&#8217;, &#8216;CO-Type2&#8217;, &#8216;CO-Type3&#8217;]</dt>
+<dd><dl class="first last docutils">
+<dt>&#8216;CO-Type1&#8217; fields:</dt>
+<dd><p class="first last">0:  12CO J 1&#8211;&gt;0 Intensity
+1:  12CO J 1&#8211;&gt;0 Intensity Error
+2:  12CO J 1&#8211;&gt;0 Null Test
+3:  12CO J 1&#8211;&gt;0 Mask
+4:  12CO J 2&#8211;&gt;1 Intensity
+5:  12CO J 2&#8211;&gt;1 Intensity Error
+6:  12CO J 2&#8211;&gt;1 Null Test
+7:  12CO J 2&#8211;&gt;1 Mask
+8:  12CO J 3&#8211;&gt;2 Intensity
+9:  12CO J 3&#8211;&gt;2 Intensity Error
+10: 12CO J 3&#8211;&gt;2 Null Test
+11: 12CO J 3&#8211;&gt;2 Mask</p>
+</dd>
+<dt>&#8216;CO-Type2&#8217; fields:</dt>
+<dd><p class="first last">0:  12CO J 1&#8211;&gt;0 Intensity
+1:  12CO J 1&#8211;&gt;0 Intensity Error
+2:  12CO J 1&#8211;&gt;0 Null Test
+3:  12CO J 1&#8211;&gt;0 Mask
+4:  12CO J 2&#8211;&gt;1 Intensity
+5:  12CO J 2&#8211;&gt;1 Intensity Error
+6:  12CO J 2&#8211;&gt;1 Null Test
+7:  12CO J 2&#8211;&gt;1 Mask</p>
+</dd>
+<dt>&#8216;CO-Type3&#8217; fields:</dt>
+<dd><p class="first last">0:  12CO Intensity
+1:  12CO Intensity Error
+2:  12CO Null Test
+3:  12CO Mask</p>
+</dd>
+</dl>
+</dd>
+<dt>Broad-band (GHz): [&#8216;030&#8217;, &#8216;044&#8217;, &#8216;070&#8217;, &#8216;100&#8217;, &#8216;143&#8217;, &#8216;217&#8217;, &#8216;353&#8217;,</dt>
+<dd><blockquote class="first">
+<div><p>&#8216;545&#8217;, &#8216;857&#8217;]</p>
+</div></blockquote>
+<dl class="last docutils">
+<dt>Broad-band fields:</dt>
+<dd><p class="first last">0: I stokes
+1: Hits
+2: II_cov</p>
+</dd>
+</dl>
+</dd>
+<dt>Processed data products: [&#8216;Dust Opacity&#8217;, &#8216;Thermal&#8217;]</dt>
+<dd><dl class="first last docutils">
+<dt>&#8216;Dust Opacity&#8217; fields:</dt>
+<dd><p class="first last">0: Opacity 353GHz
+1: Error on opacity
+2: E(B-V)
+3: Error on E(B-V)
+4: T for high freq correction
+5: Error on T
+6: Beta for high freq correction
+7: Error on Beta</p>
+</dd>
+<dt>&#8216;Thermal&#8217; dust model fields:</dt>
+<dd><p class="first last">0: Intensity
+1: Intensity standard deviation
+2: Intensity ??
+3: Intensity ??</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>longitude</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper longitude. Default is whole sky.</p>
+</div></blockquote>
+<p><strong>latitude</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper latitude. Default is whole sky.</p>
+</div></blockquote>
+<p><strong>field</strong> : int</p>
+<blockquote>
+<div><p>Field in data type.</p>
+</div></blockquote>
+<p><strong>resolution</strong> : float</p>
+<blockquote>
+<div><p>Pixel resolution in arcseconds.</p>
+</div></blockquote>
+<p><strong>cut_last_pixel</strong> : bool</p>
+<blockquote>
+<div><p>Cuts off one pixel</p>
+</div></blockquote>
+<p><strong>return_header</strong> : bool</p>
+<blockquote>
+<div><p>Return the header?</p>
+</div></blockquote>
+<p><strong>verbose</strong> : bool</p>
+<blockquote>
+<div><p>Verbose?</p>
+</div></blockquote>
+<p><strong>reverse_xaxis</strong> : bool</p>
+<blockquote>
+<div><p>The highest x-axis value begins at the origin.</p>
+</div></blockquote>
+<p><strong>dr_version</strong> : int</p>
+<blockquote>
+<div><p>Data release version of data.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>map</strong> : array-like</p>
+<blockquote>
+<div><p>Map of extracted region from Planck data.</p>
+</div></blockquote>
+<p><strong>header</strong> : dict, optional</p>
+<blockquote class="last">
+<div><p>FITS format header.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">planckpy</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pyfits</span> <span class="kn">as</span> <span class="nn">pf</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">data_type</span> <span class="o">=</span> <span class="s1">&#39;857&#39;</span><span class="p">,</span> <span class="n">longitude_range</span> <span class="o">=</span>
+<span class="go">        (155,165), latitude_range = (-30, -15))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(151, 101)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span>
+<span class="go">&#39;I_STOKES&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pf</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="s1">&#39;planck_region_857GHz.fits&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="n">header</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplanck.get_planck_filename">
+<code class="descclassname">myplanck.</code><code class="descname">get_planck_filename</code><span class="sig-paren">(</span><em>data_location='./'</em>, <em>data_type=None</em>, <em>dr_version=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplanck.html#get_planck_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplanck.get_planck_filename" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Finds the file name for data_type requested. The files are:</dt>
+<dd>COM_CompMap_dust-commrul_2048_R1.00.fits
+COM_CompMap_Lfreqfor-commrul_0256_R1.00.fits
+COM_CompMap_Lfreqfor-commrul_2048_R1.00.fits
+HFI_CompMap_CO-Type1_2048_R1.10.fits
+HFI_CompMap_CO-Type2_2048_R1.10.fits
+HFI_CompMap_CO-Type3_2048_R1.10.fits
+HFI_CompMap_DustOpacity_2048_R1.10.fits
+HFI_CompMap_ThermalDustModel_2048_R1.20.fits
+HFI_SkyMap_100_2048_R1.10_nominal.fits
+HFI_SkyMap_143_2048_R1.10_nominal.fits
+HFI_SkyMap_217_2048_R1.10_nominal.fits
+HFI_SkyMap_353_2048_R1.10_nominal.fits
+HFI_SkyMap_545_2048_R1.10_nominal.fits
+HFI_SkyMap_857_2048_R1.10_nominal.fits
+LFI_SkyMap_030_1024_R1.10_nominal.fits
+LFI_SkyMap_044_1024_R1.10_nominal.fits
+LFI_SkyMap_070_1024_R1.10_nominal.fits</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data_location</strong> : str</p>
+<blockquote>
+<div><p>Location of Planck survey archive files.</p>
+</div></blockquote>
+<p><strong>data_type</strong> : str</p>
+<blockquote>
+<div><p>Type of data from the Planck survey. See the following for the full
+descriptions of each data type.
+<a class="reference external" href="http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/">http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/</a></p>
+<p>See the header of the get_data() function to see how to specify the
+data type.</p>
+</div></blockquote>
+<p><strong>data_type_version</strong> : int</p>
+<blockquote>
+<div><p>Data release number.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>data_file</strong> : str</p>
+<blockquote>
+<div><p>File path to relevant Planck data product.</p>
+</div></blockquote>
+<p><strong>nside</strong> : int</p>
+<blockquote class="last">
+<div><p>Number of sides for HEALPix format.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplanck.main">
+<code class="descclassname">myplanck.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplanck.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplanck.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/myplanck.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

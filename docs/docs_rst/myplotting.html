@@ -1,0 +1,413 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>myplotting module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="next" title="mystats module" href="mystats.html" />
+    <link rel="prev" title="myscience package" href="myscience.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mystats.html" title="mystats module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="myscience.html" title="myscience package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-myplotting">
+<span id="myplotting-module"></span><h1>myplotting module<a class="headerlink" href="#module-myplotting" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="myplotting.check_overlaps">
+<code class="descclassname">myplotting.</code><code class="descname">check_overlaps</code><span class="sig-paren">(</span><em>bbox1</em>, <em>bbox2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#check_overlaps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.check_overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if this bounding box overlaps with the given
+bounding box <em>other</em>. OR IF NANA!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.convert_wcs_limits">
+<code class="descclassname">myplotting.</code><code class="descname">convert_wcs_limits</code><span class="sig-paren">(</span><em>limits</em>, <em>header</em>, <em>frame='fk5'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#convert_wcs_limits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.convert_wcs_limits" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>limits: array-like</strong></p>
+<blockquote>
+<div><p>(ra_min, ra_max, dec_min, dec_max) all in degrees</p>
+</div></blockquote>
+<p><strong>header: astropy.io.fits.header</strong></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(ra_min, ra_max, dec_min, dec_max) all in pixels</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.corner_plot">
+<code class="descclassname">myplotting.</code><code class="descname">corner_plot</code><span class="sig-paren">(</span><em>distributions</em>, <em>plot_grids=None</em>, <em>labels=None</em>, <em>filename=None</em>, <em>logscale=False</em>, <em>confidence_intervals=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#corner_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.corner_plot" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>distributions</strong> : array-like</p>
+<blockquote>
+<div><p>N-dimensional array</p>
+</div></blockquote>
+<p><strong>plot_grids</strong> : list</p>
+<blockquote>
+<div><p>List of arrays, where each array corresponds to the parameter values of
+the corresponding axis of the distributions.</p>
+</div></blockquote>
+<p><strong>labels</strong> : list</p>
+<blockquote>
+<div><p>List of parameter strings.</p>
+</div></blockquote>
+<p><strong>filename</strong> : string</p>
+<blockquote>
+<div><p>Filename to save to.</p>
+</div></blockquote>
+<p><strong>logscale</strong> : bool</p>
+<blockquote>
+<div><p>Plot both 1D and 2D PDFs in logscale?</p>
+</div></blockquote>
+<p><strong>confidence_intervals</strong> : array-like</p>
+<blockquote class="last">
+<div><p>Confidence intervals for 1D distributions. N-dimesional array, with
+lower, best estimate and upper bounds.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.delete_overlapping_xlabels">
+<code class="descclassname">myplotting.</code><code class="descname">delete_overlapping_xlabels</code><span class="sig-paren">(</span><em>fig</em>, <em>ax</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#delete_overlapping_xlabels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.delete_overlapping_xlabels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes overlapping xtick labels in axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>fig</strong> : matplotlib.pyplot.figure</p>
+<blockquote>
+<div><p>Figure object.</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.pyplot.axis</p>
+<blockquote>
+<div><p>Axis object.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>ax</strong> : matplotlib.pyplot.axis</p>
+<blockquote class="last">
+<div><p>Axis object without overlapping xtick labels.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.get_square_grid_sides">
+<code class="descclassname">myplotting.</code><code class="descname">get_square_grid_sides</code><span class="sig-paren">(</span><em>ngrids</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#get_square_grid_sides"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.get_square_grid_sides" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the number of rows and columns needed to encompass N
+subplots.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.plot_cdf">
+<code class="descclassname">myplotting.</code><code class="descname">plot_cdf</code><span class="sig-paren">(</span><em>data</em>, <em>ax=None</em>, <em>plot_kwargs={}</em>, <em>return_axis=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#plot_cdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.plot_cdf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="myplotting.plot_cdf_confint">
+<code class="descclassname">myplotting.</code><code class="descname">plot_cdf_confint</code><span class="sig-paren">(</span><em>data</em>, <em>data_error=0</em>, <em>ax=None</em>, <em>plot_kwargs_line={}</em>, <em>plot_kwargs_fill_between={}</em>, <em>return_axis=False</em>, <em>nsim=100</em>, <em>nbins=20</em>, <em>bin_limits=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#plot_cdf_confint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.plot_cdf_confint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs Monte Carlo simulation with data error to calculate the CDF
+point-wise confidence interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : array-like</p>
+<blockquote>
+<div><p>Distribution of data.</p>
+</div></blockquote>
+<p><strong>data_error</strong> : float, array-like</p>
+<blockquote>
+<div><p>Normal error on data. If an array, must have same dimensions as data.</p>
+</div></blockquote>
+<p><strong>ax</strong> : matplotlib.pyplot.axis, optional</p>
+<blockquote>
+<div><p>If provided, adds plot to axis object. Else plots matplotlib.pyplot.</p>
+</div></blockquote>
+<p><strong>plot_kwargs_line</strong> : dict, optional</p>
+<blockquote>
+<div><p>Kwargs to provide to matplotlib.pyplot.plot for median CDF.</p>
+</div></blockquote>
+<p><strong>plot_kwargs_fill_between</strong> : dict, optional</p>
+<blockquote>
+<div><p>Kwargs to provide to matplotlib.pyplot.fill_between for CDF confidence
+interval.</p>
+</div></blockquote>
+<p><strong>return_axis</strong> : bool, optional</p>
+<blockquote>
+<div><p>Return the CDF bin values of the data?</p>
+</div></blockquote>
+<p><strong>nsim</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of Monte Carlo simulations to run.</p>
+</div></blockquote>
+<p><strong>nbins</strong> : int, optional</p>
+<blockquote>
+<div><p>Number of bins with which to sample the simulated data.</p>
+</div></blockquote>
+<p><strong>bin_limits</strong> : array-like, optional</p>
+<blockquote>
+<div><p>Lower and upper bound of bins with which to calculate point-wise
+confidence intervals.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>x</strong> : array-like, optional</p>
+<blockquote class="last">
+<div><p>If return_axis is True, then the CDF sample locations for the original
+dataset is returned.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.reverse_colormap">
+<code class="descclassname">myplotting.</code><code class="descname">reverse_colormap</code><span class="sig-paren">(</span><em>cmap</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#reverse_colormap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.reverse_colormap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverses a matplolib.colors colormap.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cmap</strong> : matplotlib.pyplot.cm</p>
+<blockquote>
+<div><p>Colormap</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>cmap_r</strong> : matplotlib.pyplot.cm</p>
+<blockquote class="last">
+<div><p>Reversed colormap</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.scatter_contour">
+<code class="descclassname">myplotting.</code><code class="descname">scatter_contour</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>levels=10</em>, <em>fractional_levels=True</em>, <em>threshold=100</em>, <em>log_counts=False</em>, <em>histogram2d_args={}</em>, <em>plot_args={}</em>, <em>errors=None</em>, <em>contour_args={}</em>, <em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#scatter_contour"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.scatter_contour" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scatter plot with contour over dense regions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x, y</strong> : arrays</p>
+<blockquote>
+<div><p>x and y data for the contour plot</p>
+</div></blockquote>
+<p><strong>levels</strong> : integer or array (optional, default=10)</p>
+<blockquote>
+<div><p>number of contour levels, or array of contour levels</p>
+</div></blockquote>
+<p><strong>fractional_levels</strong> : bool (optional, default=True)</p>
+<blockquote>
+<div><p>If True, then levels argument (if array-like) is interpreted as levels
+within which contain the fraction of data points specified. The
+threshold and log_counts arguments will not have an effect if True.</p>
+</div></blockquote>
+<p><strong>threshold</strong> : float (default=100)</p>
+<blockquote>
+<div><p>number of points per 2D bin at which to begin drawing contours</p>
+</div></blockquote>
+<p><strong>log_counts :boolean (optional)</strong></p>
+<blockquote>
+<div><p>if True, contour levels are the base-10 logarithm of bin counts.</p>
+</div></blockquote>
+<p><strong>histogram2d_args</strong> : dict</p>
+<blockquote>
+<div><p>keyword arguments passed to numpy.histogram2d
+see doc string of numpy.histogram2d for more information</p>
+</div></blockquote>
+<p><strong>plot_args</strong> : dict</p>
+<blockquote>
+<div><p>keyword arguments passed to pylab.scatter
+see doc string of pylab.scatter for more information</p>
+</div></blockquote>
+<p><strong>contourf_args</strong> : dict</p>
+<blockquote>
+<div><p>keyword arguments passed to pylab.contourf
+see doc string of pylab.contourf for more information</p>
+</div></blockquote>
+<p><strong>ax</strong> : pylab.Axes instance</p>
+<blockquote>
+<div><p>the axes on which to plot.  If not specified, the current
+axes will be used</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>level_fractions</strong> : numpy.array</p>
+<blockquote class="last">
+<div><p>Data fraction levels for each contour.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="myplotting.set_color_cycle">
+<code class="descclassname">myplotting.</code><code class="descname">set_color_cycle</code><span class="sig-paren">(</span><em>num_colors=4, cmap=&lt;matplotlib.colors.LinearSegmentedColormap object&gt;, cmap_limits=[0, 0.8]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#set_color_cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.set_color_cycle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="myplotting.truncate_colormap">
+<code class="descclassname">myplotting.</code><code class="descname">truncate_colormap</code><span class="sig-paren">(</span><em>cmap</em>, <em>minval=0.0</em>, <em>maxval=1.0</em>, <em>n=100</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/myplotting.html#truncate_colormap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#myplotting.truncate_colormap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncates a matplolib.colors colormap to a smaller range.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cmap</strong> : matplotlib.pyplot.cm</p>
+<blockquote>
+<div><p>Colormap</p>
+</div></blockquote>
+<p><strong>minval</strong> : float</p>
+<blockquote>
+<div><p>Lower value to truncate.</p>
+</div></blockquote>
+<p><strong>maxval</strong> : float</p>
+<blockquote>
+<div><p>Upper value to truncate</p>
+</div></blockquote>
+<p><strong>n</strong> : int</p>
+<blockquote>
+<div><p>Number of discrete samples of colormap between minval and maxval.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>new_cmap</strong> : matplotlib.pyplot.cm</p>
+<blockquote class="last">
+<div><p>Truncated colormap</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="myscience.html"
+                        title="previous chapter">myscience package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mystats.html"
+                        title="next chapter">mystats module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/myplotting.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mystats.html" title="mystats module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="myscience.html" title="myscience package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

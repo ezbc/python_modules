@@ -1,0 +1,460 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>planckpy module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-planckpy">
+<span id="planckpy-module"></span><h1>planckpy module<a class="headerlink" href="#module-planckpy" title="Permalink to this headline">¶</a></h1>
+<p>Extracts a region from the Planck data in HEALPix format, and converts to
+galactic or equatorial coordinates.</p>
+<blockquote>
+<div><p>Original author: Dr. Robert Benjamin - <a class="reference external" href="mailto:bobbenjamin&#37;&#52;&#48;me&#46;com">bobbenjamin<span>&#64;</span>me<span>&#46;</span>com</a></p>
+<p>Edited and ported by: Elijah Bernstein-Cooper - <a class="reference external" href="mailto:ezbc&#37;&#52;&#48;astro&#46;wisc&#46;edu">ezbc<span>&#64;</span>astro<span>&#46;</span>wisc<span>&#46;</span>edu</a></p>
+</div></blockquote>
+<p>Code hosted at:
+<a class="reference external" href="mailto:git&#37;&#52;&#48;bitbucket&#46;org">git<span>&#64;</span>bitbucket<span>&#46;</span>org</a>:ezbc/planckpy.git</p>
+<dl class="docutils">
+<dt>Module requires the following libraries:</dt>
+<dd>numpy - <a class="reference external" href="http://www.scipy.org/scipylib/download.html">http://www.scipy.org/scipylib/download.html</a>
+astropy - <a class="reference external" href="http://www.astropy.org/">http://www.astropy.org/</a>
+healpy - <a class="reference external" href="https://pypi.python.org/pypi/healpy">https://pypi.python.org/pypi/healpy</a></dd>
+</dl>
+<dl class="function">
+<dt id="planckpy.build_header">
+<code class="descclassname">planckpy.</code><code class="descname">build_header</code><span class="sig-paren">(</span><em>header=None</em>, <em>axis_grids=None</em>, <em>reverse_xaxis=True</em>, <em>field=0</em>, <em>coord_type='equatorial'</em>, <em>xy_res=None</em>, <em>wcs_header=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/planckpy.html#build_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#planckpy.build_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a header for the extracted Planck image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>header</strong> : pyfits.Header instance</p>
+<blockquote>
+<div><p>Header from Planck data as a pyfits.Header object instance.</p>
+</div></blockquote>
+<p><strong>axis_grids</strong> : tuple, array-like</p>
+<blockquote>
+<div><p>Tuple of axis grids.</p>
+</div></blockquote>
+<p><strong>reverse_xaxis</strong> : bool</p>
+<blockquote>
+<div><p>x-axis maximum at the origin?</p>
+</div></blockquote>
+<p><strong>field</strong> : int</p>
+<blockquote>
+<div><p>Column to extract from Planck data.</p>
+</div></blockquote>
+<p><strong>coord_type</strong> : str</p>
+<blockquote>
+<div><p>Only option is &#8216;equatorial&#8217;. Galactic coordinates will be implemented
+soon.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>header_new</strong> : pyfits.Header instance</p>
+<blockquote class="last">
+<div><p>Header for extracted region from Planck data as a pyfits.Header object
+instance.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="planckpy.build_wcs">
+<code class="descclassname">planckpy.</code><code class="descname">build_wcs</code><span class="sig-paren">(</span><em>grids=None</em>, <em>coord_reses=None</em>, <em>ranges=None</em>, <em>reverse_xaxis=True</em>, <em>coord_type='equatorial'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/planckpy.html#build_wcs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#planckpy.build_wcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds grid of WCS coordinates given x and y pixel coordinate grids.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>grids</strong> : tuple</p>
+<p><strong>coord_reses</strong> : tuple</p>
+<p><strong>ranges</strong> : tuple</p>
+<p><strong>reverse_xaxis</strong> : bool</p>
+<p><strong>coord_type</strong> : str</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>x_coords, y_coords</strong> : array-like</p>
+<blockquote>
+<div><p>RA and dec grids of coordinates.</p>
+</div></blockquote>
+<p><strong>wcs_header</strong> : astropy.io.fits.header.Header instance</p>
+<blockquote class="last">
+<div><p>Header</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="planckpy.gal2sphere">
+<code class="descclassname">planckpy.</code><code class="descname">gal2sphere</code><span class="sig-paren">(</span><em>x_coords</em>, <em>y_coords</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/planckpy.html#gal2sphere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#planckpy.gal2sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts galactic coordinates to angular coordinates of a point on the
+sphere.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x_coords, y_coords</strong> : array-like</p>
+<blockquote>
+<div><p>N-dimensional galactic x and y coordinates</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>phi_grid</strong> : array-like</p>
+<blockquote>
+<div><p>Rotation angle in spherical coordinates</p>
+</div></blockquote>
+<p><strong>theta_grid</strong> : array-like</p>
+<blockquote class="last">
+<div><p>Azimuthal angle in spherical coordinates</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="planckpy.get_data">
+<code class="descclassname">planckpy.</code><code class="descname">get_data</code><span class="sig-paren">(</span><em>data_location='./'</em>, <em>data_type=None</em>, <em>x_range=(0</em>, <em>360)</em>, <em>y_range=(-90</em>, <em>90)</em>, <em>coord_type='equatorial'</em>, <em>field=0</em>, <em>resolution=0.1</em>, <em>cut_last_pixel=False</em>, <em>verbose=True</em>, <em>return_header=True</em>, <em>reverse_xaxis=True</em>, <em>dr_version=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/planckpy.html#get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#planckpy.get_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts region from Planck data set. Region will be in equatorial
+coordinates. Planck data must be on disk. Visit
+<a class="reference external" href="http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/">http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/</a> to
+download Planck archive data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data_location</strong> : str</p>
+<blockquote>
+<div><p>Filepath to location of Planck data. Default is current directory.</p>
+</div></blockquote>
+<p><strong>data_type</strong> : str</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Data type to choose from. Options are:</dt>
+<dd><dl class="first last docutils">
+<dt>Narrow-band: [&#8216;CO-Type1&#8217;, &#8216;CO-Type2&#8217;, &#8216;CO-Type3&#8217;]</dt>
+<dd><dl class="first last docutils">
+<dt>&#8216;CO-Type1&#8217; fields:</dt>
+<dd><p class="first last">0:  12CO J 1&#8211;&gt;0 Intensity
+1:  12CO J 1&#8211;&gt;0 Intensity Error
+2:  12CO J 1&#8211;&gt;0 Null Test
+3:  12CO J 1&#8211;&gt;0 Mask
+4:  12CO J 2&#8211;&gt;1 Intensity
+5:  12CO J 2&#8211;&gt;1 Intensity Error
+6:  12CO J 2&#8211;&gt;1 Null Test
+7:  12CO J 2&#8211;&gt;1 Mask
+8:  12CO J 3&#8211;&gt;2 Intensity
+9:  12CO J 3&#8211;&gt;2 Intensity Error
+10: 12CO J 3&#8211;&gt;2 Null Test
+11: 12CO J 3&#8211;&gt;2 Mask</p>
+</dd>
+<dt>&#8216;CO-Type2&#8217; fields:</dt>
+<dd><p class="first last">0:  12CO J 1&#8211;&gt;0 Intensity
+1:  12CO J 1&#8211;&gt;0 Intensity Error
+2:  12CO J 1&#8211;&gt;0 Null Test
+3:  12CO J 1&#8211;&gt;0 Mask
+4:  12CO J 2&#8211;&gt;1 Intensity
+5:  12CO J 2&#8211;&gt;1 Intensity Error
+6:  12CO J 2&#8211;&gt;1 Null Test
+7:  12CO J 2&#8211;&gt;1 Mask</p>
+</dd>
+<dt>&#8216;CO-Type3&#8217; fields:</dt>
+<dd><p class="first last">0:  12CO Intensity
+1:  12CO Intensity Error
+2:  12CO Null Test
+3:  12CO Mask</p>
+</dd>
+</dl>
+</dd>
+<dt>Broad-band (GHz): [&#8216;030&#8217;, &#8216;044&#8217;, &#8216;070&#8217;, &#8216;100&#8217;, &#8216;143&#8217;, &#8216;217&#8217;, &#8216;353&#8217;,</dt>
+<dd><blockquote class="first">
+<div><p>&#8216;545&#8217;, &#8216;857&#8217;]</p>
+</div></blockquote>
+<dl class="last docutils">
+<dt>Broad-band fields:</dt>
+<dd><p class="first last">0: I stokes
+1: Hits
+2: II_cov</p>
+</dd>
+</dl>
+</dd>
+<dt>Processed data products: [&#8216;Dust Opacity&#8217;, &#8216;Thermal&#8217;]</dt>
+<dd><dl class="first last docutils">
+<dt>&#8216;Dust Opacity&#8217; fields:</dt>
+<dd><p class="first last">0: Opacity 353GHz
+1: Error on opacity
+2: E(B-V)
+3: Radiance
+4: T for high freq correction
+5: Error on T
+6: Beta for high freq correction
+7: Error on Beta</p>
+</dd>
+<dt>&#8216;Thermal&#8217; dust model fields:</dt>
+<dd><p class="first last">0: Intensity
+1: Intensity standard deviation
+2: Intensity ??
+3: Intensity ??</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>x_coord_range</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper longitude. Default is whole sky.</p>
+</div></blockquote>
+<p><strong>y_range</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper latitude. Default is whole sky.</p>
+</div></blockquote>
+<p><strong>coord_type</strong> : str</p>
+<blockquote>
+<div><p>Only option is &#8216;equatorial&#8217;. Galactic coordinates will be implemented
+soon.</p>
+</div></blockquote>
+<p><strong>field</strong> : int</p>
+<blockquote>
+<div><p>Field in data type.</p>
+</div></blockquote>
+<p><strong>resolution</strong> : float</p>
+<blockquote>
+<div><p>Pixel resolution in arcseconds.</p>
+</div></blockquote>
+<p><strong>cut_last_pixel</strong> : bool</p>
+<blockquote>
+<div><p>Cuts off one pixel</p>
+</div></blockquote>
+<p><strong>return_header</strong> : bool</p>
+<blockquote>
+<div><p>Return the header?</p>
+</div></blockquote>
+<p><strong>verbose</strong> : bool</p>
+<blockquote>
+<div><p>Verbose?</p>
+</div></blockquote>
+<p><strong>reverse_xaxis</strong> : bool</p>
+<blockquote>
+<div><p>The highest x-axis value begins at the origin.</p>
+</div></blockquote>
+<p><strong>dr_version</strong> : int</p>
+<blockquote>
+<div><p>Data release version of data.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>map</strong> : array-like</p>
+<blockquote>
+<div><p>Map of extracted region from Planck data.</p>
+</div></blockquote>
+<p><strong>header</strong> : dict, optional</p>
+<blockquote class="last">
+<div><p>FITS format header.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">planckpy</span> <span class="kn">as</span> <span class="nn">pl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">data_type</span><span class="o">=</span><span class="s1">&#39;857&#39;</span><span class="p">,</span> <span class="n">x_range</span><span class="o">=</span><span class="p">(</span><span class="mf">21.3</span><span class="p">,</span> <span class="mf">30.3</span><span class="p">),</span>
+<span class="go">        y_range=(60.0, 73.0))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(131, 91)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;TYPE&#39;</span><span class="p">]</span>
+<span class="go">&#39;I_STOKES&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fits</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="s1">&#39;planck_region_857GHz.fits&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="planckpy.get_planck_filename">
+<code class="descclassname">planckpy.</code><code class="descname">get_planck_filename</code><span class="sig-paren">(</span><em>data_location='./'</em>, <em>data_type=None</em>, <em>dr_version=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/planckpy.html#get_planck_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#planckpy.get_planck_filename" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Finds the file name for data_type requested. The files are:</dt>
+<dd>COM_CompMap_dust-commrul_2048_R1.00.fits
+COM_CompMap_Lfreqfor-commrul_0256_R1.00.fits
+COM_CompMap_Lfreqfor-commrul_2048_R1.00.fits
+HFI_CompMap_CO-Type1_2048_R1.10.fits
+HFI_CompMap_CO-Type2_2048_R1.10.fits
+HFI_CompMap_CO-Type3_2048_R1.10.fits
+HFI_CompMap_DustOpacity_2048_R1.10.fits
+HFI_CompMap_ThermalDustModel_2048_R1.20.fits
+HFI_SkyMap_100_2048_R1.10_nominal.fits
+HFI_SkyMap_143_2048_R1.10_nominal.fits
+HFI_SkyMap_217_2048_R1.10_nominal.fits
+HFI_SkyMap_353_2048_R1.10_nominal.fits
+HFI_SkyMap_545_2048_R1.10_nominal.fits
+HFI_SkyMap_857_2048_R1.10_nominal.fits
+LFI_SkyMap_030_1024_R1.10_nominal.fits
+LFI_SkyMap_044_1024_R1.10_nominal.fits
+LFI_SkyMap_070_1024_R1.10_nominal.fits</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data_location</strong> : str</p>
+<blockquote>
+<div><p>Location of Planck survey archive files.</p>
+</div></blockquote>
+<p><strong>data_type</strong> : str</p>
+<blockquote>
+<div><p>Type of data from the Planck survey. See the following for the full
+descriptions of each data type.
+<a class="reference external" href="http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/">http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/</a></p>
+<p>See the header of the get_data() function to see how to specify the
+data type.</p>
+</div></blockquote>
+<p><strong>data_type_version</strong> : int</p>
+<blockquote>
+<div><p>Data release number.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>data_file</strong> : str</p>
+<blockquote>
+<div><p>File path to relevant Planck data product.</p>
+</div></blockquote>
+<p><strong>nside</strong> : int</p>
+<blockquote class="last">
+<div><p>Number of sides for HEALPix format.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="planckpy.switch_coords">
+<code class="descclassname">planckpy.</code><code class="descname">switch_coords</code><span class="sig-paren">(</span><em>x_coords</em>, <em>y_coords</em>, <em>coord_type='equatorial'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/planckpy.html#switch_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#planckpy.switch_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switches coordinates between equatorial and galactic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x_coords, y_coords</strong> : array-like</p>
+<blockquote>
+<div><p>N-dimensional x and y coordinates</p>
+</div></blockquote>
+<p><strong>coord_type</strong> : str</p>
+<blockquote>
+<div><p>Coordinate system of x_coords and y_coords. Options are &#8216;equatorial&#8217;
+and &#8216;galactic&#8217;. Default is to switch between &#8216;equatorial&#8217; to &#8216;galactic&#8217;.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>x_coords_sw, y_coords_sw</strong> : array-like</p>
+<blockquote class="last">
+<div><p>N-dimensional x and y coordinates in the switched coordinate system.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/planckpy.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

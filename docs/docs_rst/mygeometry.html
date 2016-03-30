@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mygeometry module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="prev" title="myimage_analysis module" href="myimage_analysis.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="myimage_analysis.html" title="myimage_analysis module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mygeometry">
+<span id="mygeometry-module"></span><h1>mygeometry module<a class="headerlink" href="#module-mygeometry" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="mygeometry.create_wedge">
+<code class="descclassname">mygeometry.</code><code class="descname">create_wedge</code><span class="sig-paren">(</span><em>center_pos</em>, <em>radius</em>, <em>angle</em>, <em>center_rel_pos=0.1</em>, <em>width=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mygeometry.html#create_wedge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.create_wedge" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>center_pos</strong> : array-like</p>
+<blockquote>
+<div><p>x and y pixel coordinates of core</p>
+</div></blockquote>
+<p><strong>height</strong> : int, float</p>
+<blockquote>
+<div><p>Height of box along y axis.</p>
+</div></blockquote>
+<p><strong>center_rel_pos</strong> : float, optional</p>
+<blockquote>
+<div><p>Core position in box along y-axis as a fraction of the height with the
+origin in the south.</p>
+</div></blockquote>
+<p><strong>width</strong> : int, float</p>
+<blockquote>
+<div><p>Width of box along x axis.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>wedge_vertices</strong> : numpy.array</p>
+<blockquote class="last">
+<div><p>4 x 2 array with box pixel vertices, starting from lower-left going
+clockwise.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mygeometry.get_polygon_mask">
+<code class="descclassname">mygeometry.</code><code class="descname">get_polygon_mask</code><span class="sig-paren">(</span><em>image</em>, <em>polygon</em>, <em>return_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mygeometry.html#get_polygon_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.get_polygon_mask" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image</strong> : array-like</p>
+<blockquote>
+<div><p>N x M array.</p>
+</div></blockquote>
+<p><strong>polygon</strong> : array-like</p>
+<blockquote>
+<div><p>K x 2 array of vertices.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mask</strong> : array-like</p>
+<blockquote class="last">
+<div><p>N x M boolean array. True for any point inside of polygon.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mygeometry.get_rect">
+<code class="descclassname">mygeometry.</code><code class="descname">get_rect</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>width</em>, <em>height</em>, <em>angle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mygeometry.html#get_rect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.get_rect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns four points of a rotated rectangle.</p>
+<p>Author: <a class="reference external" href="http://stackoverflow.com/questions/12638790/drawing-a-rectangle-inside-a-2d-numpy-array">http://stackoverflow.com/questions/12638790/drawing-a-rectangle-inside-a-2d-numpy-array</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>x, y</strong> : int</p>
+<blockquote>
+<div><p>x and y positions of rectangle</p>
+</div></blockquote>
+<p><strong>width</strong> : float</p>
+<blockquote>
+<div><p>Width of rectangle.</p>
+</div></blockquote>
+<p><strong>height</strong> : float</p>
+<blockquote>
+<div><p>Height of rectangle.</p>
+</div></blockquote>
+<p><strong>angle</strong> : float</p>
+<blockquote class="last">
+<div><p>Angle of rotation in degrees counter clockwise from East.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mygeometry.get_rectangular_mask">
+<code class="descclassname">mygeometry.</code><code class="descname">get_rectangular_mask</code><span class="sig-paren">(</span><em>image</em>, <em>x</em>, <em>y</em>, <em>width=None</em>, <em>height=None</em>, <em>angle=0.0</em>, <em>return_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mygeometry.html#get_rectangular_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.get_rectangular_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a mask excluding pixels outside of a rotated rectangular region.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image</strong> : array-like</p>
+<blockquote>
+<div><p>2D array to be masked.</p>
+</div></blockquote>
+<p><strong>x, y</strong> : int</p>
+<blockquote>
+<div><p>x and y positions of rectangle</p>
+</div></blockquote>
+<p><strong>width</strong> : float</p>
+<blockquote>
+<div><p>Width of rectangle.</p>
+</div></blockquote>
+<p><strong>height</strong> : float</p>
+<blockquote>
+<div><p>Height of rectangle.</p>
+</div></blockquote>
+<p><strong>angle</strong> : float</p>
+<blockquote>
+<div><p>Angle of rotation in degrees counter-clockwise from East.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>masked_image</strong> : array-like</p>
+<blockquote class="last">
+<div><p>Masked numpy array.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mygeometry.point_in_polygon">
+<code class="descclassname">mygeometry.</code><code class="descname">point_in_polygon</code><span class="sig-paren">(</span><em>xy</em>, <em>poly</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mygeometry.html#point_in_polygon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.point_in_polygon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests whether a point is in a polygon.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>xy</strong> : tuple</p>
+<blockquote>
+<div><p>(x,y) positions of point to test in polygon.</p>
+</div></blockquote>
+<p><strong>poly</strong> : list</p>
+<blockquote>
+<div><p>List of tuples comprising the polygon.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>inside</strong> : bool</p>
+<blockquote class="last">
+<div><p>Whether or not the point is inside the polygon.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mygeometry.rotate_polygon">
+<code class="descclassname">mygeometry.</code><code class="descname">rotate_polygon</code><span class="sig-paren">(</span><em>polygon</em>, <em>anchor</em>, <em>angle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mygeometry.html#rotate_polygon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.rotate_polygon" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>polygon</strong> : array-like</p>
+<blockquote>
+<div><p>N x 2 array with x coordinates in column 0 and y coordinates in
+column 1.</p>
+</div></blockquote>
+<p><strong>anchor</strong> : tuple</p>
+<blockquote>
+<div><p>x and y coordinates of pivot point.</p>
+</div></blockquote>
+<p><strong>angle</strong> : float</p>
+<blockquote>
+<div><p>Angle to rotate polygon clockwise from North.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>polygon_translate</strong> : array-like</p>
+<blockquote class="last">
+<div><p>N x 2 array of rotated x and y coordinates.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mygeometry.rotate_wedge">
+<code class="descclassname">mygeometry.</code><code class="descname">rotate_wedge</code><span class="sig-paren">(</span><em>wedge_vertices</em>, <em>anchor</em>, <em>angle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mygeometry.html#rotate_wedge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mygeometry.rotate_wedge" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>wedge_vertices</strong> : numpy.array</p>
+<blockquote>
+<div><p>4 x 2 array with box pixel vertices, starting from lower-left going
+clockwise.</p>
+</div></blockquote>
+<p><strong>anchor</strong> : tuple</p>
+<blockquote>
+<div><p>x and y coordinates of pivot point.</p>
+</div></blockquote>
+<p><strong>angle</strong> : float</p>
+<blockquote>
+<div><p>Angle to rotate polygon clockwise from North.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>wedge_vertices_rotated</strong> : numpy.array</p>
+<blockquote class="last">
+<div><p>4 x 2 array with rotated box pixel vertices.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="myimage_analysis.html"
+                        title="previous chapter">myimage_analysis module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/mygeometry.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="myimage_analysis.html" title="myimage_analysis module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

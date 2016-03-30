@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hdf5lib &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for hdf5lib</h1><div class="highlight"><pre>
+<span></span><span class="c1">#HDF5 library wrapper for:</span>
+<span class="c1">#*PyTables (http://www.pytables.org)</span>
+<span class="c1">#*h5py (http://code.google.com/p/h5py/)</span>
+<span class="c1">#</span>
+<span class="c1">#two modes are possible:</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#1. do not specifiy hdf5 interface:</span>
+<span class="c1">#</span>
+<span class="c1">#import hdf5lib</span>
+<span class="c1">#</span>
+<span class="c1">#----&gt; this will try first tables, and if it fails will try h5py</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#2. specify hdf5 interface:</span>
+<span class="c1">#</span>
+<span class="c1">#import hdf5lib_param</span>
+<span class="c1">#hdf5lib_param.setlib(&quot;h5py&quot;)</span>
+<span class="c1">#import hdf5lib</span>
+<span class="c1">#import snapHDF5</span>
+<span class="c1">#print hdf5lib.h5py.version</span>
+<span class="c1">#</span>
+<span class="c1">#or</span>
+<span class="c1">#</span>
+<span class="c1">#import hdf5lib_param</span>
+<span class="c1">#hdf5lib_param.setlib(&quot;tables&quot;)</span>
+<span class="c1">#import hdf5lib</span>
+<span class="c1">#import snapHDF5</span>
+<span class="c1">#print hdf5lib.tables.__version__</span>
+<span class="c1">#</span>
+<span class="c1">#----&gt; this will load the specified interface; modules loaded later (like snapHDF5.py, etc.) will then use the specified interface</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># Mark Vogelsberger (mvogelsb@cfa.harvard.edu)</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">hdf5lib_param</span>
+
+<span class="k">try</span><span class="p">:</span>
+	<span class="n">hdf5libname</span> <span class="o">=</span> <span class="n">hdf5lib_param</span><span class="o">.</span><span class="n">libname</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hdf5libname</span><span class="o">==</span><span class="s2">&quot;tables&quot;</span><span class="p">):</span>
+                <span class="kn">import</span> <span class="nn">tables</span>
+                <span class="n">use_tables</span><span class="o">=</span><span class="bp">True</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hdf5libname</span><span class="o">==</span><span class="s2">&quot;h5py&quot;</span><span class="p">):</span>
+                <span class="kn">import</span> <span class="nn">h5py</span>
+                <span class="n">use_tables</span><span class="o">=</span><span class="bp">False</span>
+<span class="k">except</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">tables</span>
+                <span class="n">use_tables</span><span class="o">=</span><span class="bp">True</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">h5py</span>
+                <span class="n">use_tables</span><span class="o">=</span><span class="bp">False</span>
+
+
+<div class="viewcode-block" id="OpenFile"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.OpenFile">[docs]</a><span class="k">def</span> <span class="nf">OpenFile</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;r&quot;</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">tables</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GetData"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.GetData">[docs]</a><span class="k">def</span> <span class="nf">GetData</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dname</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_f_getChild</span><span class="p">(</span><span class="n">dname</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="n">f</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="GetGroup"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.GetGroup">[docs]</a><span class="k">def</span> <span class="nf">GetGroup</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">gname</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_f_getChild</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="n">f</span><span class="p">[</span><span class="n">gname</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="GetAttr"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.GetAttr">[docs]</a><span class="k">def</span> <span class="nf">GetAttr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">gname</span><span class="p">,</span> <span class="n">aname</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_f_getChild</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span><span class="o">.</span><span class="n">_f_getAttr</span><span class="p">(</span><span class="n">aname</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		 <span class="k">return</span> <span class="n">f</span><span class="p">[</span><span class="n">gname</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">aname</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Contains"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.Contains">[docs]</a><span class="k">def</span> <span class="nf">Contains</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">gname</span><span class="p">,</span> <span class="n">cname</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">gname</span><span class="o">==</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">__contains__</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">_f_getChild</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span><span class="o">.</span><span class="n">__contains__</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">gname</span><span class="o">==</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
+			<span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">__contains__</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="n">f</span><span class="p">[</span><span class="n">gname</span><span class="p">]</span><span class="o">.</span><span class="n">__contains__</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ContainsGroup"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.ContainsGroup">[docs]</a><span class="k">def</span> <span class="nf">ContainsGroup</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">cname</span><span class="p">):</span>
+	<span class="k">return</span> <span class="n">group</span><span class="o">.</span><span class="n">__contains__</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CreateArray"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.CreateArray">[docs]</a><span class="k">def</span> <span class="nf">CreateArray</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">aname</span><span class="p">,</span> <span class="n">aval</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="n">f</span><span class="o">.</span><span class="n">createArray</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">aname</span><span class="p">,</span> <span class="n">aval</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">print</span> <span class="s2">&quot;NOT IMPLEMENTED!&quot;</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CreateGroup"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.CreateGroup">[docs]</a><span class="k">def</span> <span class="nf">CreateGroup</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">gname</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">createGroup</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">gname</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">print</span> <span class="s2">&quot;NOT IMPLEMENTED!&quot;</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SetAttr"><a class="viewcode-back" href="../docs_rst/hdf5lib.html#hdf5lib.SetAttr">[docs]</a><span class="k">def</span> <span class="nf">SetAttr</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">aname</span><span class="p">,</span> <span class="n">aval</span><span class="p">):</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">use_tables</span><span class="p">):</span>
+		<span class="nb">setattr</span><span class="p">(</span><span class="n">where</span><span class="o">.</span><span class="n">_v_attrs</span><span class="p">,</span> <span class="n">aname</span><span class="p">,</span> <span class="n">aval</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">print</span> <span class="s2">&quot;NOT IMPLEMENTED!&quot;</span>
+		<span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

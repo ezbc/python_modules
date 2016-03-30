@@ -1,0 +1,691 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>planckpy &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for planckpy</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+
+<span class="sd">&#39;&#39;&#39; Extracts a region from the Planck data in HEALPix format, and converts to</span>
+<span class="sd">galactic or equatorial coordinates.</span>
+
+<span class="sd">    Original author: Dr. Robert Benjamin - bobbenjamin@me.com</span>
+
+<span class="sd">    Edited and ported by: Elijah Bernstein-Cooper - ezbc@astro.wisc.edu</span>
+
+<span class="sd">Code hosted at:</span>
+<span class="sd">git@bitbucket.org:ezbc/planckpy.git</span>
+
+<span class="sd">Module requires the following libraries:</span>
+<span class="sd">    numpy - http://www.scipy.org/scipylib/download.html</span>
+<span class="sd">    astropy - http://www.astropy.org/</span>
+<span class="sd">    healpy - https://pypi.python.org/pypi/healpy</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span> <span class="k">as</span> <span class="n">pf</span>
+<span class="kn">import</span> <span class="nn">healpy</span>
+
+<div class="viewcode-block" id="build_header"><a class="viewcode-back" href="../docs_rst/planckpy.html#planckpy.build_header">[docs]</a><span class="k">def</span> <span class="nf">build_header</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">axis_grids</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">reverse_xaxis</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">coord_type</span><span class="o">=</span><span class="s1">&#39;equatorial&#39;</span><span class="p">,</span> <span class="n">xy_res</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">wcs_header</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Builds a header for the extracted Planck image.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    header : pyfits.Header instance</span>
+<span class="sd">        Header from Planck data as a pyfits.Header object instance.</span>
+<span class="sd">    axis_grids : tuple, array-like</span>
+<span class="sd">        Tuple of axis grids.</span>
+<span class="sd">    reverse_xaxis : bool</span>
+<span class="sd">        x-axis maximum at the origin?</span>
+<span class="sd">    field : int</span>
+<span class="sd">        Column to extract from Planck data.</span>
+<span class="sd">    coord_type : str</span>
+<span class="sd">        Only option is &#39;equatorial&#39;. Galactic coordinates will be implemented</span>
+<span class="sd">        soon.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    header_new : pyfits.Header instance</span>
+<span class="sd">        Header for extracted region from Planck data as a pyfits.Header object</span>
+<span class="sd">        instance.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Number of axes</span>
+    <span class="n">naxis</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis_grids</span><span class="p">)</span>
+
+    <span class="c1"># Basic FITS info</span>
+    <span class="n">header_new</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">Header</span><span class="p">()</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;SIMPLE&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;BITPIX&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">32</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;NAXIS&#39;</span><span class="p">,</span> <span class="n">naxis</span><span class="p">),</span>
+             <span class="p">]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="c1"># length of each axis, x and y correspond to dec and ra lengths</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">naxis</span><span class="p">):</span>
+        <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;NAXIS</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis_grids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]))</span>
+
+    <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;EXTEND&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">))</span>
+
+    <span class="n">column</span> <span class="o">=</span> <span class="n">field</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># CTYPE, CRPIX, CRDELT, CRDELT</span>
+    <span class="k">for</span> <span class="n">card</span> <span class="ow">in</span> <span class="n">wcs_header</span><span class="o">.</span><span class="n">cards</span><span class="p">:</span>
+        <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">card</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">card</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">card</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+
+    <span class="c1"># Extended info</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;CELLSCAL&#39;</span><span class="p">,</span> <span class="s1">&#39;CONSTANT&#39;</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;BSCALE&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;BZERO&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;BLANK&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;BUNIT&#39;</span><span class="p">,</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;TUNIT</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">column</span><span class="p">]),</span>
+             <span class="p">(</span><span class="s1">&#39;TELESCOP&#39;</span><span class="p">,</span> <span class="s1">&#39;Planck&#39;</span><span class="p">),</span>
+             <span class="p">]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="c1"># characteristics of data type</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;TYPE&#39;</span><span class="p">,</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;TTYPE</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">column</span><span class="p">],</span>
+                <span class="n">header</span><span class="o">.</span><span class="n">comments</span><span class="p">[</span><span class="s1">&#39;TTYPE</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">column</span><span class="p">]),</span>
+             <span class="p">(</span><span class="s1">&#39;FORM&#39;</span><span class="p">,</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;TFORM</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">column</span><span class="p">],</span>
+                <span class="n">header</span><span class="o">.</span><span class="n">comments</span><span class="p">[</span><span class="s1">&#39;TFORM</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">column</span><span class="p">]),</span>
+            <span class="p">]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;BMAJ&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="o">/</span><span class="mf">3600.</span><span class="p">),</span> <span class="c1"># Planck has 5&#39; beam</span>
+             <span class="p">(</span><span class="s1">&#39;BMIN&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="o">/</span><span class="mf">3600.</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;EPOCH&#39;</span><span class="p">,</span> <span class="mf">2000.</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;EQUINOX&#39;</span><span class="p">,</span> <span class="mf">2000.</span><span class="p">),</span>
+             <span class="p">]</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="c1"># Add rest frequency for CO images</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;AST-COMP&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;CO-TYPE1&#39;</span><span class="p">,</span> <span class="s1">&#39;CO-TYPE2&#39;</span><span class="p">,</span> <span class="s1">&#39;CO-TYPE3&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span> <span class="c1"># then CO J 1--&gt;0</span>
+                <span class="n">rest_freq</span> <span class="o">=</span> <span class="mf">115.2712018e9</span> <span class="c1"># Hz</span>
+            <span class="k">elif</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">):</span> <span class="c1"># then CO J 2--&gt;1</span>
+                <span class="n">rest_freq</span> <span class="o">=</span> <span class="mf">230.5380000e9</span> <span class="c1"># Hz</span>
+            <span class="k">elif</span> <span class="n">field</span> <span class="ow">in</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">11</span><span class="p">):</span> <span class="c1"># then CO J 3--&gt;2</span>
+                <span class="n">rest_freq</span> <span class="o">=</span> <span class="mf">345.796e9</span> <span class="c1"># Hz</span>
+            <span class="n">header_new</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;RESTFREQ&#39;</span><span class="p">,</span> <span class="mf">115.2712018e9</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">header_new</span></div>
+
+<div class="viewcode-block" id="build_wcs"><a class="viewcode-back" href="../docs_rst/planckpy.html#planckpy.build_wcs">[docs]</a><span class="k">def</span> <span class="nf">build_wcs</span><span class="p">(</span><span class="n">grids</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">coord_reses</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ranges</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">reverse_xaxis</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">coord_type</span><span class="o">=</span><span class="s1">&#39;equatorial&#39;</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Builds grid of WCS coordinates given x and y pixel coordinate grids.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grids : tuple</span>
+<span class="sd">    coord_reses : tuple</span>
+<span class="sd">    ranges : tuple</span>
+<span class="sd">    reverse_xaxis : bool</span>
+<span class="sd">    coord_type : str</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_coords, y_coords : array-like</span>
+<span class="sd">        RA and dec grids of coordinates.</span>
+<span class="sd">    wcs_header : astropy.io.fits.header.Header instance</span>
+<span class="sd">        Header</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">wcs</span>
+
+    <span class="c1"># Break up tuples to be more easily read</span>
+    <span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span> <span class="o">=</span> <span class="n">grids</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">grids</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">x_coord_res</span><span class="p">,</span> <span class="n">y_coord_res</span> <span class="o">=</span> <span class="n">coord_reses</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">coord_reses</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">list</span><span class="p">(</span><span class="n">ranges</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">reverse_xaxis</span><span class="p">:</span>
+        <span class="n">x_coord_res</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
+
+    <span class="c1">#print &#39;coord res:&#39;, x_coord_res, y_coord_res</span>
+
+    <span class="c1"># Initialize WCS object</span>
+    <span class="c1"># CRPIX should be at 0, 0 so that unsophisticated software like Kvis can</span>
+    <span class="c1"># read the coordinates properly.</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">wcs</span><span class="o">.</span><span class="n">WCS</span><span class="p">(</span><span class="n">naxis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_coord_res</span><span class="p">,</span> <span class="n">y_coord_res</span><span class="p">])</span>
+    <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crval</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># check if coords are wrapped around 180. astropy.wcs ra domain is [-180,</span>
+    <span class="c1"># 180]</span>
+    <span class="n">delta_x</span> <span class="o">=</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">wrapped_coords</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_range</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">180</span><span class="p">:</span>
+            <span class="n">x_range</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">180</span> <span class="o">+</span> <span class="n">x</span>
+            <span class="n">wrapped_coords</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">if</span> <span class="n">wrapped_coords</span><span class="p">:</span>
+        <span class="c1"># define</span>
+        <span class="k">if</span> <span class="n">reverse_xaxis</span><span class="p">:</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                           <span class="p">(</span><span class="o">-</span><span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                           <span class="p">(</span><span class="o">-</span><span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">reverse_xaxis</span><span class="p">:</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                           <span class="p">(</span><span class="o">-</span><span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">crpix</span> <span class="o">=</span> <span class="p">[(</span><span class="o">-</span><span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                           <span class="p">(</span><span class="o">-</span><span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">cdelt</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+    <span class="c1"># Define coordinate type</span>
+    <span class="k">if</span> <span class="n">coord_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;equatorial&#39;</span><span class="p">:</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;RA---CAR&#39;</span><span class="p">,</span> <span class="s1">&#39;DEC--CAR&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">coord_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;galactic&#39;</span><span class="p">:</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">wcs</span><span class="o">.</span><span class="n">ctype</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GLON-CAR&#39;</span><span class="p">,</span> <span class="s1">&#39;GLAT-CAR&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Convert pixel coordinates to world</span>
+    <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">all_pix2world</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span>
+                                         <span class="n">y_grid</span><span class="p">,</span>
+                                         <span class="mi">1</span><span class="p">,</span>
+                                         <span class="p">)</span>
+
+    <span class="c1"># readjust x coordinates back to domain of [0, 360]</span>
+    <span class="k">if</span> <span class="n">wrapped_coords</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">x_coords</span> <span class="o">+=</span> <span class="n">delta_x</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x_coords</span> <span class="o">+=</span> <span class="n">delta_x</span> <span class="o">+</span> <span class="mf">180.0</span>
+
+    <span class="c1"># Write wcs object as an easily readable header object</span>
+    <span class="n">wcs_header</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">to_header</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">,</span> <span class="n">wcs_header</span></div>
+
+<div class="viewcode-block" id="get_planck_filename"><a class="viewcode-back" href="../docs_rst/planckpy.html#planckpy.get_planck_filename">[docs]</a><span class="k">def</span> <span class="nf">get_planck_filename</span><span class="p">(</span><span class="n">data_location</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">dr_version</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Finds the file name for data_type requested. The files are:</span>
+<span class="sd">            COM_CompMap_dust-commrul_2048_R1.00.fits</span>
+<span class="sd">            COM_CompMap_Lfreqfor-commrul_0256_R1.00.fits</span>
+<span class="sd">            COM_CompMap_Lfreqfor-commrul_2048_R1.00.fits</span>
+<span class="sd">            HFI_CompMap_CO-Type1_2048_R1.10.fits</span>
+<span class="sd">            HFI_CompMap_CO-Type2_2048_R1.10.fits</span>
+<span class="sd">            HFI_CompMap_CO-Type3_2048_R1.10.fits</span>
+<span class="sd">            HFI_CompMap_DustOpacity_2048_R1.10.fits</span>
+<span class="sd">            HFI_CompMap_ThermalDustModel_2048_R1.20.fits</span>
+<span class="sd">            HFI_SkyMap_100_2048_R1.10_nominal.fits</span>
+<span class="sd">            HFI_SkyMap_143_2048_R1.10_nominal.fits</span>
+<span class="sd">            HFI_SkyMap_217_2048_R1.10_nominal.fits</span>
+<span class="sd">            HFI_SkyMap_353_2048_R1.10_nominal.fits</span>
+<span class="sd">            HFI_SkyMap_545_2048_R1.10_nominal.fits</span>
+<span class="sd">            HFI_SkyMap_857_2048_R1.10_nominal.fits</span>
+<span class="sd">            LFI_SkyMap_030_1024_R1.10_nominal.fits</span>
+<span class="sd">            LFI_SkyMap_044_1024_R1.10_nominal.fits</span>
+<span class="sd">            LFI_SkyMap_070_1024_R1.10_nominal.fits</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_location : str</span>
+<span class="sd">        Location of Planck survey archive files.</span>
+<span class="sd">    data_type : str</span>
+<span class="sd">        Type of data from the Planck survey. See the following for the full</span>
+<span class="sd">        descriptions of each data type.</span>
+<span class="sd">        http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/</span>
+
+<span class="sd">        See the header of the get_data() function to see how to specify the</span>
+<span class="sd">        data type.</span>
+<span class="sd">    data_type_version : int</span>
+<span class="sd">        Data release number.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data_file : str</span>
+<span class="sd">        File path to relevant Planck data product.</span>
+<span class="sd">    nside : int</span>
+<span class="sd">        Number of sides for HEALPix format.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">os</span>
+
+    <span class="n">CO_types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CO-Type1&#39;</span><span class="p">,</span> <span class="s1">&#39;CO-Type2&#39;</span><span class="p">,</span> <span class="s1">&#39;CO-Type3&#39;</span><span class="p">]</span>
+    <span class="n">freq_types</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;030&#39;</span><span class="p">,</span> <span class="s1">&#39;044&#39;</span><span class="p">,</span> <span class="s1">&#39;070&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">,</span> <span class="s1">&#39;143&#39;</span><span class="p">,</span> <span class="s1">&#39;217&#39;</span><span class="p">,</span> <span class="s1">&#39;353&#39;</span><span class="p">,</span> <span class="s1">&#39;545&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;857&#39;</span><span class="p">]</span>
+    <span class="n">dust_types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Thermal&#39;</span><span class="p">,</span> <span class="s1">&#39;Dust Opacity&#39;</span><span class="p">]</span>
+    <span class="n">dust_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;dust-commrul&#39;</span><span class="p">,</span> <span class="s1">&#39;ThermalDustModel&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Determine which file is chosen</span>
+    <span class="k">if</span> <span class="n">data_type</span> <span class="ow">in</span> <span class="n">CO_types</span><span class="p">:</span>
+        <span class="n">data_file</span> <span class="o">=</span> <span class="s1">&#39;HFI_CompMap_</span><span class="si">%s</span><span class="s1">_2048_R1.</span><span class="si">%s</span><span class="s1">0.fits&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">data_type</span><span class="p">,</span> <span class="n">dr_version</span><span class="p">)</span>
+        <span class="n">nside</span> <span class="o">=</span> <span class="mi">2048</span>
+    <span class="k">elif</span> <span class="n">data_type</span> <span class="ow">in</span> <span class="n">dust_types</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;Dust Opacity&#39;</span><span class="p">:</span>
+            <span class="n">data_file</span> <span class="o">=</span> <span class="s1">&#39;HFI_CompMap_</span><span class="si">%s</span><span class="s1">_2048_R1.</span><span class="si">%s</span><span class="s1">0.fits&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;ThermalDustModel&#39;</span><span class="p">,</span>
+                    <span class="n">dr_version</span><span class="p">)</span>
+            <span class="n">nside</span> <span class="o">=</span> <span class="mi">2048</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="o">==</span> <span class="s1">&#39;Thermal&#39;</span><span class="p">:</span>
+            <span class="n">data_file</span> <span class="o">=</span> <span class="s1">&#39;COM_CompMap_</span><span class="si">%s</span><span class="s1">_2048_R1.</span><span class="si">%s</span><span class="s1">0.fits&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;dust-commrul&#39;</span><span class="p">,</span>
+                    <span class="n">dr_version</span><span class="p">)</span>
+            <span class="n">nside</span> <span class="o">=</span> <span class="mi">2048</span>
+    <span class="k">elif</span> <span class="n">data_type</span> <span class="ow">in</span> <span class="n">freq_types</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">data_type</span> <span class="ow">in</span> <span class="n">freq_types</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="n">receiver_type</span> <span class="o">=</span> <span class="s1">&#39;LFI&#39;</span>
+            <span class="n">nside</span> <span class="o">=</span> <span class="mi">1024</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">receiver_type</span> <span class="o">=</span> <span class="s1">&#39;HFI&#39;</span>
+            <span class="n">nside</span> <span class="o">=</span> <span class="mi">2048</span>
+        <span class="n">data_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_SkyMap_</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_R1.</span><span class="si">%s</span><span class="s1">0_nominal.fits&#39;</span> <span class="o">%</span> \
+                <span class="p">(</span><span class="n">receiver_type</span><span class="p">,</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">nside</span><span class="p">,</span> <span class="n">dr_version</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="s1">&#39;Invalid data type chosen.&#39;</span><span class="p">)</span>
+
+    <span class="n">data_file</span> <span class="o">=</span> <span class="n">data_location</span> <span class="o">+</span> <span class="n">data_file</span>
+
+    <span class="c1"># Does file exist on disk?</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">data_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">%s</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> Check data release version and </span><span class="se">\</span>
+<span class="s1">            the directory including the Planck data.&#39;</span> <span class="o">%</span> <span class="n">data_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data_file</span></div>
+
+<div class="viewcode-block" id="gal2sphere"><a class="viewcode-back" href="../docs_rst/planckpy.html#planckpy.gal2sphere">[docs]</a><span class="k">def</span> <span class="nf">gal2sphere</span><span class="p">(</span><span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Converts galactic coordinates to angular coordinates of a point on the</span>
+<span class="sd">    sphere.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x_coords, y_coords : array-like</span>
+<span class="sd">        N-dimensional galactic x and y coordinates</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    phi_grid : array-like</span>
+<span class="sd">        Rotation angle in spherical coordinates</span>
+<span class="sd">    theta_grid : array-like</span>
+<span class="sd">        Azimuthal angle in spherical coordinates</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Convert from phi / theta to l/b</span>
+    <span class="n">phi_grid</span> <span class="o">=</span> <span class="n">x_coords</span> <span class="o">/</span> <span class="mf">180.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">theta_grid</span> <span class="o">=</span> <span class="p">(</span><span class="mf">90.</span> <span class="o">-</span> <span class="n">y_coords</span><span class="p">)</span> <span class="o">/</span> <span class="mf">180.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+    <span class="k">return</span> <span class="n">phi_grid</span><span class="p">,</span> <span class="n">theta_grid</span></div>
+
+<div class="viewcode-block" id="switch_coords"><a class="viewcode-back" href="../docs_rst/planckpy.html#planckpy.switch_coords">[docs]</a><span class="k">def</span> <span class="nf">switch_coords</span><span class="p">(</span><span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">,</span> <span class="n">coord_type</span><span class="o">=</span><span class="s1">&#39;equatorial&#39;</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Switches coordinates between equatorial and galactic.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x_coords, y_coords : array-like</span>
+<span class="sd">        N-dimensional x and y coordinates</span>
+<span class="sd">    coord_type : str</span>
+<span class="sd">        Coordinate system of x_coords and y_coords. Options are &#39;equatorial&#39;</span>
+<span class="sd">        and &#39;galactic&#39;. Default is to switch between &#39;equatorial&#39; to &#39;galactic&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_coords_sw, y_coords_sw : array-like</span>
+<span class="sd">        N-dimensional x and y coordinates in the switched coordinate system.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">ICRS</span> <span class="k">as</span> <span class="n">eq</span>
+    <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">Galactic</span> <span class="k">as</span> <span class="n">gal</span>
+    <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span>
+
+    <span class="c1"># Convert coordinates to arrays</span>
+    <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x_coords</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">y_coords</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">coord_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;galactic&#39;</span><span class="p">:</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">gal</span><span class="p">(</span><span class="n">l</span><span class="o">=</span><span class="n">x_coords</span><span class="p">,</span>
+                  <span class="n">b</span><span class="o">=</span><span class="n">y_coords</span><span class="p">,</span>
+                  <span class="n">unit</span><span class="o">=</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
+                  <span class="p">)</span>
+        <span class="n">x_coords_sw</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">icrs</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">deg</span>
+        <span class="n">y_coords_sw</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">icrs</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">deg</span>
+    <span class="k">elif</span> <span class="n">coord_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;equatorial&#39;</span><span class="p">:</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">eq</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">x_coords</span><span class="p">,</span>
+                  <span class="n">dec</span><span class="o">=</span><span class="n">y_coords</span><span class="p">,</span>
+                  <span class="n">unit</span><span class="o">=</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
+                  <span class="p">)</span>
+        <span class="n">x_coords_sw</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">galactic</span><span class="o">.</span><span class="n">l</span><span class="o">.</span><span class="n">deg</span>
+        <span class="n">y_coords_sw</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">galactic</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">deg</span>
+
+    <span class="k">return</span> <span class="n">x_coords_sw</span><span class="p">,</span> <span class="n">y_coords_sw</span></div>
+
+<div class="viewcode-block" id="get_data"><a class="viewcode-back" href="../docs_rst/planckpy.html#planckpy.get_data">[docs]</a><span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">data_location</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="n">data_type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">x_range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">360</span><span class="p">),</span> <span class="n">y_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">90</span><span class="p">,</span>
+    <span class="mi">90</span><span class="p">),</span> <span class="n">coord_type</span><span class="o">=</span><span class="s1">&#39;equatorial&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">cut_last_pixel</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">return_header</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">reverse_xaxis</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">dr_version</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Extracts region from Planck data set. Region will be in equatorial</span>
+<span class="sd">    coordinates. Planck data must be on disk. Visit</span>
+<span class="sd">    http://irsa.ipac.caltech.edu/data/Planck/release_1/all-sky-maps/ to</span>
+<span class="sd">    download Planck archive data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_location : str</span>
+<span class="sd">        Filepath to location of Planck data. Default is current directory.</span>
+<span class="sd">    data_type : str</span>
+<span class="sd">        Data type to choose from. Options are:</span>
+<span class="sd">            Narrow-band: [&#39;CO-Type1&#39;, &#39;CO-Type2&#39;, &#39;CO-Type3&#39;]</span>
+<span class="sd">                &#39;CO-Type1&#39; fields:</span>
+<span class="sd">                    0:  12CO J 1--&gt;0 Intensity</span>
+<span class="sd">                    1:  12CO J 1--&gt;0 Intensity Error</span>
+<span class="sd">                    2:  12CO J 1--&gt;0 Null Test</span>
+<span class="sd">                    3:  12CO J 1--&gt;0 Mask</span>
+<span class="sd">                    4:  12CO J 2--&gt;1 Intensity</span>
+<span class="sd">                    5:  12CO J 2--&gt;1 Intensity Error</span>
+<span class="sd">                    6:  12CO J 2--&gt;1 Null Test</span>
+<span class="sd">                    7:  12CO J 2--&gt;1 Mask</span>
+<span class="sd">                    8:  12CO J 3--&gt;2 Intensity</span>
+<span class="sd">                    9:  12CO J 3--&gt;2 Intensity Error</span>
+<span class="sd">                    10: 12CO J 3--&gt;2 Null Test</span>
+<span class="sd">                    11: 12CO J 3--&gt;2 Mask</span>
+<span class="sd">                &#39;CO-Type2&#39; fields:</span>
+<span class="sd">                    0:  12CO J 1--&gt;0 Intensity</span>
+<span class="sd">                    1:  12CO J 1--&gt;0 Intensity Error</span>
+<span class="sd">                    2:  12CO J 1--&gt;0 Null Test</span>
+<span class="sd">                    3:  12CO J 1--&gt;0 Mask</span>
+<span class="sd">                    4:  12CO J 2--&gt;1 Intensity</span>
+<span class="sd">                    5:  12CO J 2--&gt;1 Intensity Error</span>
+<span class="sd">                    6:  12CO J 2--&gt;1 Null Test</span>
+<span class="sd">                    7:  12CO J 2--&gt;1 Mask</span>
+<span class="sd">                &#39;CO-Type3&#39; fields:</span>
+<span class="sd">                    0:  12CO Intensity</span>
+<span class="sd">                    1:  12CO Intensity Error</span>
+<span class="sd">                    2:  12CO Null Test</span>
+<span class="sd">                    3:  12CO Mask</span>
+
+<span class="sd">            Broad-band (GHz): [&#39;030&#39;, &#39;044&#39;, &#39;070&#39;, &#39;100&#39;, &#39;143&#39;, &#39;217&#39;, &#39;353&#39;,</span>
+<span class="sd">                               &#39;545&#39;, &#39;857&#39;]</span>
+<span class="sd">                Broad-band fields:</span>
+<span class="sd">                    0: I stokes</span>
+<span class="sd">                    1: Hits</span>
+<span class="sd">                    2: II_cov</span>
+
+<span class="sd">            Processed data products: [&#39;Dust Opacity&#39;, &#39;Thermal&#39;]</span>
+<span class="sd">                &#39;Dust Opacity&#39; fields:</span>
+<span class="sd">                    0: Opacity 353GHz</span>
+<span class="sd">                    1: Error on opacity</span>
+<span class="sd">                    2: E(B-V)</span>
+<span class="sd">                    3: Radiance</span>
+<span class="sd">                    4: T for high freq correction</span>
+<span class="sd">                    5: Error on T</span>
+<span class="sd">                    6: Beta for high freq correction</span>
+<span class="sd">                    7: Error on Beta</span>
+<span class="sd">                &#39;Thermal&#39; dust model fields:</span>
+<span class="sd">                    0: Intensity</span>
+<span class="sd">                    1: Intensity standard deviation</span>
+<span class="sd">                    2: Intensity ??</span>
+<span class="sd">                    3: Intensity ??</span>
+
+<span class="sd">    x_coord_range : array-like</span>
+<span class="sd">        Lower and upper longitude. Default is whole sky.</span>
+<span class="sd">    y_range : array-like</span>
+<span class="sd">        Lower and upper latitude. Default is whole sky.</span>
+<span class="sd">    coord_type : str</span>
+<span class="sd">        Only option is &#39;equatorial&#39;. Galactic coordinates will be implemented</span>
+<span class="sd">        soon.</span>
+<span class="sd">    field : int</span>
+<span class="sd">        Field in data type.</span>
+<span class="sd">    resolution : float</span>
+<span class="sd">        Pixel resolution in arcseconds.</span>
+<span class="sd">    cut_last_pixel : bool</span>
+<span class="sd">        Cuts off one pixel</span>
+<span class="sd">    return_header : bool</span>
+<span class="sd">        Return the header?</span>
+<span class="sd">    verbose : bool</span>
+<span class="sd">        Verbose?</span>
+<span class="sd">    reverse_xaxis : bool</span>
+<span class="sd">        The highest x-axis value begins at the origin.</span>
+<span class="sd">    dr_version : int</span>
+<span class="sd">        Data release version of data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    map : array-like</span>
+<span class="sd">        Map of extracted region from Planck data.</span>
+<span class="sd">    header : dict, optional</span>
+<span class="sd">        FITS format header.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import planckpy as pl</span>
+<span class="sd">    &gt;&gt;&gt; from astropy.io import fits</span>
+<span class="sd">    &gt;&gt;&gt; (data, header) = pl.get_data(data_type=&#39;857&#39;, x_range=(21.3, 30.3),</span>
+<span class="sd">            y_range=(60.0, 73.0))</span>
+<span class="sd">    &gt;&gt;&gt; data.shape</span>
+<span class="sd">    (131, 91)</span>
+<span class="sd">    &gt;&gt;&gt; header[&#39;TYPE&#39;]</span>
+<span class="sd">    &#39;I_STOKES&#39;</span>
+<span class="sd">    &gt;&gt;&gt; fits.writeto(&#39;planck_region_857GHz.fits&#39;, data, header=header)</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="n">data_type</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;WARNING (get_data): No data type chosen. Returning None type.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="k">if</span> <span class="n">coord_type</span> <span class="ow">is</span> <span class="s1">&#39;galactic&#39;</span><span class="p">:</span>
+    	<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Galactic coordinates not yet implemented.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">90.0</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">90.0</span><span class="p">:</span>
+    	<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;y coordinates must be &lt; +90 deg and &gt; -90 deg&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> \
+       <span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> \
+       <span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">360.0</span> <span class="ow">or</span> \
+       <span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">360.0</span><span class="p">:</span>
+    	<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;x coordinates must be &gt; 0 deg and &lt; 360 deg&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;x_range[0] must be &lt; x_range[1]&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">y_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;y_range[0] must be &lt; y_range[1]&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Get the filename</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">get_planck_filename</span><span class="p">(</span><span class="n">data_type</span> <span class="o">=</span> <span class="n">data_type</span><span class="p">,</span> <span class="n">data_location</span> <span class="o">=</span>
+            <span class="n">data_location</span><span class="p">,</span> <span class="n">dr_version</span> <span class="o">=</span> <span class="n">dr_version</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Reading file:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+
+    <span class="c1"># Read the map using healpy library</span>
+    <span class="n">map_data</span> <span class="o">=</span> <span class="n">healpy</span><span class="o">.</span><span class="n">read_map</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">field</span> <span class="o">=</span> <span class="n">field</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">map_raw</span><span class="p">,</span> <span class="n">header_raw</span> <span class="o">=</span> <span class="n">map_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">map_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Change format of healpy header to pyfits header</span>
+    <span class="c1">#   ...an actually useful format</span>
+    <span class="n">header_pf</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">Header</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">header_raw</span><span class="p">:</span>
+        <span class="n">header_pf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="c1"># Get nside from HEALPix format, acts as resolution of HEALPix image</span>
+    <span class="n">nside</span> <span class="o">=</span> <span class="n">header_pf</span><span class="p">[</span><span class="s1">&#39;NSIDE&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Set up longitude / latitude grid for extracting the region</span>
+    <span class="n">x_coord_res</span><span class="p">,</span> <span class="n">y_coord_res</span> <span class="o">=</span> <span class="n">resolution</span><span class="p">,</span> <span class="n">resolution</span>
+    <span class="n">x_pixel_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">x_coord_res</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">y_pixel_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">y_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">y_coord_res</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># The counts should be positive! Problems will arise if southern</span>
+    <span class="c1"># coordinates queried</span>
+    <span class="n">x_pixel_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x_pixel_count</span><span class="p">)</span>
+    <span class="n">y_pixel_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_pixel_count</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cut_last_pixel</span><span class="p">:</span>
+        <span class="n">x_pixel_count</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">y_pixel_count</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="c1"># Write pixel positions</span>
+    <span class="n">x_pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">x_pixel_count</span><span class="p">)</span>
+    <span class="n">y_pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">y_pixel_count</span><span class="p">)</span>
+
+    <span class="c1"># Create grids of coordinate positions</span>
+    <span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x_pix</span><span class="p">,</span> <span class="n">y_pix</span><span class="p">)</span>
+
+    <span class="c1"># Need x and y range in equatorial coordinates</span>
+    <span class="k">if</span> <span class="n">coord_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;galactic&#39;</span><span class="p">:</span>
+        <span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span> <span class="o">=</span> <span class="n">switch_coords</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span><span class="p">,</span> <span class="n">coord_type</span><span class="p">)</span>
+
+    <span class="c1"># Convert pixel coordinates to WCS coordinates</span>
+    <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">,</span> <span class="n">wcs_header</span> <span class="o">=</span> <span class="n">build_wcs</span><span class="p">(</span><span class="n">grids</span><span class="o">=</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span> <span class="n">y_grid</span><span class="p">),</span>
+                                        <span class="n">coord_reses</span><span class="o">=</span><span class="p">(</span><span class="n">x_coord_res</span><span class="p">,</span> <span class="n">y_coord_res</span><span class="p">),</span>
+                                        <span class="n">ranges</span><span class="o">=</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span><span class="p">),</span>
+                                        <span class="n">reverse_xaxis</span><span class="o">=</span><span class="n">reverse_xaxis</span><span class="p">,</span>
+                                        <span class="n">coord_type</span><span class="o">=</span><span class="s1">&#39;equatorial&#39;</span><span class="p">)</span>
+
+    <span class="c1"># check if any NaNs present in coords</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x_coords</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y_coords</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid coordinate ranges&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Get galactic coordinates for angles</span>
+    <span class="k">if</span> <span class="n">coord_type</span> <span class="o">==</span> <span class="s1">&#39;equatorial&#39;</span><span class="p">:</span>
+        <span class="n">l_grid</span><span class="p">,</span> <span class="n">b_grid</span> <span class="o">=</span> <span class="n">switch_coords</span><span class="p">(</span><span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">,</span> <span class="n">coord_type</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">coord_type</span> <span class="o">==</span> <span class="s1">&#39;galactic&#39;</span><span class="p">:</span>
+    	<span class="n">l_grid</span><span class="p">,</span> <span class="n">b_grid</span> <span class="o">=</span> <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span>
+
+    <span class="c1"># Convert from phi / theta to l/b</span>
+    <span class="n">phi_grid</span><span class="p">,</span> <span class="n">theta_grid</span> <span class="o">=</span> <span class="n">gal2sphere</span><span class="p">(</span><span class="n">l_grid</span><span class="p">,</span> <span class="n">b_grid</span><span class="p">)</span>
+
+    <span class="c1"># Convert from angle to pixel</span>
+    <span class="n">pixel_indices</span> <span class="o">=</span> <span class="n">healpy</span><span class="o">.</span><span class="n">ang2pix</span><span class="p">(</span><span class="n">nside</span> <span class="o">=</span> <span class="n">nside</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">theta_grid</span><span class="p">,</span>
+            <span class="n">phi</span> <span class="o">=</span> <span class="n">phi_grid</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="c1"># Map the column data to a 2d array</span>
+    <span class="n">map_region</span> <span class="o">=</span> <span class="n">map_raw</span><span class="p">[</span><span class="n">pixel_indices</span><span class="p">]</span>
+
+    <span class="c1"># Omit any degenerate axes</span>
+    <span class="n">map_region</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">map_region</span><span class="p">)</span>
+
+    <span class="c1"># Change bad data to be NaNs</span>
+    <span class="n">bad_data</span> <span class="o">=</span> <span class="n">header_pf</span><span class="p">[</span><span class="s1">&#39;BAD_DATA&#39;</span><span class="p">]</span>
+    <span class="n">map_region</span><span class="p">[</span><span class="n">map_region</span> <span class="o">==</span> <span class="n">bad_data</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+
+    <span class="c1"># Rebuild header if galactic coordinates chosen</span>
+    <span class="k">if</span> <span class="n">coord_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;galactic&#39;</span><span class="p">:</span>
+        <span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span> <span class="o">=</span> <span class="n">switch_coords</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span><span class="p">,</span> <span class="s1">&#39;equatorial&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Convert pixel coordinates to WCS coordinates</span>
+        <span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">,</span> <span class="n">wcs_header</span> <span class="o">=</span> <span class="n">build_wcs</span><span class="p">(</span><span class="n">grids</span><span class="o">=</span><span class="p">(</span><span class="n">x_grid</span><span class="p">,</span>
+                                                          <span class="n">y_grid</span><span class="p">),</span>
+                                                    <span class="n">coord_reses</span><span class="o">=</span><span class="p">(</span><span class="n">x_coord_res</span><span class="p">,</span>
+                                                                 <span class="n">y_coord_res</span><span class="p">),</span>
+                                                    <span class="n">ranges</span><span class="o">=</span><span class="p">(</span><span class="n">x_range</span><span class="p">,</span>
+                                                            <span class="n">y_range</span><span class="p">),</span>
+                                                    <span class="n">reverse_xaxis</span><span class="o">=</span><span class="n">reverse_xaxis</span><span class="p">,</span>
+                                                    <span class="n">coord_type</span><span class="o">=</span><span class="n">coord_type</span><span class="p">)</span>
+
+    <span class="c1"># Build a header</span>
+    <span class="k">if</span> <span class="n">return_header</span><span class="p">:</span>
+        <span class="n">header_region</span> <span class="o">=</span> <span class="n">build_header</span><span class="p">(</span><span class="n">header</span> <span class="o">=</span> <span class="n">header_pf</span><span class="p">,</span>
+                <span class="n">wcs_header</span><span class="o">=</span><span class="n">wcs_header</span><span class="p">,</span>
+                <span class="n">axis_grids</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_coords</span><span class="p">,</span> <span class="n">y_coords</span><span class="p">),</span>
+                <span class="n">reverse_xaxis</span> <span class="o">=</span> <span class="n">reverse_xaxis</span><span class="p">,</span>
+                <span class="n">field</span> <span class="o">=</span> <span class="n">field</span><span class="p">,</span>
+                <span class="n">coord_type</span> <span class="o">=</span> <span class="n">coord_type</span><span class="p">,</span>
+                <span class="n">xy_res</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_coord_res</span><span class="p">,</span> <span class="n">y_coord_res</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">map_region</span><span class="p">,</span> <span class="n">header_region</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">map_region</span></div>
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

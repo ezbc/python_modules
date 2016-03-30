@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>myscience.sternberg14 &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for myscience.sternberg14</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Module for using the model of Sternberg et al. (2014)</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="calc_rh2"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.sternberg14.calc_rh2">[docs]</a><span class="k">def</span> <span class="nf">calc_rh2</span><span class="p">(</span><span class="n">h_sd</span><span class="p">,</span> <span class="n">alphaG</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">phi_g</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma_g21</span><span class="o">=</span><span class="mf">1.9</span><span class="p">,</span>
+        <span class="n">radiation_type</span><span class="o">=</span><span class="s1">&#39;isotropic&#39;</span><span class="p">,</span> <span class="n">return_fractions</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calculates ratio of molecular hydrogen to atomic hydrogen surface</span>
+<span class="sd">    density using the model from Sternberg et al. (2014) given a total hydrogen</span>
+<span class="sd">    surface density.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h_sd : array-like</span>
+<span class="sd">        Hydrogen surface density in units of solar mass per parsec**2-</span>
+<span class="sd">    return_fractions : bool</span>
+<span class="sd">        Return f_H2 and f_HI?</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rh2_fit : array-like</span>
+<span class="sd">        Model ratio between molecular and atomic hydrogen masses.</span>
+<span class="sd">    f_H2, f_HI : array-like, optional</span>
+<span class="sd">        If return_fractions=True then the following is returned:</span>
+<span class="sd">        f_H2 = mass fraction of molecular hydrogen</span>
+<span class="sd">        f_HI = mass fraction of atomic hydrogen</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+    <span class="k">if</span> <span class="n">radiation_type</span> <span class="o">==</span> <span class="s1">&#39;isotropic&#39;</span><span class="p">:</span>
+        <span class="c1"># use the constant 6.71 instead of 9.5 to disclude Helium contribution</span>
+        <span class="n">hi_sd</span> <span class="o">=</span> <span class="mf">6.73684</span> <span class="o">/</span> <span class="p">(</span><span class="n">Z</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">alphaG</span> <span class="o">/</span> <span class="mf">3.2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># Msun pc^-2</span>
+        <span class="k">if</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">hi_sd</span> <span class="o">=</span> <span class="mf">6.71</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.9</span> <span class="o">/</span> <span class="n">sigma_g21</span><span class="p">)</span> <span class="o">*</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">alphaG</span> <span class="o">/</span> <span class="mf">3.2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># Msun pc^-2</span>
+    <span class="k">elif</span> <span class="n">radiation_type</span> <span class="o">==</span> <span class="s1">&#39;beamed&#39;</span><span class="p">:</span>
+        <span class="n">hi_sd</span> <span class="o">=</span> <span class="mf">11.9</span> <span class="o">/</span> <span class="p">(</span><span class="n">Z</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">alphaG</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># Msun pc^-2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;radiation_type must be &quot;beamed&quot; or &quot;isotropic&quot;&#39;</span><span class="p">)</span>
+
+    <span class="n">f_H2</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">hi_sd</span> <span class="o">/</span> <span class="n">h_sd</span>
+    <span class="n">f_HI</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">f_H2</span>
+
+    <span class="c1"># Keep fractions within real fractional value range</span>
+    <span class="n">f_HI</span><span class="p">[</span><span class="n">f_HI</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">f_HI</span><span class="p">[</span><span class="n">f_HI</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">f_H2</span><span class="p">[</span><span class="n">f_H2</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">f_H2</span><span class="p">[</span><span class="n">f_H2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># ratio of molecular to atomic fraction</span>
+    <span class="n">R_H2</span> <span class="o">=</span> <span class="n">f_H2</span> <span class="o">/</span> <span class="n">f_HI</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">return_fractions</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">R_H2</span>
+    <span class="k">elif</span> <span class="n">return_fractions</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">R_H2</span><span class="p">,</span> <span class="n">f_H2</span><span class="p">,</span> <span class="n">f_HI</span></div>
+
+<div class="viewcode-block" id="calc_n_H"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.sternberg14.calc_n_H">[docs]</a><span class="k">def</span> <span class="nf">calc_n_H</span><span class="p">(</span><span class="n">I_UV</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alphaG</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">phi_g</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">Z_g</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">Z_CO</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">I_UV_error</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+        <span class="n">alphaG_error</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">phi_g_error</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">Z_g_error</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">calc_errors</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Equation 5 in Bialy et al. (2015)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1">#phi_cnm = calc_phi_cnm(alphaG=alphaG, Z_g=Z_g, Z_CO=Z_CO, phi_g=phi_g)</span>
+
+    <span class="c1">#n_H = 22.7*I_UV * 4.1 / (1 + 3.1 * Z_g**0.365) * Z_g / Z_CO * phi_cnm / 3.</span>
+
+    <span class="n">n_H</span> <span class="o">=</span> <span class="mf">1.54</span> <span class="o">*</span> <span class="n">I_UV</span> <span class="o">/</span> <span class="n">alphaG</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.64</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">*</span> <span class="n">Z_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.</span>
+
+    <span class="k">if</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">calc_errors</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(((</span><span class="nb">any</span><span class="p">(</span><span class="n">alphaG_error</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">),</span>
+                            <span class="nb">any</span><span class="p">(</span><span class="n">phi_g_error</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">),</span>
+                            <span class="nb">any</span><span class="p">(</span><span class="n">I_UV_error</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))))</span>
+
+    <span class="k">if</span> <span class="n">calc_errors</span><span class="p">:</span>
+
+        <span class="c1"># Calculated from Mathematica</span>
+        <span class="n">n_H_error</span> <span class="o">=</span> \
+        <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">I_UV_error</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">alphaG</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">phi_g</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> \
+        <span class="p">(</span><span class="mf">3402.78</span> <span class="o">+</span> <span class="mf">8983.33</span> <span class="o">*</span> <span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">+</span> <span class="mf">11057.7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">))</span> <span class="o">+</span> \
+        <span class="n">I_UV</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">alphaG_error</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">phi_g</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">3402.78</span> <span class="o">+</span> <span class="mf">8983.33</span> <span class="o">*</span> <span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">+</span>\
+        <span class="mf">11057.7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">))</span> <span class="o">+</span> <span class="n">alphaG</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> \
+        <span class="p">(</span><span class="mf">3402.78</span> <span class="o">+</span> <span class="mf">2245.83</span> <span class="o">*</span> <span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">+</span> <span class="mf">5528.86</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">))</span> <span class="o">*</span> \
+        <span class="n">phi_g_error</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">alphaG</span><span class="o">**</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.615457</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">))</span><span class="o">**</span><span class="mi">4</span><span class="p">))</span>
+
+
+        <span class="n">alphaG_comp</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">154.</span> <span class="o">*</span> <span class="n">I_UV</span> <span class="o">*</span> <span class="n">alphaG_error</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">/</span> \
+                      <span class="p">(</span><span class="n">alphaG</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.62481</span> <span class="o">*</span> <span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">))</span>
+
+        <span class="n">I_UV_comp</span> <span class="o">=</span>  <span class="mf">154.</span> <span class="o">*</span> <span class="n">I_UV_error</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">/</span> \
+                      <span class="p">(</span><span class="n">alphaG</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.62481</span> <span class="o">*</span> <span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">))</span>
+
+
+        <span class="n">phi_g_comp</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span> <span class="mf">125.11</span> <span class="o">*</span> <span class="n">I_UV</span> <span class="o">*</span> <span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">/</span> \
+                        <span class="p">(</span><span class="n">alphaG</span> <span class="o">*</span> <span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> \
+                            <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.62481</span> <span class="o">*</span> <span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> \
+                     <span class="mf">154.</span> <span class="o">*</span> <span class="n">I_UV</span> <span class="o">/</span> \
+                        <span class="p">(</span><span class="n">alphaG</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.62481</span> <span class="o">*</span> <span class="p">(</span><span class="n">Z_g</span> <span class="o">*</span> <span class="n">phi_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)))</span> <span class="o">*</span> \
+                     <span class="n">phi_g_error</span>
+
+        <span class="n">Z_g_comp</span> <span class="o">=</span> <span class="mf">154.</span> <span class="o">*</span> <span class="n">I_UV</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">/</span> <span class="n">alphaG</span> <span class="o">*</span> \
+                   <span class="p">(</span><span class="o">-</span><span class="mf">0.812404</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">/</span> \
+                    <span class="p">((</span><span class="n">phi_g</span> <span class="o">*</span> <span class="n">Z_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> \
+                     <span class="p">(</span><span class="mf">1.62481</span> <span class="o">*</span> <span class="p">(</span><span class="n">phi_g</span> <span class="o">*</span> <span class="n">Z_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">Z_g_error</span>
+
+        <span class="n">n_H_error_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">I_UV_comp</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">alphaG_comp</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">phi_g_comp</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> \
+                       <span class="n">Z_g_comp</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+
+        <span class="c1">#np.testing.assert_almost_equal(n_H_error, n_H_error_2, decimal=3)</span>
+        <span class="c1">#np.testing.assert_almost_equal(n_H_error_1, n_H_error_2, decimal=3)</span>
+
+        <span class="k">return</span> <span class="n">n_H</span><span class="p">,</span> <span class="n">n_H_error</span>
+
+    <span class="k">return</span> <span class="n">n_H</span></div>
+
+<div class="viewcode-block" id="calc_phi_cnm"><a class="viewcode-back" href="../../docs_rst/myscience.html#myscience.sternberg14.calc_phi_cnm">[docs]</a><span class="k">def</span> <span class="nf">calc_phi_cnm</span><span class="p">(</span><span class="n">alphaG</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">Z_g</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">Z_CO</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">phi_g</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alphaG_error</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+        <span class="n">phi_g_error</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+
+    <span class="n">phi_cnm</span> <span class="o">=</span> <span class="mf">2.58</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">3.1</span> <span class="o">*</span> <span class="n">Z_g</span><span class="o">**</span><span class="mf">0.365</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.1</span> <span class="o">*</span> <span class="n">Z_CO</span> <span class="o">/</span> <span class="n">Z_g</span> <span class="o">*</span> \
+              <span class="mf">3.0</span> <span class="o">/</span> <span class="n">alphaG</span> <span class="o">*</span> <span class="mf">2.62</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mf">2.63</span> <span class="o">*</span> <span class="n">phi_g</span> <span class="o">*</span> <span class="n">Z_g</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">phi_g</span>
+
+    <span class="k">return</span> <span class="n">phi_cnm</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

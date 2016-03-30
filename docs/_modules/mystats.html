@@ -48,7 +48,7 @@
           <div class="body" role="main">
             
   <h1>Source code for mystats</h1><div class="highlight"><pre>
-<span class="ch">#!/usr/bin/python -W ignore::DeprecationWarning</span>
+<span></span><span class="ch">#!/usr/bin/python -W ignore::DeprecationWarning</span>
 
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
@@ -59,7 +59,7 @@
 
 <span class="c1"># Sampling</span>
 
-<div class="viewcode-block" id="rv2d_discrete"><a class="viewcode-back" href="../code.html#mystats.rv2d_discrete">[docs]</a><span class="k">class</span> <span class="nc">rv2d_discrete</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="rv2d_discrete"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.rv2d_discrete">[docs]</a><span class="k">class</span> <span class="nc">rv2d_discrete</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; A generic discrete 2D random variable class meant for subclassing.</span>
 <span class="sd">    Similar to scipy.stats.rv_discrete.</span>
@@ -118,7 +118,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="n">count</span><span class="p">:</span><span class="n">count</span> <span class="o">+</span> <span class="n">L</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">param1</span><span class="p">,</span> <span class="n">param2</span><span class="p">)</span>
                     <span class="n">count</span> <span class="o">+=</span> <span class="n">L</span>
 
-<div class="viewcode-block" id="rv2d_discrete.rvs"><a class="viewcode-back" href="../code.html#mystats.rv2d_discrete.rvs">[docs]</a>    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,):</span>
+<div class="viewcode-block" id="rv2d_discrete.rvs"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.rv2d_discrete.rvs">[docs]</a>    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,):</span>
 
         <span class="sd">&#39;&#39;&#39; Returns parameters random sample from the pdf.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -133,7 +133,7 @@
 
         <span class="k">return</span> <span class="n">params</span></div></div>
 
-<div class="viewcode-block" id="rv3d_discrete"><a class="viewcode-back" href="../code.html#mystats.rv3d_discrete">[docs]</a><span class="k">class</span> <span class="nc">rv3d_discrete</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="rv3d_discrete"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.rv3d_discrete">[docs]</a><span class="k">class</span> <span class="nc">rv3d_discrete</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; A generic discrete 3D random variable class meant for subclassing.</span>
 <span class="sd">    Similar to scipy.stats.rv_discrete.</span>
@@ -198,7 +198,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">[</span><span class="n">count</span><span class="p">:</span><span class="n">count</span> <span class="o">+</span> <span class="n">L</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">param1</span><span class="p">,</span> <span class="n">param2</span><span class="p">,</span> <span class="n">param3</span><span class="p">)</span>
                         <span class="n">count</span> <span class="o">+=</span> <span class="n">L</span>
 
-<div class="viewcode-block" id="rv3d_discrete.rvs"><a class="viewcode-back" href="../code.html#mystats.rv3d_discrete.rvs">[docs]</a>    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,):</span>
+<div class="viewcode-block" id="rv3d_discrete.rvs"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.rv3d_discrete.rvs">[docs]</a>    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,):</span>
 
         <span class="sd">&#39;&#39;&#39; Returns parameters random sample from the pdf.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -213,7 +213,7 @@
 
         <span class="k">return</span> <span class="n">params</span></div></div>
 
-<div class="viewcode-block" id="calc_symmetric_error"><a class="viewcode-back" href="../code.html#mystats.calc_symmetric_error">[docs]</a><span class="k">def</span> <span class="nf">calc_symmetric_error</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_symmetric_error"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_symmetric_error">[docs]</a><span class="k">def</span> <span class="nf">calc_symmetric_error</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39;</span>
 
@@ -318,7 +318,7 @@
 
     <span class="k">return</span> <span class="n">median</span><span class="p">,</span> <span class="n">high_error</span><span class="p">,</span> <span class="n">low_error</span></div>
 
-<span class="k">def</span> <span class="nf">calc_cdf_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.32</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_cdf_error"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_cdf_error">[docs]</a><span class="k">def</span> <span class="nf">calc_cdf_error</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.32</span><span class="p">):</span>
 
     <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
     <span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">simps</span> <span class="k">as</span> <span class="n">integrate</span>
@@ -346,7 +346,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">median</span><span class="p">,</span> <span class="p">(</span><span class="n">low_error</span><span class="p">,</span> <span class="n">high_error</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">median</span><span class="p">,</span> <span class="p">(</span><span class="n">low_error</span><span class="p">,</span> <span class="n">high_error</span><span class="p">)</span></div>
 
 <span class="c1"># Bootstrapping using medians</span>
 <span class="k">def</span> <span class="nf">bootstrap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">):</span>
@@ -467,7 +467,7 @@
     <span class="k">return</span> <span class="n">medians</span><span class="p">,</span> <span class="n">cdf</span>
 
 <span class="c1"># Bootstrapping using means</span>
-<div class="viewcode-block" id="bootstrap"><a class="viewcode-back" href="../code.html#mystats.bootstrap">[docs]</a><span class="k">def</span> <span class="nf">bootstrap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">):</span>
+<div class="viewcode-block" id="bootstrap"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.bootstrap">[docs]</a><span class="k">def</span> <span class="nf">bootstrap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Bootstraps data to determine errors. Resamples the data num_samples</span>
 <span class="sd">    times. Returns errors of a bootstrap simulation at the 100.*(1 - alpha)</span>
@@ -513,7 +513,7 @@
 
     <span class="k">return</span> <span class="n">samples</span></div>
 
-<div class="viewcode-block" id="calc_bootstrap_error"><a class="viewcode-back" href="../code.html#mystats.calc_bootstrap_error">[docs]</a><span class="k">def</span> <span class="nf">calc_bootstrap_error</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_bootstrap_error"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_bootstrap_error">[docs]</a><span class="k">def</span> <span class="nf">calc_bootstrap_error</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Returns errors of a bootstrap simulation at the 100.*(1 - alpha)</span>
 <span class="sd">    confidence interval. Errors are computed by deriving a cumulative</span>
@@ -588,7 +588,7 @@
 
     <span class="k">return</span> <span class="n">means</span><span class="p">,</span> <span class="n">cdf</span>
 
-<span class="k">def</span> <span class="nf">calc_cdf</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">return_axis</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_cdf"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_cdf">[docs]</a><span class="k">def</span> <span class="nf">calc_cdf</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">return_axis</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
 
     <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
@@ -600,9 +600,9 @@
     <span class="k">if</span> <span class="n">return_axis</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">cdf</span><span class="p">,</span> <span class="n">y</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">cdf</span>
+        <span class="k">return</span> <span class="n">cdf</span></div>
 
-<div class="viewcode-block" id="calc_pdf"><a class="viewcode-back" href="../code.html#mystats.calc_pdf">[docs]</a><span class="k">def</span> <span class="nf">calc_pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_pdf"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_pdf">[docs]</a><span class="k">def</span> <span class="nf">calc_pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Calculates probability density function of the data. Uses a non-parametric</span>
@@ -616,7 +616,7 @@
 
     <span class="k">return</span> <span class="n">inverse_density_function</span></div>
 
-<div class="viewcode-block" id="bootstrap_model"><a class="viewcode-back" href="../code.html#mystats.bootstrap_model">[docs]</a><span class="k">def</span> <span class="nf">bootstrap_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">model</span><span class="p">,</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">data_error</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+<div class="viewcode-block" id="bootstrap_model"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.bootstrap_model">[docs]</a><span class="k">def</span> <span class="nf">bootstrap_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">model</span><span class="p">,</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">data_error</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
         <span class="n">sigma</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Bootstraps data with models a given number of times and calculates the</span>
@@ -686,7 +686,7 @@
 
     <span class="k">return</span> <span class="p">(</span><span class="n">confid_int</span><span class="p">,</span><span class="n">gofArray</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="bootstrap_residuals"><a class="viewcode-back" href="../code.html#mystats.bootstrap_residuals">[docs]</a><span class="k">def</span> <span class="nf">bootstrap_residuals</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">):</span>
+<div class="viewcode-block" id="bootstrap_residuals"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.bootstrap_residuals">[docs]</a><span class="k">def</span> <span class="nf">bootstrap_residuals</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Bootstraps data with models a given number of times and calculates the</span>
 <span class="sd">    Goodness of fit for each run. The standard deviation of the Goodness-of-fit</span>
@@ -750,16 +750,16 @@
 
     <span class="k">return</span> <span class="p">(</span><span class="n">confid_int</span><span class="p">,</span><span class="n">gofArray</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="get_rms"><a class="viewcode-back" href="../code.html#mystats.get_rms">[docs]</a><span class="k">def</span> <span class="nf">get_rms</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="get_rms"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.get_rms">[docs]</a><span class="k">def</span> <span class="nf">get_rms</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Calculates the rms of an array.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">))</span></div>
 
-<span class="k">def</span> <span class="nf">fvalue</span><span class="p">(</span><span class="n">chi1</span><span class="p">,</span><span class="n">chi2</span><span class="p">,</span><span class="n">dof1</span><span class="p">,</span><span class="n">dof2</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">chi1</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dof1</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">chi2</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dof2</span><span class="p">))</span>
+<div class="viewcode-block" id="fvalue"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.fvalue">[docs]</a><span class="k">def</span> <span class="nf">fvalue</span><span class="p">(</span><span class="n">chi1</span><span class="p">,</span><span class="n">chi2</span><span class="p">,</span><span class="n">dof1</span><span class="p">,</span><span class="n">dof2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">chi1</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dof1</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">chi2</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dof2</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ftest"><a class="viewcode-back" href="../code.html#mystats.ftest">[docs]</a><span class="k">def</span> <span class="nf">ftest</span><span class="p">(</span><span class="n">chi1</span><span class="p">,</span><span class="n">chi2</span><span class="p">,</span><span class="n">dof1</span><span class="p">,</span><span class="n">dof2</span><span class="p">):</span>
+<div class="viewcode-block" id="ftest"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.ftest">[docs]</a><span class="k">def</span> <span class="nf">ftest</span><span class="p">(</span><span class="n">chi1</span><span class="p">,</span><span class="n">chi2</span><span class="p">,</span><span class="n">dof1</span><span class="p">,</span><span class="n">dof2</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; The function ftest() c omputes the probability for a value drawn</span>
 <span class="sd">    from the F-distribution to equal or exceed the given value of F.</span>
 <span class="sd">    This can be used for confidence testing of a measured value obeying</span>
@@ -835,7 +835,7 @@
 
     <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">f</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span> <span class="p">(</span><span class="n">chi1</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dof1</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">chi2</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dof2</span><span class="p">)),</span> <span class="n">dof1</span><span class="p">,</span><span class="n">dof2</span><span class="p">)</span></div>
 
-<span class="k">def</span> <span class="nf">test_bootstrap</span><span class="p">():</span>
+<div class="viewcode-block" id="test_bootstrap"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.test_bootstrap">[docs]</a><span class="k">def</span> <span class="nf">test_bootstrap</span><span class="p">():</span>
     <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
     <span class="kn">from</span> <span class="nn">scikits.bootstrap</span> <span class="kn">import</span> <span class="n">ci</span>
 
@@ -848,14 +848,14 @@
     <span class="n">boot_error_ci</span> <span class="o">=</span> <span class="n">ci</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">,</span> <span class="mf">0.32</span><span class="p">)</span>
 
     <span class="k">print</span><span class="p">(</span><span class="s1">&#39;bootstrap error&#39;</span><span class="p">,</span> <span class="n">boot_error</span><span class="p">)</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;bootstrap error ci&#39;</span><span class="p">,</span> <span class="n">boot_error_ci</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;bootstrap error ci&#39;</span><span class="p">,</span> <span class="n">boot_error_ci</span><span class="p">)</span></div>
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="n">test_bootstrap</span><span class="p">()</span>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">test_bootstrap</span><span class="p">()</span></div>
 
 <span class="c1"># Likelihood calculations</span>
 
-<div class="viewcode-block" id="calc_logL"><a class="viewcode-back" href="../code.html#mystats.calc_logL">[docs]</a><span class="k">def</span> <span class="nf">calc_logL</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_error</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_logL"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_logL">[docs]</a><span class="k">def</span> <span class="nf">calc_logL</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_error</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Calculates log likelihood</span>
@@ -893,13 +893,17 @@
     <span class="n">size</span> <span class="o">=</span> <span class="n">data_weighted</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data_weighted</span><span class="p">)]</span><span class="o">.</span><span class="n">size</span>
     <span class="n">data_error_weighted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data_error_weighted</span><span class="p">)</span>
 
+    <span class="n">N</span> <span class="o">=</span> <span class="n">size</span>
+
     <span class="c1">#logL = -np.nansum((data - model)**2 / (2 * (data_error)**2))</span>
     <span class="n">logL</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">((</span><span class="n">data_weighted</span> <span class="o">-</span> <span class="n">model_weighted</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> \
-            <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">data_error_weighted</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+             <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">data_error_weighted</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">-</span> \
+            <span class="n">N</span><span class="o">/</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> \
+            <span class="n">N</span><span class="o">/</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">data_error_weighted</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">logL</span></div>
 
-<span class="k">def</span> <span class="nf">logL2L</span><span class="p">(</span><span class="n">logL</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<div class="viewcode-block" id="logL2L"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.logL2L">[docs]</a><span class="k">def</span> <span class="nf">logL2L</span><span class="p">(</span><span class="n">logL</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
 
     <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
         <span class="c1"># Normalize the log likelihoods</span>
@@ -913,16 +917,16 @@
     <span class="c1"># Normalize the likelihoods</span>
     <span class="n">likelihoods</span> <span class="o">=</span> <span class="n">likelihoods</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">likelihoods</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">likelihoods</span>
+    <span class="k">return</span> <span class="n">likelihoods</span></div>
 
-<span class="k">def</span> <span class="nf">normalize_logL</span><span class="p">(</span><span class="n">logL</span><span class="p">):</span>
+<div class="viewcode-block" id="normalize_logL"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.normalize_logL">[docs]</a><span class="k">def</span> <span class="nf">normalize_logL</span><span class="p">(</span><span class="n">logL</span><span class="p">):</span>
 
     <span class="c1"># Normalize the log likelihoods</span>
     <span class="n">logL</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">logL</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">logL</span>
+    <span class="k">return</span> <span class="n">logL</span></div>
 
-<div class="viewcode-block" id="calc_likelihood_conf"><a class="viewcode-back" href="../code.html#mystats.calc_likelihood_conf">[docs]</a><span class="k">def</span> <span class="nf">calc_likelihood_conf</span><span class="p">(</span><span class="n">likelihoods</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_likelihood_conf"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_likelihood_conf">[docs]</a><span class="k">def</span> <span class="nf">calc_likelihood_conf</span><span class="p">(</span><span class="n">likelihoods</span><span class="p">,</span> <span class="n">conf</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Calculates confidence intervals for each axis.</span>
@@ -937,13 +941,40 @@
 
     <span class="c1">#-2.0 * (np.log(conf) - np.log(</span>
 
+<div class="viewcode-block" id="calc_chisq"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_chisq">[docs]</a><span class="k">def</span> <span class="nf">calc_chisq</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">uncertainty</span><span class="p">,</span> <span class="n">reduced</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">dof</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 
-<span class="k">def</span> <span class="nf">gauss</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Calculates chi squared statistic given a model, data, and associated</span>
+<span class="sd">    uncertainty.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : array-like</span>
+<span class="sd">        Model of data.</span>
+<span class="sd">    data : array-like</span>
+<span class="sd">        Observed data same shape as model.</span>
+<span class="sd">    uncertainty : float, array-like</span>
+<span class="sd">        Uncertainty on data.</span>
+<span class="sd">    reduced : bool</span>
+<span class="sd">        Calculate reduced chi squared?</span>
+<span class="sd">    dof : int</span>
+<span class="sd">        Degrees of freedom.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">chisq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> \
+                       <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">uncertainty</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">reduced</span><span class="p">:</span>
+        <span class="n">chisq</span> <span class="o">/=</span> <span class="n">dof</span>
+
+    <span class="k">return</span> <span class="n">chisq</span></div>
+
+<div class="viewcode-block" id="gauss"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.gauss">[docs]</a><span class="k">def</span> <span class="nf">gauss</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
     <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-    <span class="k">return</span> <span class="n">amp</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">x0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">width</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">amp</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">x0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">width</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="calc_hessian"><a class="viewcode-back" href="../code.html#mystats.calc_hessian">[docs]</a><span class="k">def</span> <span class="nf">calc_hessian</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="calc_hessian"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.calc_hessian">[docs]</a><span class="k">def</span> <span class="nf">calc_hessian</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the hessian matrix with finite differences</span>
 <span class="sd">    Parameters:</span>
@@ -966,7 +997,7 @@
 
 <span class="c1"># Perumations</span>
 
-<div class="viewcode-block" id="unique_permutations"><a class="viewcode-back" href="../code.html#mystats.unique_permutations">[docs]</a><span class="k">def</span> <span class="nf">unique_permutations</span><span class="p">(</span><span class="n">elements</span><span class="p">):</span>
+<div class="viewcode-block" id="unique_permutations"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.unique_permutations">[docs]</a><span class="k">def</span> <span class="nf">unique_permutations</span><span class="p">(</span><span class="n">elements</span><span class="p">):</span>
 
     <span class="sd">&#39;&#39;&#39; Calculates the unique permutations of a set of elements</span>
 
@@ -991,6 +1022,27 @@
             <span class="n">remaining_elements</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">first_element</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">sub_permutation</span> <span class="ow">in</span> <span class="n">unique_permutations</span><span class="p">(</span><span class="n">remaining_elements</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="p">(</span><span class="n">first_element</span><span class="p">,)</span> <span class="o">+</span> <span class="n">sub_permutation</span></div>
+
+<div class="viewcode-block" id="sigfig"><a class="viewcode-back" href="../docs_rst/mystats.html#mystats.sigfig">[docs]</a><span class="k">def</span> <span class="nf">sigfig</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">sig_digits</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39; Converts number to have the significant digits.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># if an array cycle through each element</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">new_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">element</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="n">decimals</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">sig_digits</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">element</span><span class="p">))))</span>
+            <span class="k">print</span> <span class="n">decimals</span>
+            <span class="n">new_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="n">decimals</span><span class="p">)</span>
+            <span class="k">print</span> <span class="n">new_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">new_array</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">decimals</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">sig_digits</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">value</span><span class="p">))))</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="n">decimals</span><span class="p">)</span></div>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
@@ -1034,7 +1086,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &copy; Copyright 2016, Elijah Bernstein-Cooper.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4a0+.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
     </div>
   </body>
 </html>

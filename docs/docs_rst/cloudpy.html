@@ -1,0 +1,271 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cloudpy module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cloudpy">
+<span id="cloudpy-module"></span><h1>cloudpy module<a class="headerlink" href="#module-cloudpy" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="cloudpy.Cloud">
+<em class="property">class </em><code class="descclassname">cloudpy.</code><code class="descname">Cloud</code><span class="sig-paren">(</span><em>av_filename, hi_filename, av_error_filename=None, hi_error_filename=None, mask_filename=None, cloud_prop_filename=None, dgr_grid=None, intercept_grid=None, width_grid=None, threshold_delta_dgr=0.0001, residual_width_scale=3.0, av_error=None, av_background=None, verbose=False, clobber_likelihoods=True, likelihood_filename='', hi_noise_vel_range=[0, 1], binsize=1, vel_range_diff_thres=2.0, init_vel_width=50, vel_center=None, vel_center_gauss_fit_kwargs=None, subtract_comps=False, recalculate_likelihoods=True, pixel_mask_increase_fraction=0.01, diagnostic_filename=None, use_bin_weights=False, use_only_binned_data=False, bin_procedure='all', binned_data_filename_ext=None, weights_filename=None, av_mask_threshold=None, plot_args={}, perform_parent_iterations=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#Cloud"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.Cloud" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+<dl class="method">
+<dt id="cloudpy.Cloud.load_cloud_properties">
+<code class="descname">load_cloud_properties</code><span class="sig-paren">(</span><em>prop_filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#Cloud.load_cloud_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.Cloud.load_cloud_properties" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cloudpy.Cloud.load_region">
+<code class="descname">load_region</code><span class="sig-paren">(</span><em>region_filename</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#Cloud.load_region"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.Cloud.load_region" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cloudpy.Cloud.run_analysis">
+<code class="descname">run_analysis</code><span class="sig-paren">(</span><em>region_filename=None</em>, <em>region='california'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#Cloud.run_analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.Cloud.run_analysis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="cloudpy.KeyboardInterruptError">
+<em class="property">exception </em><code class="descclassname">cloudpy.</code><code class="descname">KeyboardInterruptError</code><a class="reference internal" href="../_modules/cloudpy.html#KeyboardInterruptError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.KeyboardInterruptError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/exceptions.html#exceptions.Exception" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="cloudpy.QueueGet">
+<em class="property">class </em><code class="descclassname">cloudpy.</code><code class="descname">QueueGet</code><span class="sig-paren">(</span><em>maxsize=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#QueueGet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.QueueGet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">multiprocessing.queues.Queue</span></code></p>
+<p>Queue which will retry if interrupted with EINTR.</p>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="cloudpy.QueueGet.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>block=True</em>, <em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#QueueGet.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.QueueGet.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.load">
+<code class="descclassname">cloudpy.</code><code class="descname">load</code><span class="sig-paren">(</span><em>filename</em>, <em>binary_likelihood_filename=None</em>, <em>load_fits=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.make_nhi_movie">
+<code class="descclassname">cloudpy.</code><code class="descname">make_nhi_movie</code><span class="sig-paren">(</span><em>cloud=None</em>, <em>widths=(1</em>, <em>)</em>, <em>filename=None</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#make_nhi_movie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.make_nhi_movie" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_av_bin_map">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_av_bin_map</code><span class="sig-paren">(</span><em>av_map</em>, <em>av_bin_map</em>, <em>av_header=None</em>, <em>av_header_bin=None</em>, <em>filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_av_bin_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_av_bin_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_av_vs_nhi">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_av_vs_nhi</code><span class="sig-paren">(</span><em>nhi</em>, <em>av</em>, <em>av_error=None</em>, <em>limits=None</em>, <em>fit=True</em>, <em>savedir=''</em>, <em>filename=None</em>, <em>show=True</em>, <em>fit_params=None</em>, <em>contour_plot=True</em>, <em>levels=10</em>, <em>plot_median=True</em>, <em>scale=('linear'</em>, <em>'linear')</em>, <em>title=''</em>, <em>gridsize=(100</em>, <em>100)</em>, <em>std=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_av_vs_nhi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_av_vs_nhi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_co_spectra">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_co_spectra</code><span class="sig-paren">(</span><em>clouds=None</em>, <em>props=None</em>, <em>limits=None</em>, <em>filename=''</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_co_spectra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_co_spectra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots a heat map of likelihoodelation values as a function of velocity
+width and velocity center.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cloud</strong> : cloudpy.Cloud</p>
+<blockquote class="last">
+<div><p>If provided, properties taken from cloud.props.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_dgr_intercept_progression">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_dgr_intercept_progression</code><span class="sig-paren">(</span><em>cloud</em>, <em>filename=None</em>, <em>show=True</em>, <em>title=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_dgr_intercept_progression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_dgr_intercept_progression" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_hi_spectrum">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_hi_spectrum</code><span class="sig-paren">(</span><em>cloud=None</em>, <em>props=None</em>, <em>limits=None</em>, <em>filename=''</em>, <em>plot_co=False</em>, <em>hi_mask=None</em>, <em>co_mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_hi_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_hi_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots a heat map of likelihoodelation values as a function of velocity
+width and velocity center.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cloud</strong> : cloudpy.Cloud</p>
+<blockquote class="last">
+<div><p>If provided, properties taken from cloud.props.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_hi_width_correlation">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_hi_width_correlation</code><span class="sig-paren">(</span><em>widths</em>, <em>correlations</em>, <em>correlations_masked_2mass=None</em>, <em>correlations_masked_planck=None</em>, <em>correlation_error=None</em>, <em>filename=None</em>, <em>title=''</em>, <em>limits=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_hi_width_correlation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_hi_width_correlation" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_likelihoods_hist">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_likelihoods_hist</code><span class="sig-paren">(</span><em>cloud=None</em>, <em>props=None</em>, <em>limits=None</em>, <em>returnimage=False</em>, <em>plot_axes=('widths'</em>, <em>'dgr_grid')</em>, <em>show=0</em>, <em>filename=''</em>, <em>contour_confs=(0.95</em>, <em>)</em>, <em>logscale=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_likelihoods_hist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_likelihoods_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots a heat map of likelihoodelation values as a function of velocity
+width and velocity center.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cloud</strong> : cloudpy.Cloud</p>
+<blockquote class="last">
+<div><p>If provided, properties taken from cloud.props.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_map_movie">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_map_movie</code><span class="sig-paren">(</span><em>cloud</em>, <em>filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_map_movie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_map_movie" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_mask_map">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_mask_map</code><span class="sig-paren">(</span><em>cloud=None</em>, <em>props=None</em>, <em>filename=None</em>, <em>load_original_av=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_mask_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_mask_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_mask_residuals">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_mask_residuals</code><span class="sig-paren">(</span><em>residuals=None</em>, <em>x_fit=None</em>, <em>y_fit=None</em>, <em>fit_params=None</em>, <em>residual_thres=None</em>, <em>filename=None</em>, <em>show=True</em>, <em>anno_text=None</em>, <em>return_fig=False</em>, <em>limits=None</em>, <em>counts=None</em>, <em>factor='silverman'</em>, <em>bin_edges=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_mask_residuals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_mask_residuals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_nh2_vs_nhi">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_nh2_vs_nhi</code><span class="sig-paren">(</span><em>nhi</em>, <em>nh2</em>, <em>limits=None</em>, <em>fit=True</em>, <em>savedir=''</em>, <em>filename=None</em>, <em>show=True</em>, <em>fit_params=None</em>, <em>contour_plot=True</em>, <em>levels=10</em>, <em>scale=('linear'</em>, <em>'linear')</em>, <em>title=''</em>, <em>gridsize=(100</em>, <em>100)</em>, <em>std=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_nh2_vs_nhi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_nh2_vs_nhi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_nhi_map">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_nhi_map</code><span class="sig-paren">(</span><em>cloud=None</em>, <em>nhi_image=None</em>, <em>props=None</em>, <em>filename=None</em>, <em>mask=None</em>, <em>anno_text=''</em>, <em>return_fig=False</em>, <em>vlimits=None</em>, <em>plot_contours=True</em>, <em>log_scale=False</em>, <em>av_contours=None</em>, <em>av_data=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_nhi_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_nhi_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_residual_hist_movie">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_residual_hist_movie</code><span class="sig-paren">(</span><em>cloud</em>, <em>filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_residual_hist_movie"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_residual_hist_movie" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.plot_residual_map">
+<code class="descclassname">cloudpy.</code><code class="descname">plot_residual_map</code><span class="sig-paren">(</span><em>residuals, header=None, dgr=None, show=False, mask=None, filename=None, anno_text=None, return_fig=False, vlimits=[None, None]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#plot_residual_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.plot_residual_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.retry_on_eintr">
+<code class="descclassname">cloudpy.</code><code class="descname">retry_on_eintr</code><span class="sig-paren">(</span><em>function</em>, <em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#retry_on_eintr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.retry_on_eintr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cloudpy.save">
+<code class="descclassname">cloudpy.</code><code class="descname">save</code><span class="sig-paren">(</span><em>cloud</em>, <em>filename</em>, <em>binary_likelihood_filename=None</em>, <em>write_fits=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/cloudpy.html#save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#cloudpy.save" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/cloudpy.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>traingp module &mdash; custom_modules 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="custom_modules 0.0.1 documentation" href="../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-traingp">
+<span id="traingp-module"></span><h1>traingp module<a class="headerlink" href="#module-traingp" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="traingp.create_train_data">
+<code class="descclassname">traingp.</code><code class="descname">create_train_data</code><span class="sig-paren">(</span><em>velocity_axis=None, velocity_range=None, nchannels=None, width_range=[5, 20], temp_range=[40, 8000], amp_range=None, mean_range=None, ncomponents=4, nspectra=100, rms=0.01</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/traingp.html#create_train_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#traingp.create_train_data" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>velocity_axis</strong> : array-like</p>
+<blockquote>
+<div><p>Array of velocity value at each channel. Units of km/s.</p>
+</div></blockquote>
+<p><strong>velocity_range</strong> : array-like</p>
+<blockquote>
+<div><p>Used if velocity_axis is None. Lower and upper limit to velocity range.
+Paired with nchannels. Units of km/s.</p>
+</div></blockquote>
+<p><strong>nchannels</strong> : int, optional</p>
+<blockquote>
+<div><p>Used if velocity_axis is None. Number of channels in spectra. Paired
+with velocity_range.</p>
+</div></blockquote>
+<p><strong>width_range</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper limit to standard deviation of Gaussians expected in
+spectra. Units of km/s.</p>
+</div></blockquote>
+<p><strong>temp_range</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper limit to kinetic temperatures of gas, e.g. CNM and WNM
+temperatures. Temperatures converted to be width_range. Units of K.</p>
+</div></blockquote>
+<p><strong>amp_range</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper limit to amplitudes of Gaussian components in K.</p>
+</div></blockquote>
+<p><strong>mean_range</strong> : array-like</p>
+<blockquote>
+<div><p>Lower and upper limit to centers of Gaussian components in km/s.
+Default is (0.25 and 0.75 of (maximum velocity - minimum velocity)) +
+minimum velocity.</p>
+</div></blockquote>
+<p><strong>RMS</strong> : float</p>
+<blockquote>
+<div><p>RMS of spectra. Units of K / (km / s)</p>
+</div></blockquote>
+<p><strong>ncomponents</strong> : int</p>
+<blockquote>
+<div><p>Number of Gaussian components in spectra.</p>
+</div></blockquote>
+<p><strong>nspectra</strong> : int</p>
+<blockquote>
+<div><p>Number of spectra to generate.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>agd_train</strong> : dict</p>
+<blockquote class="last">
+<div><p>AGD training data set to be used as input for gausspy.gp.train function.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="traingp.format_train_data">
+<code class="descclassname">traingp.</code><code class="descname">format_train_data</code><span class="sig-paren">(</span><em>RMS=0.05</em>, <em>NCOMPS=4</em>, <em>NCHANNELS=512</em>, <em>NSPECTRA=10</em>, <em>AMP_lims=None</em>, <em>FWHM_lims=None</em>, <em>MEAN_lims=None</em>, <em>x_value=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/traingp.html#format_train_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#traingp.format_train_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/docs_rst/traingp.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">custom_modules 0.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Elijah Bernstein-Cooper.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.6.
+    </div>
+  </body>
+</html>
