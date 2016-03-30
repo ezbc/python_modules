@@ -1,10 +1,10 @@
 Documentation for Collection of Python Modules
 **********************************************
 
-.. automodule:: myplotting
+.. automodule:: myscience
     :members:
 
-.. automodule:: myscience
+.. automodule:: myplotting
     :members:
 
 .. automodule:: mystats
