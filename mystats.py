@@ -843,9 +843,13 @@ def calc_logL(model, data, data_error=None, weights=None):
     size = data_weighted[~np.isnan(data_weighted)].size
     data_error_weighted = np.median(data_error_weighted)
 
+    N = size
+
     #logL = -np.nansum((data - model)**2 / (2 * (data_error)**2))
     logL = -np.nansum((data_weighted - model_weighted)**2 / \
-            (2 * (data_error_weighted)**2))
+             (2 * (data_error_weighted)**2)) - \
+            N/2.0 * np.log(2 * np.pi) - \
+            N/2.0 * np.log(data_error_weighted**2)
 
     return logL
 
@@ -887,6 +891,33 @@ def calc_likelihood_conf(likelihoods, conf, df=1):
 
     #-2.0 * (np.log(conf) - np.log(
 
+def calc_chisq(model, data, uncertainty, reduced=True, dof=1):
+
+    ''' Calculates chi squared statistic given a model, data, and associated
+    uncertainty.
+
+    Parameters
+    ----------
+    model : array-like
+        Model of data.
+    data : array-like
+        Observed data same shape as model.
+    uncertainty : float, array-like
+        Uncertainty on data.
+    reduced : bool
+        Calculate reduced chi squared?
+    dof : int
+        Degrees of freedom.
+
+    '''
+
+    chisq = np.nansum((np.ravel(model) - np.ravel(data))**2 / \
+                       np.ravel(uncertainty)**2)
+
+    if reduced:
+        chisq /= dof
+
+    return chisq
 
 def gauss(x, width, amp, x0):
     import numpy as np
@@ -917,6 +948,21 @@ def calc_hessian(x):
 # Perumations
 
 def unique_permutations(elements):
+
+    ''' Calculates the unique permutations of a set of elements
+
+    Parameters
+    ----------
+    elements : array-like
+        List of N elements to be permutated
+
+    Returns
+    -------
+    permutations : array-like
+        N x M array, where M is the number of unique permutations.
+
+    '''
+
     if len(elements) == 1:
         yield (elements[0],)
     else:

@@ -4,13 +4,15 @@
 Module for using the model of Krumholz et al. (2009)
 '''
 
-def calc_rh2(h_sd, phi_cnm = None,
+def calc_rh2(h_sd,
+        phi_cnm = 3.0,
         Z = 1.0, # metallicity
         a = 0.2, # ?
         f_diss = 0.1, # fraction of absorbing H2 which disociates
         phi_mol = 10.0, # molecular gas fraction
-        mu_H = 2.3e-24, # molecular weight of H, g
-        return_fractions=False
+        sigma_d=1.0,
+        return_fractions=False,
+        remove_helium=True,
         ):
 
     '''
@@ -22,8 +24,22 @@ def calc_rh2(h_sd, phi_cnm = None,
     ----------
     h_sd : array-like
         Hydrogen surface density in units of solar mass per parsec**2-
+    phi_cnm : float
+        Ratio of CNM number density and minimum number density to maintain
+        pressure balance with the WNM.
+    Z : float
+        Gas-phase metallicity relative to solar.
+    a : float
+        ?
+    phi_mol : float
+        Molecular gas fraction.
+    sigma_d : float
+        Dust cross section in units of 10^-21 cm^-2 (solar).
     return_fractions : bool
         Return f_H2 and f_HI?
+    remove_helium : bool
+        Remove contribution from Helium to total gas surface density? If
+        True, assumes h_sd does not include Helium.
 
     Returns
     -------
@@ -39,37 +55,32 @@ def calc_rh2(h_sd, phi_cnm = None,
 
     # Constants
     c = 3.0e10 # speed of light, cm/s
-
-    # solar values
-    sigma_d_solar = 1e-21 # solar dust grain cross section, cm^2
     R_d_solar = 10**-16.5 # solar cloud radius, cm
-    E_0_solar = 7.5e-4 # Radiation field, erg/s
+    E_0_solar = 7.5e-4 # solar radiation field, erg/s
+    mu_H = 2.34e-24, # molecular weight of H + He, g
 
-    # cloud values
-    sigma_d = sigma_d_solar * Z # dust grain cross section, cm^2
-    R_d = R_d_solar * Z # cloud radius, cm
+    # normalized values
+    R_d = R_d_solar / 10**-16.5 * Z # formation rate of H2 on dust, cm^3 / s
 
     # normalized radiation field strength, EQ 7
-    chi = ((f_diss * sigma_d_solar * c * E_0_solar) \
-            * (1.0 + (3.1 * Z**0.365))) \
-            / (31.0 * phi_cnm * R_d_solar)
+    chi = 2.3 * (sigma_d / R_d) * (1 + 3.1 * Z**0.365) / phi_cnm
+    #chi = 2.3 * (1 + 3.1 * Z**0.365) / phi_cnm
 
     # dust-adjusted radiation field, EQ 10
     psi = chi * (2.5 + chi) / (2.5 + (chi * np.e))
 
-    # cloud optical depth, EQ 21
-    tau_c = (3.0 * h_sd * sigma_d) / (4.0 * (3.1 * Z**0.365) * mu_H)
+    # cloud optical depth, EQ 21, include scaling of dust cross-section relative
+    # to solar
+    tau_c = 0.067 * Z * h_sd * sigma_d
 
-    tau_c = (3.0 * h_sd * 2.0 * 10.0**33 * sigma_d) / \
-            (4.0 * (3.1 * 10**18)**2 * mu_H)
+    # remove contribution from Helium?
+    if remove_helium:
+        tau_c *= 1.4
 
-    # cloud optical depth, EQ 21
-    tau_c = 0.067 * Z * h_sd
-
+    # calculate fractions, Equations 35 and 36
     f_H2_sub1 = (3.0 * psi) / (4.0 * tau_c)
     f_H2_sub2 = (4.0 * a * psi * phi_mol) / ((4.0 * tau_c) + (3.0 * (phi_mol \
             - 1.0) * psi))
-
     f_H2 = 1.0 - (f_H2_sub1 / (1.0 + f_H2_sub2))
     f_HI = 1.0 - f_H2
 
@@ -79,11 +90,7 @@ def calc_rh2(h_sd, phi_cnm = None,
     f_H2[f_H2 > 1] = 1.0
     f_H2[f_H2 < 0] = 0.0
 
-    # ratio of molecular to atomic fraction, EQ 17 Lee et al. 2012
-    R_H2 = 4 * tau_c / (3 * psi) \
-            * (1+ 0.8 * psi * phi_mol \
-                / (4 * tau_c + 3 * (phi_mol - 1) * psi)) -1
-
+    # ratio of molecular to atomic fraction
     R_H2 = f_H2 / f_HI
 
     if not return_fractions:

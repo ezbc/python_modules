@@ -257,17 +257,32 @@ def bin_image(ndarray, binsize=(1,1), header=None, origin='lower left',
         #statistic = lambda x: [print(element) for element in x]
 
     if quick_bin:
-        # reshape trimmed array
-        compression_pairs = [(d, c//d) for d,c in zip(new_shape,
-                                                      ndarray.shape)]
-        flattened = [l for p in compression_pairs for l in p]
+        if len(binsize) == 2:
+            # reshape trimmed array
+            compression_pairs = [(d, c//d) for d,c in zip(new_shape,
+                                                          ndarray.shape)]
+            flattened = [l for p in compression_pairs for l in p]
 
-        ndarray = ndarray.reshape(flattened)
-        for i in range(len(new_shape)):
-            ndarray = statistic(ndarray, (-1*(i+1)))
-        #return ndarray_bin
-        ndarray_bin = ndarray
-        #print ndarray_bin.shape
+            ndarray = ndarray.reshape(flattened)
+            for i in range(len(new_shape)):
+                ndarray = statistic(ndarray, (-1*(i+1)))
+            ndarray_bin = ndarray
+        elif len(binsize) == 3:
+            ndarray_bin = np.empty(new_shape)
+
+            slice_shape = new_shape[1:]
+            ndarray_slice_shape = ndarray.shape[1:]
+            # reshape trimmed array
+            compression_pairs = [(d, c//d) for d,c in zip(slice_shape,
+                                                          ndarray_slice_shape)]
+            flattened = [l for p in compression_pairs for l in p]
+
+            for i in xrange(ndarray.shape[0]):
+                ndarray_slice = ndarray[i].reshape(flattened)
+                for j in range(len(slice_shape)):
+                    ndarray_slice = statistic(ndarray_slice, (-1*(j+1)))
+                ndarray_bin[i] = ndarray_slice
+
     else:
         if len(binsize) == 2:
             xx, yy = np.meshgrid(np.arange(0, ndarray.shape[0], 1),
