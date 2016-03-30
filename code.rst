@@ -4,6 +4,9 @@ Documentation for Collection of Python Modules
 .. automodule:: myplotting
     :members:
 
+.. automodule:: myscience
+    :members:
+
 .. automodule:: mystats
     :members:
 
@@ -16,6 +19,5 @@ Documentation for Collection of Python Modules
 .. automodule:: myimage_analysis
     :members:
 
-.. automodule:: myscience
-    :members:
+
 

@@ -9,7 +9,7 @@ Welcome to custom_modules's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    code.rst
 
