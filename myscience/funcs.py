@@ -107,7 +107,7 @@ def calc_radiation_field(T_dust, a=100, T_dust_error=0., beta=2.0,
 
     return U
 
-def calc_temperature(n_H=1.0, pressure=3800.0, pressure_error=(100,100),
+def calc_temperature(n_H=1.0, pressure=3700.0, pressure_error=(1200,1200),
         n_H_error=0, calc_error=True):
 
     ''' Calculates temperature of atomic hydrogen assuming thermal equilibrium.
