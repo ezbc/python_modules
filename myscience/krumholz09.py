@@ -53,18 +53,8 @@ def calc_rh2(h_sd,
 
     import numpy as np
 
-    # Constants
-    c = 3.0e10 # speed of light, cm/s
-    R_d_solar = 10**-16.5 # solar cloud radius, cm
-    E_0_solar = 7.5e-4 # solar radiation field, erg/s
-    mu_H = 2.34e-24, # molecular weight of H + He, g
-
-    # normalized values
-    R_d = R_d_solar / 10**-16.5 * Z # formation rate of H2 on dust, cm^3 / s
-
-    # normalized radiation field strength, EQ 7
-    chi = 2.3 * (sigma_d / R_d) * (1 + 3.1 * Z**0.365) / phi_cnm
-    #chi = 2.3 * (1 + 3.1 * Z**0.365) / phi_cnm
+    # caluclate normalized radiation field
+    chi = calc_chi(phi_cnm=phi_cnm, Z=Z, sigma_d=sigma_d)
 
     # dust-adjusted radiation field, EQ 10
     psi = chi * (2.5 + chi) / (2.5 + (chi * np.e))
@@ -97,6 +87,74 @@ def calc_rh2(h_sd,
         return R_H2
     elif return_fractions:
         return R_H2, f_H2, f_HI
+
+def calc_chi(phi_cnm=3.0, Z=1.0, sigma_d=1.0, phi_cnm_error=(0.0,0.0),
+        Z_error=(0.0,0.0), sigma_d_error=(0.0,0.0)):
+
+    ''' Calculates the normalized radiation field strength, EQ 7 of Krumholz et
+    al. (2009).
+
+    Parameters
+    ----------
+    phi_cnm : float
+        Ratio of CNM number density and minimum number density to maintain
+        pressure balance with the WNM.
+    Z : float
+        Gas-phase metallicity relative to solar.
+    sigma_d : float
+        Dust cross section in units of 10^-21 cm^-2 (solar).
+    phi_cnm_error : float
+        Uncertainty on phi_cnm.
+    Z_error : float
+        Uncertainty on Z.
+    sigma_d_error : float
+        Uncertainty on sigma_d.
+
+    Returns
+    -------
+    chi : float
+        Normalized radiation field strength.
+    chi_error : float, optional
+        Uncertainty on normalized radiation field strength. Returned if any
+        input parameter errors are greater than 0.
+
+    '''
+
+    import numpy as np
+
+    # Constants
+    c = 3.0e10 # speed of light, cm/s
+    R_d_solar = 10**-16.5 # solar cloud radius, cm
+    E_0_solar = 7.5e-4 # solar radiation field, erg/s
+    mu_H = 2.34e-24, # molecular weight of H + He, g
+
+    # normalized values
+    R_d = R_d_solar / 10**-16.5 * Z # formation rate of H2 on dust, cm^3 / s
+
+    # normalized radiation field strength, EQ 7
+    chi = 2.3 * (sigma_d / R_d) * (1 + 3.1 * Z**0.365) / phi_cnm
+
+    if np.sum((phi_cnm_error, Z_error, sigma_d_error)) > 0:
+        phi_cnm_error = np.array(phi_cnm_error)
+        Z_error = np.array(Z_error)
+        sigma_d_error = np.array(sigma_d_error)
+
+        # https://www.wolframalpha.com/input/?i=partial+2.3+*+sigma+%2F+Z+*+(1+%2B+3.1+*+Z%5E0.365)+%2F+phi+with+respect+to+sigma
+        sigma_d_comp = 2.3 * (1 + 3.1 * Z**0.365) / phi_cnm * sigma_d_error
+
+        # https://www.wolframalpha.com/input/?i=partial+2.3+*+sigma+%2F+Z+*+(1+%2B+3.1+*+Z%5E0.365)+%2F+phi+with+respect+to+Z
+        Z_comp = -(sigma_d *(4.52755 *Z**0.365+2.3))/(Z**2 * phi_cnm) * Z_error
+
+        # https://www.wolframalpha.com/input/?i=partial+2.3+*+sigma+%2F+Z+*+(1+%2B+3.1+*+Z%5E0.365)+%2F+phi+with+respect+to+phi
+        phi_cnm_comp =  (sigma_d *(-7.13* Z**0.365-2.3))/(Z *phi_cnm**2) * \
+                        phi_cnm_error
+
+        chi_error = (sigma_d_comp**2 + Z_comp**2 + phi_cnm_comp**2)**0.5
+
+        return chi, chi_error
+    else:
+        return chi
+
 
 def calc_phi_cnm(T_cnm, Z=1.0):
 
