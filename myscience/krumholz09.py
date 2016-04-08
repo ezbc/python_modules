@@ -13,6 +13,7 @@ def calc_rh2(h_sd,
         sigma_d=1.0,
         return_fractions=False,
         remove_helium=True,
+        print_nbad=False,
         ):
 
     '''
@@ -75,10 +76,28 @@ def calc_rh2(h_sd,
     f_HI = 1.0 - f_H2
 
     # Keep fractions within real fractional value range
-    f_HI[f_HI > 1] = 1.0
-    f_HI[f_HI < 0] = 0.0
-    f_H2[f_H2 > 1] = 1.0
-    f_H2[f_H2 < 0] = 0.0
+    # get number of poor data points:
+
+    if 0:
+        mask = (
+            (f_HI > 1) | \
+             (f_HI < 0) | \
+             (f_H2 > 1) | \
+             (f_H2 < 0))
+
+        #if print_nbad:
+        if np.sum(mask) > 0:
+            print('')
+            print('number of total points:', np.size(f_HI))
+            print('number of f_HI < 0:', np.sum(f_HI < 0))
+            print('number of f_HI > 1:', np.sum(f_HI > 1))
+            print('number of f_H2 > 1:', np.sum(f_H2 > 1))
+            print('number of f_H2 < 0:', np.sum(f_H2 < 0))
+    if 1:
+        f_HI[f_HI > 1] = 1.0
+        f_HI[f_HI < 0] = 0.0
+        f_H2[f_H2 > 1] = 1.0
+        f_H2[f_H2 < 0] = 0.0
 
     # ratio of molecular to atomic fraction
     R_H2 = f_H2 / f_HI

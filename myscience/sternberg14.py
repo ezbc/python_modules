@@ -18,6 +18,8 @@ def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, sigma_g21=1.9,
     ----------
     h_sd : array-like
         Hydrogen surface density in units of solar mass per parsec**2-
+    alphaG : float
+        Fundamental dimensionless parameter for the HI-to-H2 transition.
     return_fractions : bool
         Return f_H2 and f_HI?
 
@@ -48,10 +50,11 @@ def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, sigma_g21=1.9,
     f_HI = 1.0 - f_H2
 
     # Keep fractions within real fractional value range
-    f_HI[f_HI > 1] = 1.0
-    f_HI[f_HI < 0] = 0.0
-    f_H2[f_H2 > 1] = 1.0
-    f_H2[f_H2 < 0] = 0.0
+    if 1:
+        f_HI[f_HI > 1] = 1.0
+        f_HI[f_HI < 0] = 0.0
+        f_H2[f_H2 > 1] = 1.0
+        f_H2[f_H2 < 0] = 0.0
 
     # ratio of molecular to atomic fraction
     R_H2 = f_H2 / f_HI
@@ -126,4 +129,104 @@ def calc_phi_cnm(alphaG=1.0, Z_g=1.0, Z_CO=1.0, phi_g=1.0, alphaG_error=0.,
               3.0 / alphaG * 2.62 / (1 + (2.63 * phi_g * Z_g)**0.5) * phi_g
 
     return phi_cnm
+
+def calc_w(phi_g=1.0, Z_g=1.0, phi_g_error=(0.0,0.0), Z_g_error=(0.0,0.0)):
+
+    ''' Calculates the normalized H2-dust-limited dissociation bandwidth. alphaG
+    can be related to the Krumholz et al. (2009) normalized radiation field
+    strength, chi, by alphaG = w * chi. See Equation 93 of Sternberg et al.
+    (2014).
+
+    Parameters
+    ----------
+    phi_g : float
+        Order-unity grain composition factor.
+    Z_g : float
+        Gas-phase metallicity.
+    phi_g_error : float
+        Uncertainty on phi_g.
+    Z_g_error : float
+        Uncertainty on Z_g.
+
+    Returns
+    -------
+    w : float
+        Normalized H2-dust-limited dissociation bandwidth
+    w_error : float, optional
+        Uncertainty on w. Returned if any input parameter errors are greater
+        than 0.
+
+    '''
+
+    # calculate bandwidth
+    w = 1.0 / (1 + (2.64 * phi_g * Z_g)**0.5)
+
+    # calculate errors if any are greater than 0
+    if np.sum((phi_g_error, Z_g_error)) > 0:
+        phi_g_error = np.array(phi_g_error)
+        Z_g_error = np.array(Z_g_error)
+
+        # https://www.wolframalpha.com/input/?i=partial+derivative+1+%2F+(1+%2B+(2.64+*+phi+*+Z)**0.5)+with+respect+to+phi
+        phi_g_comp = -(0.812404*Z)/((Z*phi)**0.5*(1.62481 *(Z * phi)**0.5+1)**2)
+        phi_g_comp *= phi_g_error
+
+        # https://www.wolframalpha.com/input/?i=partial+derivative+1+%2F+(1+%2B+(2.64+*+phi+*+Z)**0.5)+with+respect+to+Z
+        Z_g_comp = -(0.812404 * phi)/((Z *phi)**0.5*(1.62481*(Z*phi)**0.5+1)**2)
+        Z_g_comp *= Z_g_error
+
+        w_error = (phi_g_comp**2 + Z_g_comp**2)**0.5
+
+        return w, w_error
+
+    return w
+
+def calc_chi(alphaG=1.0, w=1.0/(1+2.64**0.5), alphaG_error=(0.0,0.0),
+        w_error=(0.0,0.0)):
+
+    ''' Calculates the normalized radiation field equivalent to the Krumholz
+    et al. (2009) parameter chi from Sternberg et al. (2014) parameters. See
+    equation 92 of Sternberg et al. (2014).
+
+    Parameters
+    ----------
+    alphaG : float
+        Fundamental dimensionless parameter for the HI-to-H2 transition.
+    w : float
+        Normalized H2-dust-limited dissociation bandwidth
+    alphaG_error : float
+        Uncertainty on alphaG.
+    w_error : float
+        Uncertainty on w.
+
+    Returns
+    -------
+    chi : float
+        Normalized radiation field from Krumholz et al. (2009) = alphaG / w. See
+        equation 93 of Sternberg et al. (2014).
+    chi_error : float
+        Uncertainty on chi. Returned if any input parameter errors are greater
+        than 0.
+
+    '''
+
+    # calculate chi
+    chi = alphaG / w
+
+    # calculate errors if any are greater than 0
+    if np.sum((alphaG_error, w_error)) > 0:
+        alphaG_error = np.array(alphaG_error)
+        w_error = np.array(w_error)
+
+        alphaG_comp = 1.0 / w
+        alphaG_comp *= alphaG_error
+
+        w_comp = - alphaG / w**2
+        w_comp *= w_error
+
+        chi_error = (alphaG_comp**2 + w_comp**2)**0.5
+
+        return chi, chi_error
+
+    return chi
+
 
