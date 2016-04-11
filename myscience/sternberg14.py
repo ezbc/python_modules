@@ -7,7 +7,7 @@ Module for using the model of Sternberg et al. (2014)
 '''
 
 def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, sigma_g21=1.9,
-        radiation_type='isotropic', return_fractions=True):
+        radiation_type='isotropic', return_fractions=True, remove_helium=True,):
 
     '''
     Calculates ratio of molecular hydrogen to atomic hydrogen surface
@@ -36,13 +36,18 @@ def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, sigma_g21=1.9,
     import numpy as np
 
     if radiation_type == 'isotropic':
-        # use the constant 6.71 instead of 9.5 to disclude Helium contribution
-        hi_sd = 6.73684 / (Z * phi_g) * np.log(alphaG / 3.2 + 1) # Msun pc^-2
-        if 0:
-            hi_sd = 6.71 * (1.9 / sigma_g21) * \
+        if remove_helium:
+            # use the constant 6.71 instead of 9.5 to disclude Helium contribution
+            hi_sd = 6.73684 / (Z * phi_g) * np.log(alphaG / 3.2 + 1) # Msun pc^-2
+        else:
+            hi_sd = 9.5 / (Z * phi_g) * \
                     np.log(alphaG / 3.2 + 1) # Msun pc^-2
     elif radiation_type == 'beamed':
-        hi_sd = 11.9 / (Z * phi_g) * np.log(alphaG / 2.0 + 1) # Msun pc^-2
+        if remove_helium:
+            hi_sd = 11.9 / 1.4101 / \
+                    (Z * phi_g) * np.log(alphaG / 2.0 + 1) # Msun pc^-2
+        else:
+            hi_sd = 11.9 / (Z * phi_g) * np.log(alphaG / 2.0 + 1) # Msun pc^-2
     else:
         raise ValueError('radiation_type must be "beamed" or "isotropic"')
 
@@ -167,11 +172,13 @@ def calc_w(phi_g=1.0, Z_g=1.0, phi_g_error=(0.0,0.0), Z_g_error=(0.0,0.0)):
         Z_g_error = np.array(Z_g_error)
 
         # https://www.wolframalpha.com/input/?i=partial+derivative+1+%2F+(1+%2B+(2.64+*+phi+*+Z)**0.5)+with+respect+to+phi
-        phi_g_comp = -(0.812404*Z)/((Z*phi)**0.5*(1.62481 *(Z * phi)**0.5+1)**2)
+        phi_g_comp = -(0.812404*Z_g)/((Z_g*phi_g)**0.5*\
+                     (1.62481 *(Z_g * phi_g)**0.5+1)**2)
         phi_g_comp *= phi_g_error
 
         # https://www.wolframalpha.com/input/?i=partial+derivative+1+%2F+(1+%2B+(2.64+*+phi+*+Z)**0.5)+with+respect+to+Z
-        Z_g_comp = -(0.812404 * phi)/((Z *phi)**0.5*(1.62481*(Z*phi)**0.5+1)**2)
+        Z_g_comp = -(0.812404 * phi_g)/((Z_g *phi_g)**0.5*\
+                   (1.62481*(Z_g*phi_g)**0.5+1)**2)
         Z_g_comp *= Z_g_error
 
         w_error = (phi_g_comp**2 + Z_g_comp**2)**0.5
