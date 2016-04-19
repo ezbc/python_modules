@@ -238,6 +238,14 @@ def set_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
 
     return color_cycle
 
+def get_color_cycle(num_colors=4, cmap=plt.cm.copper, cmap_limits=[0, 0.8]):
+
+    # color cycle, grabs colors from cmap
+    color_cycle = [cmap(i) for i in np.linspace(cmap_limits[0],
+                                                cmap_limits[1],
+                                                num_colors)]
+    return color_cycle
+
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
 
     ''' Truncates a matplolib.colors colormap to a smaller range.
