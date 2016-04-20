@@ -13,7 +13,6 @@ def calc_rh2(h_sd,
         sigma_d=1.0,
         return_fractions=False,
         remove_helium=True,
-        print_nbad=False,
         ):
 
     '''
@@ -53,6 +52,8 @@ def calc_rh2(h_sd,
     '''
 
     import numpy as np
+
+    #print 'phi_cnm, Z, sigma_d', phi_cnm, Z, sigma_d
 
     # caluclate normalized radiation field
     chi = calc_chi(phi_cnm=phi_cnm, Z=Z, sigma_d=sigma_d)

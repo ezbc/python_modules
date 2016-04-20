@@ -33,12 +33,14 @@ def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, sigma_g21=1.9,
         f_HI = mass fraction of atomic hydrogen
     '''
 
+    #print 'aG, Z, phi_g', alphaG, Z, phi_g
+
     import numpy as np
 
     if radiation_type == 'isotropic':
         if remove_helium:
             # use the constant 6.71 instead of 9.5 to disclude Helium contribution
-            hi_sd = 6.73684 / (Z * phi_g) * np.log(alphaG / 3.2 + 1) # Msun pc^-2
+            hi_sd = 6.71 / (Z * phi_g) * np.log(alphaG / 3.2 + 1) # Msun pc^-2
         else:
             hi_sd = 9.5 / (Z * phi_g) * \
                     np.log(alphaG / 3.2 + 1) # Msun pc^-2
@@ -61,8 +63,12 @@ def calc_rh2(h_sd, alphaG=1.5, Z=1.0, phi_g=1.0, sigma_g21=1.9,
         f_H2[f_H2 > 1] = 1.0
         f_H2[f_H2 < 0] = 0.0
 
+    #if radiation_type != 'isotropic':
+        #raise ValueError('rad field not isotropic!')
+
     # ratio of molecular to atomic fraction
-    R_H2 = f_H2 / f_HI
+    #R_H2 = f_H2 / f_HI
+    R_H2 = h_sd / hi_sd - 1.0
 
     if not return_fractions:
         return R_H2
