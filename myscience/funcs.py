@@ -194,3 +194,24 @@ def FWHM_to_std(FWHM):
 def gaussian(amp, fwhm, mean):
     return lambda x: amp * np.exp(-(x-mean)**2/4./(fwhm/2.355)**2)
 
+def calc_physical_scale(theta, D):
+
+    ''' Calculates scale on sky given distance and solid angle.
+
+    Parameters
+    ----------
+    theta: float
+        Solid angle in arcseconds.
+    D: float
+        Distance in parsecs.
+
+    Returns
+    -------
+    d : float
+        Physical scale in parsecs.
+    '''
+
+    d = theta * D / 206265.0
+
+    return d
+
