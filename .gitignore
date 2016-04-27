@@ -3,4 +3,6 @@ planckpy
 gausspy
 matplotlib
 _build
+*png
+_autosummary
 
