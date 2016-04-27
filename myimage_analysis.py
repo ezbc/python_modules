@@ -925,4 +925,32 @@ def calculate_moment(data, moment=0, weights=1):
 
     return result
 
+def mask_nans(arrays, return_mask=False):
+
+    """ Masks any positions where any array in the list has a NaN.
+
+    Parameters
+    ----------
+    arrays : tuple
+        Tuple of arrays. The mask will be the shape of the first array. The
+        last axes of the rest of the arrays will be masked.
+
+    """
+
+    mask = np.zeros(np.shape(arrays[0]), dtype=bool)
+
+    for array in arrays:
+        mask[array != array] = 1
+
+    masked_arrays = []
+    for array in arrays:
+        if isinstance(array, np.ndarray):
+            masked_arrays.append(array[~mask])
+        else:
+            masked_arrays.append(array)
+
+    if return_mask:
+        return masked_arrays, mask
+    else:
+        return masked_arrays
 
